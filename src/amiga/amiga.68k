@@ -1,0 +1,4361 @@
+*
+*	Amiga-specific portions of DigDug2
+*
+* (c) JOTD 2025-2026
+*
+
+	* first instruction (includes contain code)
+	jra		start
+
+	.include "../src/include.inc"
+	.include "../src/options.inc"
+	.include "../src/sounds.inc"
+
+	.include "hardware/custom.i"
+	.include "exec/types2.i"
+	.include "lvo/exec_lvos.i"
+	.include "lvo/dos_lvos.i"
+	.include "lvo/graphics_lvos.i"
+
+	.global	m6809_direct_page_pointer
+	
+AttnFlags = 0x128
+AFB_68010 = 0
+AFB_68020 = 1
+AFB_68030 = 2
+
+
+NB_POSSIBLE_SPRITES = 0x100
+NB_POSSIBLE_TILES = 0x100
+BORDERBLANK = 0
+
+***********
+* ECS/OCS *
+***********
+
+	.ifdef	OCS_VERSION
+NO68020 = 1
+BITPLANE_FMODE = 0			| works with 1, albeit slower
+SPRITE_FMODE = 0			| required!!
+FMODE_OFFSET = 0
+SCROLL_WIDTH = 0x10
+BASE_BPLCON0_VALUE = 0x4200+BORDERBLANK
+
+	.if	OCS_VERSION==0
+SUPER_DEGRADED_OCS_VERSION = 1
+	.endif
+	.else
+*******
+* AGA *
+*******
+* 3: most performant
+
+FMODE_OFFSET = -8
+BITPLANE_FMODE = 3			| works with 1, albeit slower
+SPRITE_FMODE = 0			| no need to break compat AGA/ECS
+SCROLL_WIDTH = 0x40
+BASE_BPLCON0_VALUE = 0x0610+BORDERBLANK
+	.endif
+
+**********
+* shared *
+**********
+
+	
+COPPER_Y_START = 0x24
+BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 16!
+BASE_BPLCON2_VALUE = 0x0024		| sprites above all playfields
+
+HW_SPRITE_X_CORRECTION = 9
+	.ifdef	OCS_VERSION
+HW_SPRITE_Y_CORRECTION = -1
+	.else
+HW_SPRITE_Y_CORRECTION = 47
+	.endif
+	
+SPRITE_X_CORRECTION = 0
+	.ifdef	OCS_VERSION
+SPRITE_Y_CORRECTION = -16		| X (portrait)
+	.else
+SPRITE_Y_CORRECTION = 16		| X (portrait)
+	.endif
+SPRITE_HEIGHT = 16
+SPRITE_WIDTH = 16
+
+NB_LINES = 288
+
+Y_MAX = 280
+
+_custom = 0xDFF000
+
+NB_SPRITE_CLUTS = 0x10
+
+TILE_CLUT_POW2 = 6
+NB_TILE_CLUTS = (1<<TILE_CLUT_POW2)
+TILE_CLUT_MASK = NB_TILE_CLUTS-1
+
+SPRITE_START = 0x1780
+
+LAST_SPRITE = SPRITE_START+(NB_TARGET_SPRITES*TARGET_SPRITE_SIZEOF)-TARGET_SPRITE_SIZEOF
+FIRST_SPRITE = SPRITE_START
+
+GRID_POWER = 5
+GRID_SIDE = 1<<(8-GRID_POWER)   | coords are max 256
+
+* to save bandwidth, do not clear cookie cut blit
+* if no bitplane data: there will be some color artefacts
+* but not noticeable unless 2 sprites cross each other paths
+OPT_IGNORE_ZERO_BITPLANE = 0
+	.ifdef	OCS_VERSION
+OPT_ENABLE_DOUBLE_BUFFERING = 1
+	.else
+OPT_ENABLE_DOUBLE_BUFFERING = 1
+	.endif
+OPT_ENABLE_MULTIPLEXED_SPRITES = 0
+
+NB_TILE_PLANES = 4
+NB_BOB_PLANES = 4
+TOTAL_NB_COLORS = 1<<NB_TILE_PLANES
+BG_NB_BYTES_PER_ROW = 40*2
+
+* add 16 so sprites can be drawn at the bottom
+* without corrupting the screen
+NB_LINES = Y_MAX+16
+NB_PLAYFIELD_LINES = NB_LINES
+
+
+BG_SCREEN_PLANE_SIZE = BG_NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES
+BG_SCREEN_SIZE = BG_SCREEN_PLANE_SIZE*NB_TILE_PLANES
+	.ifndef	OCS_VERSION
+FG_NB_BYTES_PER_ROW = 40
+FG_SCREEN_SIZE = FG_SCREEN_PLANE_SIZE*NB_BOB_PLANES
+FG_SCREEN_PLANE_SIZE = FG_NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES
+	.endif
+	
+VIDEO_ADDRESS = 0
+
+NB_HOST_SPRITES = 8
+
+NB_TARGET_SPRITES = 0x40  
+	
+TARGET_SPRITE_X_1 = 0x801
+TARGET_SPRITE_X_2 = 0x1001
+TARGET_SPRITE_Y = 0x800
+TARGET_SPRITE_CODE = 0
+TARGET_SPRITE_COLOR = 1
+TARGET_SPRITE_ATTR = 0x1000
+TARGET_SPRITE_SIZEOF = 2
+
+FLIP_Y_BIT = 0
+MIRROR_X_BIT = 1
+SIZE_Y_BIT = 2
+SIZE_X_BIT = 3
+
+	STRUCTURE	PREVIOUS_SPRITE,0
+	UWORD	PREV_X
+	UWORD	PREV_Y
+	UWORD	PREV_HEIGHT			
+	UWORD	PREV_WIDTH			
+	UBYTE	PREV_STAR		| not used	
+	UBYTE	PREV_ACTIVE_PLANES	
+	LABEL		PREVIOUS_SPRITE_SIZEOF
+
+* hardware sprite (not used)
+	STRUCTURE	SPRITE,0
+	UBYTE	SPRITE_X
+	UBYTE	SPRITE_Y
+	UBYTE	SPRITE_CODE
+	UBYTE	SPRITE_CLUT
+	LABEL	SPRITE_SIZEOF
+
+
+
+* system bits
+BIT_INSERT_COIN_1 = 0
+BIT_INSERT_COIN_2 = 1
+
+
+
+
+BIT_UP = 0
+BIT_DOWN = 2
+BIT_RIGHT = 1
+BIT_LEFT = 3
+
+
+
+
+
+	
+	.macro	WAIT_BLIT
+	.ifndef	RELEASE
+	* always check that custom is set (in dev mode)
+	* saves a lot of time!
+	cmp.l	#_custom,a5
+	jeq		customok\@
+	BREAKPOINT	"custom not set in A5"
+customok\@:
+	.endif
+	move.w	#0x8400,(dmacon,a5)		| blitter high priority
+wait\@:
+	BTST	#6,(dmaconr,a5)
+	BNE.S	wait\@
+	move.w	#0x0400,(dmacon,a5)		| blitter normal priority
+.endm
+
+	.macro MUL_TABLE value,len
+mul\value\()_table:
+	.set    mulv,0
+	.rept	\len
+	dc.w	mulv
+	.set	mulv,mulv+\value
+	.endr
+.endm
+
+	* this game uses USP & SSP and is sensitive about stack usage
+	* plus it's way better to save S just in case of an osd call
+	* which is interrupted, then calls game irq which uses S
+	
+	.macro	OSD_ENTER
+	tst.b	osd_entry_count
+	jne		osd_enter_\@
+	* top entry: save game U register
+	move.w	d5,target_usp_value
+	* save & relocate stack
+	move.l	a7,saved_stack
+	lea		osd_stack,a7
+osd_enter_\@:
+	addq.b	#1,osd_entry_count	| increase nesting
+	.endm
+	
+	.macro	OSD_EXIT
+	subq.b	#1,osd_entry_count	| decrease nesting
+	jne		osd_exit_\@
+	* out of the osd stack: restore game stack
+	move.l	saved_stack,a7
+	* osd didn't change d5
+osd_exit_\@:
+	.endm
+	
+* debug macro that colors the screen until LMB pressed
+.macro 	blitz_bypass
+	move.w	d0,-(a7)
+	clr.w	d0
+loop\@:
+	move.w	d0,_custom+color
+	btst	#6,0xbfe001
+	beq.b	out\@
+	addq.w	#1,d0
+	bra.b	loop\@
+out\@:
+	move.w	(a7)+,d0
+	nop
+.endm
+
+* same thing but if LMB is pressed when entering, macro waits for release)
+.macro blitz
+w\@:
+	btst	#6,0xbfe001
+	beq.b	w\@
+	blitz_bypass
+.endm
+
+start:
+	move.l	a7,old_stack
+	jra	_user
+    
+	
+* exports
+
+	.global		_user
+	.global		_player_start
+	.global		_demo_end
+	.global		_resload
+	.global		_dosbase
+	.global		cheat_used
+	.global		no_io_flag
+* osd layer		
+	.global osd_enable_interrupts
+	.global osd_disable_interrupts
+	.global osd_break		| for debug	
+	.global osd_blitz		| for debug
+	.global osd_video_byte_dirty
+	.global osd_video_word_dirty
+	.global osd_read_high_scores
+	.global osd_write_high_scores	
+	.global osd_sound_start
+	.global osd_music_stop
+
+
+		
+		* read/write on memory
+		.ifne	OPT_ENABLE_LOGGING
+		.global	osd_log_cpu
+		.global osd_get_last_known_pc
+		.global	osd_read_file
+		.global	osd_write_file
+		.global	osd_dump_logs
+		.global	osd_cpu_logging_control
+		.endif
+
+		
+	.include	"ReadJoypad.i"
+	.include	"whdload_funcs.i"
+
+
+
+	    
+_user:
+    * if D0 contains "WHDL"
+    * A0 contains resload
+        
+    cmp.l   #0x05748444c,D0	| WHDL
+    bne.b   .standard
+	move.b	d1,_keyexit
+    move.l a0,_resload
+
+	move.l	a0,a2
+	lea	(_tag,pc),a0
+	jsr	(resload_Control,a2)
+	
+	
+	* set user stack different from supervisor stack
+	* this is important as the game uses a task system with stacks
+	* and it's working strangely
+	lea	user_stack_top,a0
+	move.l	a0,usp
+	* set user mode
+	move.w	#0,SR
+	
+    jra		.no_forbid
+.standard:
+	
+    * open dos library, graphics library
+    move.l  0x4.W,a6
+    lea dosname,a1
+    moveq.l #0,d0
+    jsr _LVOOpenLibrary(a6)
+    move.l  d0,_dosbase
+
+	lea	read_args_string(pc),a0
+	lea	program_args(pc),a1
+	move.l	#program_args_end-program_args,d0
+	lsr.l	#2,d0		| number of longs
+	
+
+	bsr	get_args_BCPL
+
+0:	
+	lea		program_args,a0
+
+	move.l	(A0)+,D0	| INVINCIBLE/S
+	beq.b	1f
+	or.l	#1,cheat_flags
+	st.b	cheat_used
+1:
+	move.l	(A0)+,D0	| INFLIVES/S
+	beq.b	2f
+	or.l	#2,cheat_flags
+	st.b	cheat_used
+2:
+
+	move.l	(A0)+,D0	| CHEATKEYS/S
+	beq.b	2f
+	* cheat isn't used as long as no cheat key is used
+	or.l	#0x10,cheat_flags
+2:
+
+
+	move.l	(A0)+,D0	| SKILL/K/N
+	beq.b	2f
+	bsr		bcpl_string_to_int
+	move.l	d0,difficulty_level
+2:
+
+
+	lea		_custom,a5
+	lea		debug_copperlist,a0
+	move.l	a0,cop1lc(a5)
+
+* no multitask
+	
+	move.l	4.W,A6
+	* system-friendly PAL/NTSC detect
+	cmp.b #50,0x212(a6)		| vblankfrequency
+	jeq	0f
+	* set NTSC
+	move.l	#NTSC_MONITOR_ID,monitor
+0:
+	lea graphicsname,a1
+    moveq.l #0,d0
+    jsr _LVOOpenLibrary(a6)
+    move.l  d0,_gfxbase
+    move.l	d0,a6
+	move.l	38(a6),old_syscoplist
+	move.l	34(A6),old_actiview		| gb_ActiView
+
+	sub.l	a1,a1
+	jsr	_LVOLoadView(a6)
+	jsr	_LVOWaitTOF(a6)
+	jsr	_LVOWaitTOF(a6)
+	
+	jbsr		load_highscores
+    * check if "floppy" file is here
+    move.l  _dosbase(pc),a6
+    move.l   #floppy_file,d1
+    move.l  #1005,d2   | MODE_OLDFILE
+    jsr     _LVOOpen(a6)
+    move.l  d0,d1
+    beq.b   .no_floppy
+    * "floppy" file found
+    jsr     _LVOClose(a6)
+    * wait 2 seconds for floppy drive to switch off
+    move.l  #100,d1
+    jsr     _LVODelay(a6)
+.no_floppy:
+
+* no multitask
+	
+    move.l  4,a6
+    jsr _LVOForbid(a6)
+
+    
+	sub.l	A1,A1
+	jsr	_LVOFindTask(a6)		| find ourselves
+	move.l	D0,A0
+	move.l	#-1,184(A0)	| pr_WindowPtr: no more system requesters (insert volume, write protected...)
+
+	move.w	AttnFlags(a6),d0
+	btst	#AFB_68010,d0
+	jeq		0f				| 68020: ok 50 fps
+	* now the tricky part: patch the code to change move.w sr,-(sp) by move.w ccr,-(sp) if on 68020
+	* allowing a version compiled for 68000 to run on 68020 without whdload
+	jbsr	correct_push_sr_code
+
+	move.w	AttnFlags(a6),d0
+	btst	#AFB_68020,d0
+	jeq		0f				| 68020: ok 50 fps
+	* kick 1.3 doesn't have CacheClearU, do it the hard way
+	lea	flush_icache,a5
+	jsr		_LVOSupervisor(a6)
+
+0:
+.no_forbid:
+	tst.l	_resload
+	jeq		0f
+	* patch move.w sr for whdload part
+	* this is needed even on whdload as some code runs in user mode. whdload corrects the problem
+	* at run-time but it takes some cycles
+	move.l	whd_attn_flags(pc),d0
+	btst	#AFB_68010,d0
+	beq	0f
+	jbsr	correct_push_sr_code
+	move.l	_resload(pc),a2
+	jbsr	resload_FlushCache(a2)
+0:
+	
+	.ifne	OPT_ENABLE_LOGGING
+	move.l	#log_buffer,log_ptr
+	lea	log_buffer_end,a0
+	move.l	#0xCAFECAFE,d0
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	.endif
+
+
+	lea		_custom,a5
+	lea		debug_copperlist,a0
+	move.l	a0,cop1lc(a5)
+	
+	lea		bg_screen_buffer_1,a0
+	jbsr	align_for_fmode
+	move.l	a0,background_ptr
+	
+	.ifdef	OCS_VERSION
+	* OCS version, double buffering occurs on back buffer if enabled
+	move.l	#mulBG_NB_BYTES_PER_ROW_table,bob_row_multiplication_table
+	move.w	#BG_NB_BYTES_PER_ROW,bob_row_size
+	move.w	#BG_SCREEN_PLANE_SIZE,bob_plane_size
+
+	lea		bg_screen_buffer_1,a0
+	move.l	a0,fg_screen_data_1
+	move.l	a0,playfield_drawn_screen_ptr
+	move.l	a0,playfield_displayed_screen_ptr
+
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	lea		bg_screen_buffer_2,a0
+	move.l	a0,fg_screen_data_2
+	move.l	a0,playfield_displayed_screen_ptr
+	.endif
+
+	.else
+	* AGA version, dual playfield
+
+	move.l	#mulFG_NB_BYTES_PER_ROW_table,bob_row_multiplication_table
+	move.w	#FG_NB_BYTES_PER_ROW,bob_row_size
+	move.w	#FG_SCREEN_PLANE_SIZE,bob_plane_size
+	
+	lea		fg_screen_buffer_1,a0
+	jbsr	align_for_fmode
+	move.l	a0,fg_screen_data_1
+	move.l	a0,playfield_drawn_screen_ptr
+	move.l	a0,playfield_displayed_screen_ptr
+
+
+
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	lea		fg_screen_buffer_2,a0
+	jbsr	align_for_fmode
+	move.l	a0,fg_screen_data_2
+	move.l	a0,playfield_displayed_screen_ptr
+	.endif
+	
+	.endif
+
+	cmp.w	#0x8000,bob_plane_size
+	jcs	0f
+	BREAKPOINT	"plane size too high for word operations"
+0:
+	
+	jbsr		set_status_bitplanes
+	* set them even if reset by game afterwards
+	* avoiding ugly stripe bitplane effect at startup
+
+	jbsr		really_update_scroll
+	
+	.ifndef	OCS_VERSION
+	* in AGA version, BOB bitplanes are on 2nd playfield
+	jbsr		set_bob_bitplanes
+	.endif
+	
+	lea		palette,a0
+	.ifdef	OCS_VERSION
+	* ECS: load 16 common colors for tiles/bobs & sprites
+	move.w	#TOTAL_NB_COLORS,d0
+	lea		tiles_colors,a1	
+	bsr		load_palette
+	lea		palette,a0
+	move.w	#TOTAL_NB_COLORS,d0
+	lea		bobs_colors,a1	
+	.else
+	* AGA: load 32 colors (16+16 DPF)
+	move.w	#TOTAL_NB_COLORS*2,d0
+	lea		tiles_colors,a1
+	.endif
+	bsr		load_palette
+	
+
+	move.l	cheat_flags,d0
+	jeq		1f
+	move.b	d0,d1
+	and.b	#3,d1
+	jeq		2f
+	* cheat key disable highscore only if used
+	st.b	cheat_used
+2:
+	btst	#0,d0
+	sne		invincible_flag
+	btst	#2,d0
+	sne		no_io_flag
+
+	BTST	#1,d0
+	sne		infinite_lives_flag
+	btst	#2,d0
+
+0:
+1:
+	move.b	difficulty_level+3,d0
+	and.b	#3,d0
+	
+	moveq	#0,d0
+	move.b	start_level_option+3,d0
+
+	move.b	d0,start_level
+	
+	move.l	misc_options,d1
+	btst	#0,d1
+	sne		frameskip
+	move.l	misc_options,d1
+	btst	#1,d1
+	sne		static_waves_flag
+	.ifndef	RELEASE
+	btst	#31,d1
+	sne		break_at_startup_flag
+	.endif
+	
+	**move.b	d0,dip_switches_2
+
+
+	
+
+	move.l	cheat_flags,d0
+	btst	#0,d0
+	beq.b	0f
+	st		cheat_used
+	*bset	#6,dip_switches_2
+0:
+	btst	#1,d0
+	beq.b	0f
+	st		infinite_lives_flag
+	st		cheat_used
+0:
+	btst	#2,d0
+	beq.b	0f
+	st		cheat_used
+0:
+	move.l	cheat_flags,d0
+	btst	#3,d0
+	beq.b	0f
+	st		cheat_used
+	*bset	#5,dip_switches_2
+0:
+	
+	move	#0x80,d1	| demo sounds on always
+	move.l	start_lives(pc),d0
+	not.b	d0
+	and.b	#3,d0
+	or.b	d0,d1
+	move.l	difficulty_level(pc),d0
+	ror.b	#4,d0
+	or.b	d0,d1
+	bset	#5,d1		| 30k-70k for extra lives
+	
+	move.b	d1,dip_switches_2
+	
+	jsr	 _detect_controller_types 
+
+	.ifne	OPT_ENABLE_LOGGING
+	* install dump and quit handler
+	* jump 4: dump & illegal
+	* jump A: quit
+	pea		dump_and_quit
+	lea		2.W,a0
+	move.l	#0x4AFC4EF9,(a0)+
+	move.l	(a7)+,(a0)+
+	pea		quit_to_os
+	move.w	#0x4EF9,(a0)+
+	move.l	(a7)+,(a0)+
+	.endif
+
+	jra		demo_game
+
+	.ifne	OPT_ENABLE_LOGGING
+dump_and_quit:	
+	jbsr	osd_dump_logs
+	illegal
+	.endif
+
+correct_push_sr_code:
+	lea	push_sr_table,a0
+0:
+	move.l	(a0)+,d0
+	jeq		1f
+	move.l	d0,a1
+	move.w	(a1),d0
+	cmp.w	#0x40E7,d0
+	jne		2f
+	* patch instruction move.w sr,-(sp) => move.w ccr,-(sp)
+	move.w	#0x42e7,(a1)
+	jra		0b
+2:
+	cmp.w	#0x42e7,d0
+	* no need to do anything, already fixed or 68020+ version
+	jra		0b
+	
+3:
+	BREAKPOINT	"non push sr instruction in A1"
+	jra		0b
+1:
+	rts
+	
+* < D0: bcpl string (with leading size byte)
+* < A1: dest C string
+bcpl_arg_string_copy:
+    movem.l D0-D2/A0-A1,-(a7)
+	lsl.l	#2,d0
+	moveq.l	#0,d2
+    move.l  d0,a0
+	move.b	(a0)+,d2	| size
+	beq.b	1f
+	subq	#1,d2
+0:
+	move.b	(a0)+,(a1)+
+	dbf		d2,0b
+1:
+    movem.l (a7)+,D0-D2/A0-A1
+    rts
+
+
+bcpl_string_to_int:
+    movem.l A0/A1,-(a7)
+    lea temp_filename_buffer(pc),a1
+    bsr bcpl_arg_string_copy
+    * convert to integer
+    move.l  a1,a0
+    * < A0: pointer on C string
+    * > D0: value
+    * > D1: -1 if ok, position of the string if error
+    bsr parse_integer
+    movem.l  (a7)+,a0/a1
+	rts
+	
+* parse integer from string
+* < A0: pointer on C string
+* > D0: value
+* > D1: -1 if ok, position of the string if error
+parse_integer:
+    movem.l  d2/d3,-(a7)
+    * go to end of string
+    moveq.l #-1,d1
+.loop1:
+    addq.l  #1,d1
+    tst.b   (a0,d1.w)
+    bne.b   .loop1
+    * d1 is the number of chars
+    moveq.l #0,d0
+    moveq.l #0,d2
+    subq.l  #2,d1   | 10th power minus 1
+.loop2:
+    move.b  (a0)+,d2
+    beq.b   .out
+    
+    cmp.b   #32,d2
+    beq.b   .skip
+    sub.b   #48,d2
+    bcs.b   .error
+    cmp.b   #10,d2
+    bcc.b   .error
+    move.w  d1,d3
+    bmi.b   .doadd
+.muloop:
+    mulu    #10,d2
+    dbf d3,.muloop
+.doadd:
+    add.l   d2,d0
+.skip:
+    subq.l  #1,d1
+    bra.b   .loop2
+.out:    
+    movem.l  (a7)+,d2/d3
+    rts
+.error:
+    moveq.l #0,d0
+    bra.b   .error
+	
+    * thanks Toni for this 1.3 read argument code
+BCPL_RdArgs = 78
+	
+	* a1 = pointer to result array. Must be LONG aligned!
+	* a0 = formatting string. BSTR!
+	* d0 = size of result array (number of LONGs)
+get_args_BCPL:
+	movem.l d2/d3/d4,-(sp)
+	move.l d0,d3
+	moveq #BCPL_RdArgs,d0
+	move.l a0,d1
+	lsr.l #2,d1
+	move.l a1,d2
+	lsr.l #2,d2
+	moveq #0,d4
+	bsr.s call_bcpl
+	movem.l (sp)+,d2/d3/d4
+	rts
+
+	* d0 = gv index
+	* d1-d4 = bcpl parms
+
+BCPL_STACK = 3000
+
+call_bcpl:
+	movem.l d2-d7/a2-a6,-(sp)
+
+	move.l d0,d6
+	move.l d1,d5
+
+	move.l 4.w,a6
+	move.l	_dosbase(pc),a5
+
+
+	sub.l a1,a1
+	jsr	_LVOFindTask(a6)
+	move.l d0,a4
+
+	* allocate BCPL stack
+	move.l #BCPL_STACK,d0
+	move.l #65536+1,d1
+	jsr	_LVOAllocMem(a6)
+	move.l d0,d7
+	beq.s 0f
+	
+	movem.l d7/a5/a6,-(sp)
+
+	moveq #0,d0
+	move.l d5,d1
+	sub.l a0,a0
+	move.l d7,a1
+	lea 3*4(a1),a1
+	move.l 136(a4),a2
+	add.w	d6,d6
+	add.w	d6,d6
+	move.l 0(a2,d6.w),a4
+	movem.l 46(a5),a5/a6
+	jsr (a5) | call bcpl!
+	
+	movem.l (sp)+,d7/a5/a6
+
+0:
+	move.l d7,a1
+	move.l #BCPL_STACK,d0
+	jsr	_LVOFreeMem(a6)
+
+
+	movem.l (sp)+,d2-d7/a2-a6
+	rts
+
+
+
+
+	
+* zero all registers but 6809 stack pointer
+cpu_init:
+	moveq	#0,d0
+	moveq	#0,d1
+	moveq	#0,d2
+	moveq	#0,d3
+	moveq	#0,d4
+	moveq	#0,d6
+	moveq	#0,d7
+	rts
+
+demo_game:
+		move		#0x4000,_custom+intena						| disable interrupts
+		move		#0x7FFF,_custom+intreq						| ack all interrupts
+		bsr			platform_init					| amiga-specific init
+		
+0:	
+	.ifne	OPT_ALIGNED_MEMORY
+	* compute ram start for dev mode
+	* align so real addresses LSW match actual arcade addresses
+	* and lower 16-bit match original RAM & even ROM offsets
+	*
+	lea		dev_ram_buffer,a6
+	move.l	a6,d0
+	clr.w	d0
+	move.l	d0,d1
+	add.l	#0x10000+RAM_START,d1
+	move.l	d1,ram_start_0000		| memory (0x1000-0xFFFF)
+	
+	
+	* relocate rom tables just after shared RAM
+	* memory is contiguous (only 1 segment of memory RAM+ROM)
+	* and 6809 memory access is way faster (no bank switching)
+	
+	* copy the ROM data
+	add.l	#ROM_START-RAM_START,d1
+	move.l 	d1,a1
+	move.w	#(0x10000-ROM_START)/4-1,d0
+	.else
+	* release mode
+
+	* copy the ROM data after RAM
+	lea		rom_buffer,a1
+	move.w	#(0x10000-ROM_START)/4-1,d0
+	.endif
+	
+	lea		rom_base,a0
+0:
+	move.l	(a0)+,(a1)+
+	dbf		d0,0b
+
+
+	
+	GET_MEMORY_START_AND_DP
+	* initialize namco IO
+	lea	namco_io_start_memory_4800(pc),a0
+	lea	(namco_io_4800,a6),a1
+	moveq	#0x7,d0
+0:
+	move.l	(a0)+,(a1)+
+	dbf	d0,0b
+	
+	moveq	#0,d5		| set D5.L to 0
+	jbsr	cpu_init
+	jmp			reset_e5ba					| pass control to the cpu core
+
+
+* dip switches & I/O memory at start
+* the settings are encoded with 3 lives, level select enabled, bonus life 30k/80k
+* nb lives are at 4814. F2 means 5 lives
+namco_io_start_memory_4800:
+	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF3,0xF0,0xF1,0xF1,0xF1,0xF1,0xF0,0xF0
+	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF4,0xF0,0xF4,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0
+
+
+
+do_irq:
+	* set base for RAM
+	jbsr	cpu_init
+	GET_MEMORY_START_AND_DP
+* uncomment to ignore the wait for end of tunes that the game expects
+*	clr.l	(0x4040,a6)  | start music is done
+*	clr.l	(0x4044,a6)  | game over music is done
+*	clr.l	(0x4048,a6)  | game over music is done
+*	clr.l	(0x404C,a6)  | game over music is done
+*	clr.l	(0x4050,a6)  | death sfx is done & others
+*	clr.b	(0x404D,a6)  | death sfx is done
+
+	* should we set a saved copy of S or use the one that existed
+	* when the game was interrupted? depends if the game was interrupted
+	* in the original game code or in an osd function
+	cmp.b	#1,osd_entry_count
+	jeq		0f
+	* osd_entry_count > 1: means that we interrupted an osd call
+	* we have to restore d5 as it was on entering the osd call
+	* restore game S (aka d5) so it's used in the irq
+	* we must not change d5 until game irq has been called
+	move.w	target_usp_value,d5
+0:
+	jra		irq_8000					| pass control to the cpu core
+	
+* just in case some hardware calls nmi
+_nmi:
+	move.w	#0x7FFF,_custom+intreq
+	move.w	#0x7FFF,_custom+intreq
+	rts
+	
+
+
+level3_interrupt:
+	* disable osd context switch
+	* we must not save d5 or change stack from an osd call from an interrupt
+	addq.b	#1,osd_entry_count
+    	movem.l d0-d7/a0-a6,-(a7)
+	lea		_custom,a5
+	move.w	(intreqr,a5),d0
+	btst	#5,d0
+	beq.b		1f		| copper
+
+	clr.b	vbl_sync_flag
+	
+*	moveq	#0,d0
+*	jsr	_read_joystick
+*	move.l	d0,_joypad_2_state
+
+	move.l	_joypad_1_state(pc),d1
+	move.l	d1,_joypad_1_old_state
+	moveq	#1,d0
+	jsr	_read_joystick
+	move.l	d0,_joypad_1_state
+
+	
+	* CD32 "play" is disabled but it's free to read
+	* 3rd button on a Sega 3-button so 3rd button is pause
+	btst	#JPB_BTN_PLAY,d0
+	beq.b	0f
+	btst	#JPB_BTN_PLAY,d1
+	bne.b	0f
+	bsr		toggle_pause
+0:
+	* countdown active to start "hurry" tune?
+	jbsr	handle_music_termination
+	jbsr	handle_hurry_music_restart
+	
+	* ack vbl twice (040/pistorm bug)
+	move.w	#0x20,(intreq,a5)
+	move.w	#0x20,(intreq,a5)	
+	jra	3f
+1:
+	* has to be copper
+
+	* we're going to ack copper & software interrupt now
+	* do it twice (040/pistorm bug)
+	move.w	#0x14,(intreq,a5)
+	move.w	#0x14,(intreq,a5)
+
+	tst.b	pause_flag
+	jne	23f
+
+
+
+	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
+	st.b	interrupt_mode
+	* is level 1 interrupt set? that would mean that mid-screen interrupt
+	* is the source of the interrupt
+	btst	#2,d0
+	beq.b	2f
+	* mid-screen copper interrupt, must occur once every 5 times
+	* to simulate ~60 Hz on 50 Hz display
+	move.b	mid_screen_interrupt_count,d0
+	addq.b	#1,d0
+	cmp.b	#5,d0
+	bne.b	1f
+	jbsr		do_irq
+	clr.b	interrupt_mode	
+	clr.b	d0
+1:
+	move.b	d0,mid_screen_interrupt_count
+	jra		3f
+2:
+
+	move.l	d5,-(a7)
+	
+		
+	jbsr	really_update_scroll
+	jbsr	really_update_hw_sprites
+	move.l	(a7)+,d5
+	* do the irq now
+	* doing the irq now leaves more time to update hw sprites
+	* and avoid the blinking
+	jbsr		do_irq
+
+	
+	tst.b	frameskip
+	jeq		0f
+	eor.b	#1,flip_flop
+	jeq		23f
+0:
+	jbsr		really_update_sprites
+	
+	
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	bsr		switch_screen_buffers
+	.endif
+
+	jbsr		really_update_tiles
+	
+23:
+	jbsr	read_inputs
+
+3:
+    movem.l (a7)+,d0-d7/a0-a6
+	* enable osd context switch
+    subq.b	#1,osd_entry_count
+    rte
+	
+osd_read_4802:
+	move.b	#0xF0,d0	| this value seems not to change except at bootup
+	rts
+
+	.ifne	OPT_ENABLE_LOGGING
+
+	.macro	CHECK_ZERO_MSW	reg
+	swap	\reg
+	tst		\reg
+	jeq		0f
+	move.w	(6,a7),d6
+	BREAKPOINT		"\reg MSW is not zero, PC=check d6!"
+0:
+	swap	\reg
+	.endm
+	
+osd_log_cpu:
+	* first, check that registers don't have a wrong longword mask
+	CHECK_ZERO_MSW	d1
+	CHECK_ZERO_MSW	d2
+	CHECK_ZERO_MSW	d3
+	CHECK_ZERO_MSW	d4
+	move.w	(6,a7),last_known_m6809_pc
+	
+	move.w	last_known_m6809_pc,0x100
+	
+	move.l	a6,-(a7)
+	* check if cpu log is enabled
+	tst.b	cpu_log_enable
+	jeq		445f
+	move.l	log_ptr,a6
+	move.w	(10,a7),(a6)+	| the PC
+	move.l	d1,-(a7)
+	rol.w	#8,d1
+	move.b	d0,d1
+	rol.w	#8,d1   | make D, make sure that not too many diffs
+	move.w	d0,(a6)+
+	move.w	d1,(a6)+
+	move.w	d2,(a6)+
+	move.w	d3,(a6)+
+	move.w	d4,(a6)+
+	move.w	#0xDEAD,(a6)+
+	move.l	a6,log_ptr
+	cmp.w	#0xCAFE,(a6)  | hitting the protection buffer
+	jne		444f
+	BREAKPOINT	"cpu log buffer full, dumping and exiting!"
+	jbsr	osd_dump_logs
+	illegal
+444:
+	move.l	(a7)+,d1
+445:
+	move.l	(a7)+,a6
+	rts
+
+* < D6: 0 disable, 1 enable
+osd_cpu_logging_control:
+	move.b	d6,cpu_log_enable
+	rts
+	.endif
+
+osd_blitz:
+	blitz
+	rts
+
+osd_get_last_known_pc:
+	move.w	last_known_m6809_pc,d6
+	rts
+
+osd_break:
+	* sends a WinUAE command to enter WinUAE debugger
+	.ifndef	RELEASE
+	move.l	D0,-(a7)
+	pea     0.w
+	* Normally it would point to where the result of the command is written, but since the last parameter (first pushed)
+	* indicating the number of bytes to write is 0, nothing is written.
+	pea     0.w	
+	pea     1003f-1002f
+	pea     1002f(pc)
+	pea     -1.w
+	pea     82.w
+	jsr     0xf0ff60
+	lea     24(sp),sp
+	move.l	(a7)+,d0
+	.endif
+    rts
+		
+1002: .asciz    "AKS_ENTERDEBUGGER 1"
+1003:
+        .align	2
+
+	
+
+	
+
+
+* < D0: nonzero interrupts enabled
+osd_is_vblank_interrupt_enabled:
+	move.w	_custom+intenar,d0
+	and.w	#0x0030,d0
+	rts
+	
+	
+
+
+* Z: set if not playing
+is_game_playing:
+	* check game in play flag plus
+	* screen somewhere to avoid insert coin by fire on
+	* "get ready" screen or "best scores"
+	movem.l	a5/a6,-(a7)
+	GET_MEMORY_START_AND_DP
+	cmp.b	#0x52,(0X1AE,a6)	| "R" from ready screen: game considered in play
+	jeq		1f
+	cmp.b	#0x42,(0X228,a6)	| "B" from best scores: game considered in play
+	jeq		1f
+	tst.b	game_in_play_101b(a6)
+0:
+	movem.l	(a7)+,a5/a6
+	rts
+1:
+	cmp.l	#0,a6		| unset Z
+	jra		0b
+	
+skip_level:
+	movem.l	a6/a5,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	#1,level_completed_flag_10d1(a6)
+	movem.l	(a7)+,a6/a5
+	rts
+
+toggle_monsters:
+	movem.l	a6/a5,-(a7)
+	GET_MEMORY_START_AND_DP
+	eor.b	#1,enemies_active_10d2(a6)
+	movem.l	(a7)+,a6/a5
+	rts
+
+lose_all_lives:
+	movem.l	a6/a5,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	#1,nb_lives_1703(a6)					| no more lives
+	movem.l	(a7)+,a6/a5
+	rts
+
+add_100000_points:
+	movem.l	a5/a6,-(a7)
+	GET_MEMORY_START_AND_DP
+	movem.w	d0/d7,-(a7)
+	move.b	player_1_score_1700(a6),d0
+	MOVEQ	#1,d7
+	abcd	d7,d0
+	move.b	d0,player_1_score_1700(a6)
+	movem.w	(a7)+,d0/d7
+	movem.l	(a7)+,a5/a6
+	rts
+
+
+
+set_status_bitplanes:
+	lea		scroll_table,a2
+	
+	move.l		background_ptr,a4
+	lea		reset_bplcon1_1,a0	| pointer on first bitplane
+	add.w	#255*4,a2		| max scroll
+	move.w	(a2),(a0)	| set bplcon value
+	add.w	(2,a2),a4	| bytes offset
+	lea		tiles_bitplanes+2,a0				| pointer on first bitplane
+	move.l	a4,d0				| base address			
+	jbsr	set_background_bitplanes
+	
+	move.l		background_ptr,a4
+	lea		reset_bplcon1_2,a0	| pointer on first bitplane
+	move.w	(a2),(a0)	| set bplcon value
+	add.w	(2,a2),a4	| bytes offset
+	move.l	a4,d0				| base address	
+	lea		tiles_bitplanes_end+2,a0				| pointer on first bitplane	
+	add.l	#BG_NB_BYTES_PER_ROW*34*8,d0
+	jbsr	set_background_bitplanes
+	
+	rts
+	
+* we're going to scan for scroll values with some optimization
+* to avoid to update copperlist if values don't change
+really_update_scroll:
+	GET_MEMORY_START_AND_DP
+	lea		scroll_table,a2
+	move.l		background_ptr,a4
+	moveq	#0,d5
+	move.b	(scroll_value_1008,a6),d5	| scroll value 0=>0xFF
+	not.b	d5
+	.ifdef	OCS_VERSION
+	move.b	d5,sprite_x_offset
+	.endif
+	add.w	d5,d5
+	add.w	d5,d5
+	add.w	d5,a2
+0:
+	lea		scrolling_bitplanes,a0
+	add.w	#BG_NB_BYTES_PER_ROW*16,a4		| skip 2 first tile rows
+	move.w	(a2)+,(a0)	| set bplcon value
+	add.w	(a2),a4	| bytes offset
+	
+	move.l	a4,d0
+	addq	#4,a0				| pointer on first bitplane
+	jbsr	set_background_bitplanes
+	
+	rts
+	
+	
+* we're going to scan for dirty tiles (0x800 array)
+* an optimization is to also have flags for 0x20-size regions
+* if the value is 0, then no need to try to refresh the next
+* 0x20 tiles. If screen tiles don't change, we read 0x20 bytes
+* instead of 0x800 each frame.
+
+really_update_tiles:
+	.ifdef OCS_VERSION
+	lea		_custom,a5
+	WAIT_BLIT  | no need in AGA: dual playfield
+	.endif
+	GET_MEMORY_START_AND_DP
+	lea		(VIDEO_ADDRESS,a6),a6
+	lea		(VIDEO_ADDRESS+0x800,a6),a5
+	lea		tiles_row_flags(pc),a1
+	moveq	#0,d3
+3:
+	tst.b	(a1)+
+	jeq		2f
+	lea		tiles_refresh_table(pc),a0
+	subq.b	#1,(-1,a1)
+	move.w	#0x3F,d2		| 0X40 cols!
+	move.w	d3,d7
+	lsl.w	#6,d7		| times 64, get offset for big dirty table
+	add.w	d7,a0
+0:
+
+	tst.b	(a0)+
+	jeq		1f
+	subq.b	#1,(-1,a0)	| decrease dirty counter
+	* read tile & color codes from RAM
+
+	move.b	(a6,d7.w),d0		| code
+	move.b	(a5,d7.w),d1		| color/attribute
+
+	movem.l	d2/d3/d7/a0/a1/a5,-(a7)
+	jbsr	update_bg_tile
+	movem.l	(a7)+,d2/d3/d7/a0/a1/a5
+1:
+	addq	#1,d7
+	dbf	d2,0b
+2:
+	addq	#1,d3
+	cmp.w	#0x20,d3
+	jne		3b
+	rts
+	
+
+* void mappy_state::mappy_draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, uint8_t *spriteram_base)
+* {
+* 	uint8_t *spriteram = spriteram_base + 0x780;
+* 	uint8_t *spriteram_2 = spriteram + 0x800;
+* 	uint8_t *spriteram_3 = spriteram_2 + 0x800;
+* 	int offs;
+* 
+* 	for (offs = 0;offs < 0x80;offs += 2)
+* 	{
+* 		/* is it on? */
+* 		if ((spriteram_3[offs+1] & 2) == 0)
+* 		{
+* 			static const uint8_t gfx_offs[2][2] =
+* 			{
+* 				{ 0, 1 },
+* 				{ 2, 3 }
+* 			};
+* 			int sprite = spriteram[offs];
+* 			int color = spriteram[offs+1];
+* 			int sx = spriteram_2[offs+1] + 0x100 * (spriteram_3[offs+1] & 1) - 40;
+* 			int sy = 256 - spriteram_2[offs] + 1;   // sprites are buffered and delayed by one scanline
+* 			int flipx = (spriteram_3[offs] & 0x01);
+* 			int flipy = (spriteram_3[offs] & 0x02) >> 1;
+* 			int sizex = (spriteram_3[offs] & 0x04) >> 2;
+* 			int sizey = (spriteram_3[offs] & 0x08) >> 3;
+* 			int x,y;
+* 
+* 			sprite &= ~sizex;
+* 			sprite &= ~(sizey << 1);
+* 
+* 			sy -= 16 * sizey;
+* 			sy = (sy & 0xff) - 32;  // fix wraparound
+* 
+* 			if (flip_screen())
+* 			{
+* 				flipx ^= 1;
+* 				flipy ^= 1;
+* 			}
+* 
+* 			for (y = 0;y <= sizey;y++)
+* 			{
+* 				for (x = 0;x <= sizex;x++)
+* 				{
+* 					m_gfxdecode->gfx(1)->transmask(bitmap,cliprect,
+* 						sprite + gfx_offs[y ^ (sizey * flipy)][x ^ (sizex * flipx)],
+* 						color,
+* 						flipx,flipy,
+* 						sx + 16*x,sy + 16*y,
+* 						m_palette->transpen_mask(*m_gfxdecode->gfx(1), color, 15));
+* 				}
+* 			}
+* 		}
+* 	}
+* }
+* 
+* 
+	.macro	COMPUTE_GRID_OFFSET
+	.ifndef	RELEASE
+	movem.l	d0/d1,-(a7)
+	nop
+	.endif
+	lsr.w	#GRID_POWER,d0	| reduce coord from 256 to 1<<(8-GRID_POWER) (0-7)
+	lsr.w	#GRID_POWER,d1
+	lsl.w	#8-GRID_POWER,d1		| multiply by 1<<(8-GRID_POWER) to get offset
+	add.w	d0,d1
+	.ifndef	RELEASE
+	cmp.w	#GRID_SIDE*GRID_SIDE,d1
+	jcs		cgo_ok_\@
+	movem.l	(a7)+,d0/d1
+	BREAKPOINT	"grid offset out of range, check coords in d0/d1"
+cgo_ok_\@:
+	addq	#8,a7
+	.endif
+	.endm
+	
+	* shared code between bobs & hw sprites
+	* jumps to 2f if not active
+	* returns d0 and d1 decoded
+	.macro		COMPUTE_SPRITE_COORDS
+	moveq	#0,d2
+	move.b	(TARGET_SPRITE_COLOR,a0),d2
+	jeq		2f			| all sprites are black when color = 0
+	moveq	#0,d0
+	move.b	(TARGET_SPRITE_X_2,a0),d0
+	bclr	#2,d0
+	jne		2f	| if ((spriteram_3[offs+1] & 2) == 0)
+	
+	* compute sx
+	moveq	#0,d1
+	and.w	#0x1,d0
+	lsl.w	#8,d0		| times 0x100
+	sub.w	#40,d0
+	move.b	(TARGET_SPRITE_X_1,a0),d1
+	add.w	d1,d0		| sx = spriteram_2[offs+1] + 0x100 * (spriteram_3[offs+1] & 1) - 40
+	* compute sy
+	move.b	(TARGET_SPRITE_Y,a0),d1  | sprite Y
+	subq.w	#1,d1	| sy = spriteram_2[offs]-1  (MAME mirrors sy but we don't!)	
+	jmi		2f
+	.endm
+	
+* /*
+* sprite format:
+* 
+* spriteram
+* 0   xxxxxxxx  tile number
+* 1   --xxxxxx  color
+* 
+* spriteram_2
+* 0   xxxxxxxx  Y position
+* 1   xxxxxxxx  X position
+* 
+* spriteram_3
+* 0   xx------  tile number LSB
+* 0   --xx----  Y size (16, 8, 32, 4?)
+* 0   ----xx--  X size (16, 8, 32, 4?)
+* 0   ------x-  Y flip
+* 0   -------x  X flip
+* 1   ------x-  disable
+* 1   -------x  X position MSB
+* */
+
+really_update_hw_sprites:
+	************************************************
+	* draw current sprites from 6809 sprite memory *
+	************************************************
+	GET_MEMORY_START_AND_DP
+	* clear "sprite drawn" table
+	lea		sprite_drawn_table(pc),a0
+	move.w	#NB_TARGET_SPRITES/4-1,d7
+0:
+	clr.l	(a0)+
+	dbf		d7,0b
+	* clear "sprite already there" table
+	lea		sprite_location_table(pc),a0
+	move.w	#(GRID_SIDE*GRID_SIDE/4)-1,d7
+0:
+	clr.l	(a0)+
+	dbf		d7,0b
+	* make sure to respect original game priorities like with BOBs
+	*
+	* if not done, HW sprite can be drawn on top of a BOB that is supposed
+	* to be drawn on top. So only assign HW sprite if the object is alone
+	* in its slot (32x32 square)
+	*
+	* position the bobs&sprites in the grid. Don't put a hardware sprite
+	* if number of objects in grid is != 1 (ourselves)
+
+	lea		sprite_location_table(pc),a3
+	lea		(FIRST_SPRITE,a6),a0		| sprite start
+	move.w	#NB_TARGET_SPRITES-1,d7
+1:
+	COMPUTE_SPRITE_COORDS		| jumps in 2f if not active
+	COMPUTE_GRID_OFFSET
+	addq.b	#1,(a3,d1.w)	| count one more sprite in the area
+2:
+	addq.w	#TARGET_SPRITE_SIZEOF,a0
+	dbf		d7,1b
+	
+	* now update in the reverted order // the bobs
+	lea		(LAST_SPRITE,a6),a0		| sprite start
+	lea		hws_table,a4
+	lea		game_sprites+2,a2				| copperlist part
+	lea		game_sprites_end+2,a6			| end
+	move.w	#NB_TARGET_SPRITES,d6
+	moveq	#0,d7
+	move.l	#sprite_control_words,d5
+1:
+	jbsr	update_one_hw_sprite
+	subq.w	#TARGET_SPRITE_SIZEOF,a0
+	cmp.l	a2,a6
+	jeq		2f			| all sprites are used already: bail out
+	addq	#1,d7
+	cmp.w	d6,d7		| we have to increase d7 (priority inverted vs bobs)
+	jne		1b
+	* blank the rest of the unused sprites
+	* a quick way is to cancel sprite position
+	* leaving the current sprite data
+	move.l	d5,a3		| pointer on sprite positions in copperlist
+	lea		sprite_control_words_end,a2
+1:
+	cmp.l	a2,a3
+	jeq		2f
+	clr.w	(6,a3)
+	clr.w	(2,a3)
+	addq	#8,a3
+	jra		1b
+2:	
+	rts
+
+
+	
+	
+* < A0: target sprite memory
+* < A2: part copperlist where the sprites are
+* A3: scratch
+* < A4: hardware sprite table (0 if not hw sprite)
+* < D5: pointer on sprite positions in the copperlist
+* < D7: loop counter (used for flag index)
+update_one_hw_sprite:
+
+	* get code immediately. we want to know if it's a
+	* hardware sprite right away
+	moveq	#0,d3
+	move.b	(TARGET_SPRITE_CODE,a0),d3
+
+	lsl.w	#3,d3
+	move.b	(TARGET_SPRITE_ATTR,a0),d2
+	btst	#MIRROR_X_BIT,d2  | Y but portrait!
+	jeq		0f
+	addq	#4,d3
+0:
+	
+	move.l	(a4,d3.w),d3
+	jeq		2f		| not defined or no HW sprite, pass to BOBs
+
+	lea		HW_SpriteYTable_16,a1		| most sprites have same size 16 high
+	btst	#SIZE_Y_BIT,d2
+	jeq		0f
+	lea		HW_SpriteYTable_32,a1		| most sprites have same size 16 high
+0:
+
+	COMPUTE_SPRITE_COORDS
+
+
+	move.l	d3,a5	| clut table
+
+	
+	* we're taking from here, mark the sprite as empty
+	* so BOB pass isn't going to consider it
+	lea		sprite_location_table(pc),a3
+	move.w	d0,-(a7)
+	move.w	d1,-(a7)
+	COMPUTE_GRID_OFFSET
+	lea		sprite_location_table(pc),a3
+	cmp.b	#2,(a3,d1.w)
+	jcs		0f
+	* 2 objects in the same slot: don't use HW sprite as it would
+	* screw priorities in many cases
+	addq	#4,a7
+	jra		2f
+0:
+	move.w	(a7)+,d1
+	move.w	(a7)+,d0
+	
+	lea		sprite_drawn_table(pc),a3
+	st.b	(a3,d7.w)
+	
+
+	.ifne	HW_SPRITE_X_CORRECTION
+	add.w	#HW_SPRITE_X_CORRECTION,d0
+	.endif
+	.ifne	HW_SPRITE_Y_CORRECTION
+	add.w	#HW_SPRITE_Y_CORRECTION,d1
+	.endif
+
+	exg		d0,d1
+	
+	and.b	#0xF,d2		| CLUT
+	
+	* it is a HW sprite all right
+	lsl.w	#3,d2	| 2 pointers for each sprite
+
+	lea		(a5,d2.w),a5	| pointer on first sprite
+
+	* D0 and D1 are already set
+	* so is A1 with sprite Y pos table
+	
+	jbsr		store_sprite_pos
+
+	* first sprite of couple
+	move.l	(a5)+,a3	| pointer on sprite data
+	*move.l	d0,(a3)		| control word of sprite 1, not useful
+	move.l	a3,d1
+	* store sprite pointer in copperlist
+	move.w	d1,(4,a2)
+	swap	d1
+	move.w	d1,(a2)
+	move.l	d5,a3
+	move.w	d0,(6,a3)
+	swap	d0
+	move.w	d0,(2,a3)
+	swap	d0
+	* second sprite of couple
+	BSET	#7,d0		| attach bit set
+	move.w	d0,(6+8,a3)
+	swap	d0
+	move.w	d0,(2+8,a3)
+	move.l	(a5),a3		| pointer on sprite data
+	*move.l	d0,(a3)		| control word of sprite 2, not useful
+	move.l	a3,d1
+	* store sprite pointer in copperlist
+	move.w	d1,(4+8,a2)
+	swap	d1
+	move.w	d1,(8,a2)
+	move.w	#0x10,d1
+	add.w	d1,a2	| advance in sprite copperlist part
+	add.w	d1,d5	| next sprite couple
+2:
+	
+	rts
+
+	
+really_update_sprites:
+
+	
+	***********************
+	* erase previous BOBs *
+	***********************
+	move.l	bob_previous_drawn_sprites(pc),a4
+	lea		_custom,a5
+	* clear previous positions
+	
+	move.w	#NB_TARGET_SPRITES-1,d7
+	move.l	playfield_drawn_screen_ptr(pc),a1
+	
+	
+	.ifdef	OCS_VERSION
+	*************************
+	* blit background tiles *
+	*************************
+	lea	background_restore_buffer,a0
+	WAIT_BLIT
+	move.l	#-1,bltalwm(a5)		| needed for blit_background
+	* loop
+1:
+	move.w	(a4),d0
+	jeq	11f		| x=0: inactive
+	move.w	(2,a4),d1
+	cmp.w	#NB_LINES,d1
+	jcc		11f				| too low: discard
+	and.w	#0x1F0,d0		| align on 16 lower bound
+	* clear area where the sprite was
+	clr.l	(a4)+			| ack deletion by setting -1 in X & Y
+	move.w	(a4)+,d4			| height
+	move.w	(a4)+,d2		| width
+	addq	#2,a4			
+	jbsr	blit_background
+
+	.else
+	* loop
+1:
+	*******************
+	* erase playfield *
+	*******************
+	move.l	(a4),d1	| read X and Y
+	jeq		11f		| x=y=0: inactive, skip
+	move.l	d1,d0
+	swap	d0		| get X
+
+	* clear area where the sprite was
+	clr.l	(a4)+			| ack deletion
+	move.w	(a4)+,d4		| height
+	move.w	(a4)+,d2		| width/clut index (if star)
+	addq	#2,a4			| ignore that info	
+
+	and.w	#0x1F0,d0		| align on 16 lower bound
+	move.w	#NB_TILE_PLANES,d3
+	move.l		playfield_drawn_screen_ptr(pc),a1
+	jbsr		clear_planes_any_blitter_internal
+	.endif
+
+	dbf		d7,1b	
+	bra.b	12f
+11:
+	lea	(PREVIOUS_SPRITE_SIZEOF,a4),a4
+	dbf		d7,1b
+12:	
+	
+	
+	*********************************************
+	* draw current BOBs from 6809 sprite memory *
+	*********************************************
+
+
+	GET_MEMORY_START_AND_DP
+    lea _custom,A5
+	lea		(FIRST_SPRITE,a6),a0		| sprite start
+	move.w	#NB_TARGET_SPRITES-1,d7
+
+
+	lea		sprite_drawn_table(pc),a3
+	move.l	bob_previous_drawn_sprites(pc),a6
+1:
+	tst.b	(a3,d7.w)
+	jne		2f
+	jbsr	update_one_bob
+	lea		sprite_drawn_table(pc),a3	| reload table pointer
+2:
+	addq.w	#TARGET_SPRITE_SIZEOF,a0
+	dbf		d7,1b
+
+	rts
+	
+	.ifdef	OCS_VERSION
+
+* what: blits data on bg plane, no horizontal shifting (erase)
+* args:
+* < A0: pristine background
+* < A1: dest buffer
+* < D0: X (rounded to smaller 8-multiple)
+* < D1: Y
+* < D2: width in bytes
+* < D4: height
+
+* trashes: D0-D1
+
+blit_background:
+	movem.l	d2-d6/a0-a5,-(a7)
+	lea		_custom,a5
+	* adjust offset X: X//8
+	lsr.w	#3,d0
+	lea		mulBG_NB_BYTES_PER_ROW_table(pc),a4
+	add.w	d1,d1
+	* add Y offset: Y*BG_NB_BYTES_PER_ROW
+	add.w	(a4,d1.w),d0
+	* same offset for source and destination
+	add.w	d0,a1
+	add.w	d0,a0
+	
+
+    move.l  #0x09f00000,d3    | A->D copy, ascending mode	
+	move.w	#BG_NB_BYTES_PER_ROW,d1		| blit modulo
+
+    sub.w   d2,d1       | blit modulo
+    lsl.w   #6,d4
+    lsr.w   #1,d2		| blit width
+    add.w   d2,d4       | blit height
+	
+    * always the same settings
+
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+    
+    * blitter registers set
+
+	move.l d3,bltcon0(a5)	| sets con0 and con1
+
+    move.w  d1,bltamod(a5)	|A modulo
+    move.w  d1,bltdmod(a5)	|D modulo
+							
+	move.l a0,bltapt(a5)	|source graphic top left corner
+	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	
+	.rept	NB_BOB_PLANES-1
+	.if	BG_SCREEN_PLANE_SIZE>0x7FFF
+	add.l	#BG_SCREEN_PLANE_SIZE,a0
+	add.l	#BG_SCREEN_PLANE_SIZE,a1
+	.else
+	add.w	#BG_SCREEN_PLANE_SIZE,a0
+	add.w	#BG_SCREEN_PLANE_SIZE,a1
+	.endif
+	WAIT_BLIT
+	* second bitplane
+	move.l a0,bltapt(a5)	|source graphic top left corner
+	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	.endr
+	
+	movem.l	(a7)+,d2-d6/a0-a5
+	rts
+
+	
+	
+	.endif
+	
+*void mappy_state::mappy_draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, uint8_t *spriteram_base)
+*{
+*	uint8_t *spriteram = spriteram_base + 0x780;
+*	uint8_t *spriteram_2 = spriteram + 0x800;
+*	uint8_t *spriteram_3 = spriteram_2 + 0x800;
+*	int offs;
+*
+*	for (offs = 0;offs < 0x80;offs += 2)
+*	{
+*		/* is it on? */
+*		if ((spriteram_3[offs+1] & 2) == 0)
+*		{
+*			static const uint8_t gfx_offs[2][2] =
+*			{
+*				{ 0, 1 },
+*				{ 2, 3 }
+*			};
+*			int sprite = spriteram[offs];
+*			int color = spriteram[offs+1];
+*			int sx = spriteram_2[offs+1] + 0x100 * (spriteram_3[offs+1] & 1) - 40;
+*			int sy = 256 - spriteram_2[offs] + 1;   // sprites are buffered and delayed by one scanline
+*			int flipx = (spriteram_3[offs] & 0x01);
+*			int flipy = (spriteram_3[offs] & 0x02) >> 1;
+*			int sizex = (spriteram_3[offs] & 0x04) >> 2;
+*			int sizey = (spriteram_3[offs] & 0x08) >> 3;
+*			int x,y;
+*
+*			sprite &= ~sizex;
+*			sprite &= ~(sizey << 1);
+*
+*			sy -= 16 * sizey;
+*			sy = (sy & 0xff) - 32;  // fix wraparound
+*
+*			if (flip_screen())
+*			{
+*				flipx ^= 1;
+*				flipy ^= 1;
+*			}
+*
+*			for (y = 0;y <= sizey;y++)
+*			{
+*				for (x = 0;x <= sizex;x++)
+*				{
+*					m_gfxdecode->gfx(1)->transmask(bitmap,cliprect,
+*						sprite + gfx_offs[y ^ (sizey * flipy)][x ^ (sizex * flipx)],
+*						color,
+*						flipx,flipy,
+*						sx + 16*x,sy + 16*y,
+*						m_palette->transpen_mask(*m_gfxdecode->gfx(1), color, 15));
+*				}
+*			}
+*		}
+*	}
+*}
+
+* < A0: sprite array
+* < A2: sprite group table
+* < A4: bob table
+* < A5: custom
+* < A6: previously drawn sprites array
+* must preserve all of those, plus D7
+
+update_one_bob:
+	COMPUTE_SPRITE_COORDS
+	
+	
+	.ifne	SPRITE_Y_CORRECTION
+	add.w	#SPRITE_Y_CORRECTION,d1
+	.endif
+	.ifne	SPRITE_X_CORRECTION
+	add.w	#SPRITE_X_CORRECTION,d0
+	.endif
+	
+	exg	d0,d1		| portrait
+	
+	
+	moveq	#0,d3
+	move.b	(TARGET_SPRITE_CODE,a0),d3
+
+	
+	cmp.b	#0x32+SPRITE_Y_CORRECTION,d0			| position of first "D" of dig dug title
+	jne		0f
+	cmp.b	#0xE0,d3
+	jcs		0f
+	jne		1f
+	* left top title sprite: draw entire title
+	move.l	a0,-(a7)
+	lea		title_pic,a0
+	jra		101f    | bypass sprite clut/mirror shit stuff, proceed to blit
+1:
+	cmp.b	#0xF5,d3
+	jcc		0f
+	* don't draw title sprites
+	rts
+0:
+
+	* load properties (for X size mostly, used for dragons and flames,
+	* where sprite tiles can be used with or without X size, which makes it
+	* more complicated to display as opposed to X&Y size (big inflated monsters)
+	* and Y size (player hammering), that are only displayed grouped
+	lea		bob_table,a4
+	move.b	(TARGET_SPRITE_ATTR,a0),d4
+	btst	#SIZE_X_BIT,d4
+	jeq		0f
+	btst	#SIZE_Y_BIT,d4
+	jne		0f			| XY are with normal sprites
+	* draw from alternate table
+	lea		bob_table_x_size,a4
+0:
+	and.b	#0xF,d2		| CLUT
+	
+	* check if it is a grouped sprite in the table with 0x100 pre-computed entries
+	
+*	tst.b	(a2,d3.w)
+*	jeq		10f
+*	jpl		50f
+*	* right part: display only if mirrored
+*	btst	#FLIP_Y_BIT,(TARGET_SPRITE_ATTR,a0)
+*	jeq		2f			| not mirrored
+*	* mirrored, right part: display but correct code
+*	subq.w	#1,d3
+*	jra		100f
+*50:
+*	btst	#FLIP_Y_BIT,(TARGET_SPRITE_ATTR,a0)
+*	jne		2f			| mirrored: don't display
+*	
+*100:
+10:
+	* here D3 is code and D2 is clut
+	* log the usage
+	.ifne	OPT_ENABLE_LOGGING
+	movem.l	a2/d2-d3,-(a7)
+	lea		sprite_log_table,a2
+	lsl.w	#4,d3		| 16 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a2,d3.l)
+	movem.l	(a7)+,a2/d2-d3
+	.endif
+
+	.ifdef	NO68020
+	add.w	d3,d3
+	add.w	d3,d3
+	move.l	(a4,d3.w),d4		| get pointer from bob table
+	.else
+	move.l	(a4,d3.w*4),d4		| get pointer from bob table
+	.endif
+	jeq		2f
+	* entry is valid, now what about clut?
+	
+	move.l	d4,a1
+	.ifdef	NO68020
+	add.w	d2,d2
+	add.w	d2,d2
+	move.l	(a1,d2.w),d4
+	.else
+	move.l	(a1,d2.w*4),d4
+	.endif
+	jeq		22f
+
+	* re-load properties (for X/Y flip)
+	move.b	(TARGET_SPRITE_ATTR,a0),d3
+	
+	move.l	a0,-(a7)
+	move.l	d4,a0
+    * flip_x = D3 & 0x1
+    * flip_y = D3 & 0x2
+	btst	#MIRROR_X_BIT,d3  | Y but portrait!
+	jeq		101f
+	* mirror (most sprites don't have that, it will just display
+	* the next frame if not generated, which can be off-putting!
+	add.w	#((NB_BOB_PLANES+1)*4+8),a0
+	.ifndef		RELEASE
+	tst.w	(a0)
+	jpl		101f
+	move.l	(a7),a1
+	move.b	(TARGET_SPRITE_CODE,a1),d3
+	move.b	(TARGET_SPRITE_ATTR,a1),d2
+
+	BREAKPOINT	"unexpected mirror bit set, tile code in d3"
+	jra		21f
+	.endif
+101:
+	.ifdef	OCS_VERSION
+	add.w	sprite_x_offset_w,d0
+	.endif
+
+	move.w	(a0)+,d4		| height
+	jeq		2f   | empty fully cropped: used to mask title
+
+	
+102:
+	move.w	(a0)+,d5		| width
+	move.w	(a0)+,d2		| Y-offset
+
+	add.w	d2,d1
+
+	* A0 points on the first bitplane of the bob
+
+	move.l		playfield_drawn_screen_ptr(pc),a1
+	
+	* D0 and D1 are already set
+	move.w	(a0)+,d6				| active plane mask
+	move.l	(NB_BOB_PLANES*4,a0),d2
+	jeq	21f		| mask is zero: blank tile => skip
+	move.l	d2,a3
+	moveq	#0,d2	| no y-clip
+	* note down that this bob will have to be erased
+
+
+*	btst	#MIRROR_X_BIT,d3  | X but portrait!
+*	jne		101f
+*	* mirror, change start if double size
+*	btst	#SIZE_X_BIT,d3
+*	jne		101f
+*	sub.w	#16,d0
+*101:
+
+	move.w	d0,(a6)+			| store current sprite attributes to previous ones
+	move.w	d1,(a6)+			| store current sprite attributes to previous ones
+	move.w	d4,(a6)+			| store height
+	move.w	d5,(a6)+			| store width in bytes
+	clr.b	(a6)+				| 
+	move.b	d6,(a6)+		    | active planes (helps for erase)
+	move.w	d5,d2			    | width in bytes
+	moveq	#0,d5			    | Y-offset
+
+*	btst	#FLIP_Y_BIT,d3  | X but portrait! not used in this game
+*	jeq		101f
+*	* flip
+*	neg.w	d4
+*101:
+
+	move.w	#NB_BOB_PLANES,d3
+	jbsr		blit_planes_any_internal_cookie_cut
+	move.l	(a7)+,a0
+	rts
+21:
+	move.l	(a7)+,a0
+	lea		(PREVIOUS_SPRITE_SIZEOF,a6),a6
+2:
+	rts
+
+22:
+	.ifndef	RELEASE
+	lsr.w	#2,d2		| clut
+	lsr.w	#2,d3		| code
+	*move.w	#0xF00,_custom+color
+	.endif
+	jra		2b
+
+
+	
+
+	
+
+	.ifne	OPT_ENABLE_LOGGING
+
+osd_dump_logs:
+	move.w	sr,-(a7)
+	move.w	#0x2700,SR
+	movem.l	d0-a6,-(a7)
+	move.l	_resload(pc),a2
+	lea		sprite_log_table,a1
+	lea		sprite_log_name(pc),a0
+	move.l	#NB_SPRITE_CLUTS*NB_POSSIBLE_SPRITES,d0
+	jbsr	resload_SaveFile(a2)
+	
+	move.l	_resload(pc),a2
+	lea		character_log_table,a1
+	lea		character_log_name(pc),a0
+	move.l	#NB_TILE_CLUTS*NB_POSSIBLE_TILES,d0
+	jbsr	resload_SaveFile(a2)
+		
+	GET_MEMORY_START_AND_DP
+	lea		sprites_ram_name_1000(pc),a0
+	lea	(SPRITE_START,a6),a1		| sprites
+	move.l	#0X1080,d0
+	jbsr	resload_SaveFile(a2)
+
+	jbsr	save_cpu_log
+	
+    movem.l (a7)+,d0-a6
+	move.w	(a7)+,SR
+	rts
+
+save_cpu_log:
+	move.l	_resload(pc),a2
+	lea		log_buffer,a1
+	move.l	log_ptr,d0
+	sub.l	a1,d0
+	jeq		0f
+	move.l	log_ptr,a0
+	* add RAM & ROM base in the end
+	move.l	a6,(a0)+
+	move.l	#rom_base,(a0)+
+	addq	#8,d0
+	lea		cpu_log_name(pc),a0
+	jbsr	resload_SaveFile(a2)
+0:	
+	rts
+	
+
+sprites_ram_name_1000:
+	.asciz	"sprite_ram_1780"
+
+
+sprite_log_name:
+	.asciz	"used_sprites"
+character_log_name:
+	.asciz	"used_tiles"
+cpu_log_name:
+	.asciz	"cpu_log"
+	.align	2
+	.endif	
+	
+
+* < A5: custom
+* < D0.W,D1.W: x,y
+* < A0: source (pointer on array of planes)
+* < A1: destination fg plane, also background to mix with cookie cut fg plane
+* < A3: source mask for cookie cut
+* < D2: width in bytes
+* < D3: number of planes
+* < D4: height. If negative, source is copied with negative modulo (flip)
+* < D5: y offset for source planes
+* < D7: blit mask (not considered, optim, -1 all through the game)
+* blit mask set
+* returns: start of destination in A1 (computed from old A1+X,Y)
+* trashes: a1
+blit_planes_any_internal_cookie_cut:
+    movem.l d0-d7/a4,-(a7)
+    * pre-compute the maximum of shit here
+	tst.w	d4
+	bpl.b	1f
+	sub.w	d4,d1	| pre-add height to d1
+	subq.w	#1,d1	| minus one
+1:	
+	tst.w	d1
+    beq.b   2f    | optim
+	jmi		8f		| negative: don't display
+	move.l	bob_row_multiplication_table(pc),a4
+	.ifdef	NO68020
+	add.w	d1,d1
+    move.w  (a4,d1.w),d1	| y times 40
+	.else
+    move.w  (a4,d1.w*2),d1	| y times 40
+	.endif
+2:
+	lea		cookie_cut_blit_table(pc),a4
+	
+    move.w  d0,d6
+    lsr.w   #3,d0			| X displacement in bytes
+	*bclr	#0,d0			| no need, it will be even
+    and.w   #0xF,d6
+	.ifdef	NO68020
+	add.w	d6,d6
+	add.w	d6,d6
+	move.l	(a4,d6.w),d7
+	lea		cookie_cut_mask_blit_table(pc),a4
+	move.l	(a4,d6.w),d6
+	.else
+	move.l	(a4,d6.w*4),d7
+	lea		cookie_cut_mask_blit_table(pc),a4
+	move.l	(a4,d6.w*4),d6
+	.endif
+3:   
+    add.w   d0,d1
+4:
+    * make offset even. Blitter will ignore odd address
+    * but a 68000 CPU doesn't and since we RETURN A1...
+
+    add.w   d1,a1       | plane position (D1 < 0x7FFF, 288*40=0x2D00)
+
+	
+	move.w	bob_row_size,d0
+	tst.w	d4
+	bpl.b	5f
+	neg.w	d0
+	neg.w	d4    | make d4 positive again
+5:
+    sub.w   d2,d0       | blit width
+    lsl.w   #6,d4
+    lsr.w   #1,d2
+    add.w   d2,d4       | blit height
+    * always the same settings (ATM)
+	add.w	d5,a3			| apply y offset to mask too (y offset looks wrong)
+	
+	moveq	#-2,d2
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+   
+    * blitter registers set
+
+	move.w	d2,bltamod(a5)		|A modulo=bytes to skip between lines
+	move.w	d2,bltbmod(a5)		|B modulo=bytes to skip between lines
+	moveq	#0,d2
+    move.w  d2,bltalwm(a5)
+	
+    move.w  d0,bltcmod(a5)	|C modulo
+    move.w  d0,bltdmod(a5)	|D modulo
+					
+	subq	#1,d3
+	beq.b	7f
+	subq	#1,d3
+6:
+	jbsr	process_1_plane
+	
+	add.w	bob_plane_size,a1
+	dbf		d3,6b
+7:
+	jbsr	process_1_plane
+8:
+    movem.l (a7)+,d0-d7/a4
+    rts
+	
+process_1_plane:
+	move.l (a0)+,d0
+	beq.b	60f
+	move.l	d0,a4
+	add.w	d5,a4		| add Y offset
+	bra.b	61f
+60:
+	.ifeq	OPT_IGNORE_ZERO_BITPLANE
+	WAIT_BLIT
+	* source is 0: just apply mask (less bandwidth lost) and change bltcon
+	move.l  a3,bltapt(a5)	|source graphic top left corner (mask)
+	move.l	d6,bltcon0(a5)	| sets con0 and con1: C-A->D cookie cut, B fixed
+ 	move.w	d2,bltbdat(a5)	|B word is zero
+	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	.endif
+	rts
+61:
+	WAIT_BLIT
+	* non-zero: set data source & bltcon
+	move.l  a3,bltapt(a5)	|source graphic top left corner (mask)
+	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
+	move.l	a4,bltbpt(a5)	|source graphic top left corner
+	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	rts
+
+	.macro	GEN_MINTERM_TABLE	name,value
+\name\()_table:
+	.set	shift,0
+	.rept	16
+	.long	(shift<<28)+(shift<<12)+(\value<<16)
+	.set	shift,shift+1
+	.endr
+	.endm
+	
+	.macro	GEN_MINTERM_TABLE_2	name,value
+\name\()_table:
+	.set	shift,0
+	.rept	16
+	.long	(shift<<28)+(\value<<16)
+	.set	shift,shift+1
+	.endr
+	.endm
+	
+	GEN_MINTERM_TABLE	cookie_cut_blit,0x0FCA
+	GEN_MINTERM_TABLE_2	cookie_cut_mask_blit,0x0BCA
+
+
+* < D0,D1: x,y
+* < A1: foreground plane pointer (often first plane!)
+* < D2: width in bytes (inc. 2 extra for shifting)
+* < D3: nb planes to clear
+* < D4: blit height
+* < D5: plane mask
+	.ifndef	OCS_VERSION
+* trashes D0-D6/A2
+clear_planes_any_blitter_internal:
+    * pre-compute the maximum of shit here
+	move.w	d1,d6
+    beq.b   1f    | optim
+	* check if y start + height > Y_MAX
+	* (ignores case where y = 0, no risk)
+	add.w	d4,d6
+	sub.w	#Y_MAX,d6
+	bmi.b	0f
+	* y start + height > Y_MAX: clip height
+	sub.w	d6,d4
+	beq.b	10f
+	bpl.b	0f
+10:
+	* null or negative height after clipping: out
+	rts
+0:
+    lea mulFG_NB_BYTES_PER_ROW_table(pc),a2
+    add.w   d1,d1
+    move.w  (a2,d1.w),d1
+1:
+    and.w   #0x1F0,d0
+    beq.b   2f				| zero X optimization
+    lsr.w   #3,d0
+    add.w   d0,d1
+2:   
+    add.w   d1,a1       | plane position (always even)
+
+	* reuse d1 for bltcon0
+	moveq	#1,d1
+	ror.l	#8,d1     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
+
+	move.w #FG_NB_BYTES_PER_ROW,d0
+	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
+    sub.w   d2,d0       | blit width
+
+	move.w	d4,d6		| save height
+    lsl.w   #6,d4
+    lsr.w   #1,d2
+    add.w   d2,d4       | blit height+width
+	moveq	#-1,d2
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+    
+	move.l	d2,bltafwm(a5)
+	move.l d1,bltcon0(a5)	
+    move.w  d0,bltdmod(a5)	|D modulo
+	
+	subq	#1,d3
+	jeq		4f
+3:
+	WAIT_BLIT
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+32:
+	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d3,3b
+4:
+	rts
+	
+	
+	
+	subq	#1,d3
+*	jra		31f
+3:
+*	lsr.b	#1,d5
+*	jcc		32f
+*	BTST	#6,(dmaconr,a5)
+*	jra		31f
+*	* blitter is busy: do it with cpu for that plane
+*	move.w	d6,d2
+*	subq	#1,d2
+*	move.l	a1,a2
+*	* no need to know which width in the case of gyruss there are
+*	* only 32 bit erase / blits
+*55:
+*	clr.l	(a2)
+*	lea		(FG_NB_BYTES_PER_ROW,a2),a2
+*	dbf		d2,55b
+*	jra 	32f			| should send to blitter operation next time
+	
+31:
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+32:
+	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d3,3b
+4:
+*	lsr.b	#1,d5
+*	jcs		5f
+*	rts
+*5:
+	* last plane: if blitter busy, do with CPU
+*	BTST	#6,(dmaconr,a5)
+*	jra		31f
+*	* blitter is busy: do it with cpu for that plane
+*	move.w	d6,d2
+*	subq	#1,d2
+*	move.l	a1,a2
+*	* no need to know which width in the case of gyruss there are
+*	* only 32 bit erase / blits
+*55:
+*	clr.l	(a2)
+*	lea		(BG_NB_BYTES_PER_ROW,a2),a2
+*	dbf		d2,55b
+*	rts
+*31:
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+    rts
+	.endif
+
+bob_row_multiplication_table:
+	.long	0
+bob_row_size:
+	.word	0
+bob_plane_size:
+	.word	0
+blitter_modulo:
+	.word	0
+	
+sprite_drawn_table:
+	.skip	NB_TARGET_SPRITES
+sprite_location_table:
+	.skip	GRID_SIDE*GRID_SIDE
+
+bob_previous_positions_1:
+	.skip NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZEOF
+bob_previous_drawn_sprites:
+	.long	bob_previous_positions_1
+bob_previous_displayed_sprites:
+	.ifeq	OPT_ENABLE_DOUBLE_BUFFERING
+	.long	bob_previous_positions_1
+	.else
+	.long	bob_previous_positions_2	
+bob_previous_positions_2:
+	.skip NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZEOF
+	.endif
+
+		
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+switch_screen_buffers:
+
+	* let's switch screen buffers, background (chars)
+	* toggle fg planes (double buffering)
+	* also toggle previous sprite positions
+	lea		playfield_drawn_screen_ptr(pc),a0
+	lea		bob_previous_positions_1(pc),a2
+	lea		bob_previous_positions_2(pc),a3
+	move.l	fg_screen_data_1,a1
+	move.l	fg_screen_data_2,a5
+	* also switch previous state memory
+	cmp.l	(a0),a1
+	bne.b	2f
+	* screen data 1 is displayed screen
+	* set it to drawn screen
+	exg		a1,a5
+	exg		a2,a3
+2:
+	move.l	a1,(a0)
+	move.l	a5,playfield_displayed_screen_ptr
+	move.l	a3,bob_previous_displayed_sprites
+	move.l	a2,bob_previous_drawn_sprites
+
+	rts
+	.endif
+	
+	
+store_system:
+	tst.l	_resload
+	beq.b	0f
+	rts
+0:
+	* system copper
+	
+	move.l	4.W,a6
+	move.w	AttnFlags(a6),d0
+	btst	#AFB_68010,d0
+	beq.b	1f
+	lea	get_vbr,a5
+
+	jsr		_LVOSupervisor(a6)
+	move.l	d0,system_vbr
+1:
+	move.w	AttnFlags(a6),d0
+	btst	#AFB_68020,d0
+	bne.b	1f				| 68020: ok 50 fps
+	
+	* check fastmem
+	pea		2f(pc)	
+2:
+	move.l	(a7)+,d0
+
+	* check for slow mem too
+	cmp.l	#0xC00000,d0
+	jcs		1f
+	cmp.l	#0xD80000,d0
+	jcs		3f
+1:	
+	cmp.l	#0x200000,d0
+	bcc.b	1f				
+3:
+	* no whdload, no fastmem/68020: assume slow switch to 25 FPS
+	* plus don't animate the waves
+	* if running on PiStorm, well, too bad use whdload
+	*
+	*
+	st.b	frameskip
+	st.b	static_waves_flag
+1:
+
+	lea	_custom,a6
+	move.w	intenar(a6),old_intena
+	move.w	dmaconr(a6),old_dmacon
+	lea		old_sysvectors,a0
+	move.l	system_vbr(pc),a1
+	move.l	(0x68,a1),(a0)+
+	move.l	(0x6c,a1),(a0)+
+	move.l	(0x70,a1),(a0)+
+	move.l	(0x74,a1),(a0)+
+	move.l	(0x78,a1),(a0)+
+	move.l	(0x7C,a1),(a0)+
+	rts
+
+restore_system:	
+	move.l	system_vbr(pc),a0
+	lea	_custom,a6
+	jsr		_mt_remove_cia
+
+	move.w	#0x4000,intena(a6)	| ints off
+	lea		old_sysvectors,a0
+	move.l	system_vbr(pc),a1
+	move.l	(a0)+,(0x68,a1)
+	move.l	(a0)+,(0x6c,a1)
+	move.l	(a0)+,(0x70,a1)
+	move.l	(a0)+,(0x74,a1)
+	move.l	(a0)+,(0x78,a1)
+	move.l	(a0)+,(0x7C,a1)
+
+
+	bclr	#6,0xbfee01
+
+	lea	_custom,a6
+	move.w	old_intena,d0			| get old val
+	and.w	#0x3fff,d0
+	eor.w	#0x3fff,d0
+	move.w	d0,intena(a6)		| clr bits
+	eor.w	#0x3fff,d0
+	or.w	#0xc000,d0		
+	move.w	d0,intena(a6)		| set bits and main
+
+	move.w	old_dmacon,d0			| get old val
+	and.w	#0x3fff,d0
+	eor.w	#0x3fff,d0
+
+***		and.w	#0xfff0,d0		| preserve sound dma for now
+
+	move.w	d0,dmacon(a6)		| clr bits
+
+
+
+	eor.w	#0x3fff,d0
+	or.w	#0xc000,d0		
+	move.w	d0,dmacon(a6)		| set bits and main
+
+	move.l	old_syscoplist,cop1lc(a6)
+	move.l	_gfxbase,a6
+	move.b	gb_ChipRevBits0(a6),chiprevbits+3
+	move.l	old_actiview,a1
+	jsr	_LVOLoadView(a6)
+
+
+	moveq	#0,d0
+	rts
+
+quit_to_os:
+	tst.l	_resload
+	bne.b	0f
+	bsr		restore_system
+	* set SR to 0 from here, so we return to OS with SR=0
+	* (else it kills the system pretty quickly)
+	* it works as quit_to_os is called from an interrupt
+	move.w	#0,SR
+	move.l	old_stack(pc),a7
+	jbsr		save_highscores
+	moveq	#0,d0
+	rts
+0:
+	pea	  TDREASON_OK
+	move.l	_resload(pc),-(a7)
+	addq.l	#resload_Abort,(a7)
+	rts
+
+
+
+	
+platform_init:
+	bsr		store_system
+	
+	lea		_custom,a5
+	move.w	#0x7FFF,dmacon(a5)
+	move.w	#0x7FFF,intena(a5)
+    move.l  #-1,bltafwm(a5)
+	
+	move.l	monitor,d0
+	cmp.l	#NTSC_MONITOR_ID,D0
+	bne		0f
+	* disable extra mid-screen interrupt, as it would be too fast (NTSC)
+	move.w	#0x1FE,intreq_block_game
+0:
+	move.w #BASE_BPLCON0_VALUE,bplcon0(a5) | 8 bitplanes, dual playfield, borderblank
+	move.w	#BASE_BPLCON2_VALUE,bplcon2(a5)
+	move.w	#BASE_BPLCON3_VALUE,bplcon3(a5)
+ 	*         VVHH
+    move.w #0x99-0X18+SCROLL_WIDTH+(COPPER_Y_START<<8),diwstrt(a5)
+    move.w #0x79-0X18+SCROLL_WIDTH+(COPPER_Y_START<<8)+0x1000,diwstop(a5)
+    move.w #0x0038,ddfstrt(a5)
+    move.w #0x00D0,ddfstop(a5)
+
+	* restrict borders: we don't see bobs on the borders!
+	* try to hide color 0 on the border (except on OCS)
+
+	.ifdef	OCS_VERSION
+	move.w	#BG_NB_BYTES_PER_ROW-40,d0
+    move.w d0,bpl2mod(a5)
+    move.w d0,bpl1mod(a5)
+	.else
+    move.w #(SPRITE_FMODE<<2)+BITPLANE_FMODE,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
+	move.w	#0,bplcon4(a5)			| use the same colors as bobs playfield
+
+
+	move.w	#FMODE_OFFSET+BG_NB_BYTES_PER_ROW-40,d0
+    move.w d0,bpl2mod(a5)
+	move.w	#FMODE_OFFSET+FG_NB_BYTES_PER_ROW-40,d0
+    move.w d0,bpl1mod(a5)
+	.endif
+
+	move.w	#0,bplcon1(a5)
+
+	lea		game_copperlist,a0
+	move.l	a0,cop1lc(a5)
+
+	
+	* set sprite registers to blank sprite in copperlist
+
+	
+	lea	game_sprites+2,a2			| copperlist
+
+	* pad last sprite entries with blank
+	move.l	#blank_sprite,d0
+1:
+	move.w	d0,(4,a2)
+	swap	d0
+	move.w	d0,(a2)
+	swap	d0
+	addq	#8,a2
+	cmp.l	#game_sprites_end,a2
+	bcs		1b
+2:	
+
+
+
+	* wait 300 lines
+	move.w	#100,d0
+	bsr	beamdelay
+	move.w	#100,d0
+	bsr	beamdelay
+	move.w	#100,d0
+	bsr	beamdelay
+	
+    * init sprite, bitplane, whatever dma
+
+    move.w #0x83E0,dmacon(a5)
+ 
+
+	* install keyboard and vblank/copper handler
+	move.l	system_vbr(pc),a1
+	pea		level2_interrupt(pc)
+	move.l	(a7)+,(0x68,a1)
+	pea		level3_interrupt(pc)
+	move.l	(a7)+,(0x6C,a1)
+	pea		_nmi(pc)
+	move.l	(a7)+,(0x7C,a1)
+
+	* soundfx lib
+	lea		_custom,a6
+	lea		blank_sound,a0
+	move.l	a0,(0xA0,a6)
+	move.l	a0,(0xB0,a6)
+	move.l	a0,(0xC0,a6)
+	move.l	a0,(0xD0,a6)
+	move.l	system_vbr(pc),a0
+	moveq	#1,d0	| PAL
+	jbsr		_mt_install_cia
+	
+    rts
+	
+
+* so memory is quadword-aligned (not trusting .align directives)
+align_for_fmode:
+	.ifdef	OCS_VERSION
+	* do nothing!
+	.else
+	add.w	#0x8,a0
+	move.l	a0,d0
+	and.b	#0xF8,d0
+	move.l	d0,a0
+	.endif
+	rts
+
+
+* < A0: palette
+* < A1: copperlist
+* < D0: number of colors to load	
+load_palette:
+	subq.w	#1,d0
+	beq.b	2f
+1:
+	addq.w	#2,a1
+	move.w	(a0)+,(a1)+
+	dbf		d0,1b
+2:
+	rts
+	
+
+
+	
+	
+
+osd_enable_interrupts:
+	move.w	#0xC038,_custom+intena
+	rts
+osd_disable_interrupts:
+	move.w	#0x0030,_custom+intena
+	rts
+
+* a0=screen virtual address (preserved), d0=tile (preserved)
+* a6=ram base
+* should preserve all registers
+
+osd_video_word_dirty:
+	OSD_ENTER
+	movem.l	d0/d1/d7/a0/a1,-(a7)
+	jbsr	video_byte_dirty
+	tst.b	d7
+	jeq		0f				| out of range: ignore
+	move.b	d7,(1,a0)		| next byte too
+0:
+	movem.l	(a7)+,d0/d1/d7/a0/a1
+	OSD_EXIT
+	rts	
+
+
+	
+osd_video_byte_dirty:
+	OSD_ENTER
+	movem.l	d0/d1/d7/a0/a1,-(a7)
+	jbsr	video_byte_dirty
+	movem.l	(a7)+,d0/d1/d7/a0/a1
+	OSD_EXIT
+	rts	
+
+video_byte_dirty:
+	move.l	a0,d7		| save address
+	sub.l	a6,d7
+
+	* sometimes game uses same code to set video or non video
+	* memory. We don't want to be alerted
+	cmp.l	#VIDEO_ADDRESS+0x1000,d7
+	jcc		osd_video_dirty_out
+
+	* remove offset
+	.ifne	VIDEO_ADDRESS
+	sub.w	#VIDEO_ADDRESS,d7
+	.else
+	tst.w	d7
+	.endif
+	jmi		osd_video_dirty_out
+
+
+	
+	* now set the flag for tile refresh in copper interrupt (so it doesn't
+	* interfere with blits. This game uses a lot of tile animation in the background
+	* as opposed to most games, so updating in real tile isn't an option and kills
+	* the smoothness even in double buffering mode)
+
+	and.w	#0x7FF,d7
+
+
+	lea		tiles_refresh_table(pc),a0
+	add.w	d7,a0
+	lsr.w	#6,d7	| get row for faster operation
+	lea		tiles_row_flags(pc),a1
+	add.w	d7,a1
+	* now a0 points on the tiles refresh table, mark it dirty
+*	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+*	moveq	#2,d7
+*	.else
+	moveq	#1,d7		| background tiles aren't double buffered here!
+*	.endif
+	move.b	d7,(a0)
+	move.b	d7,(a1)
+	rts
+osd_video_dirty_out:
+	moveq	#0,d7
+	rts
+	
+	.ifdef	XXX
+* < D7: 0-0x800
+* > D0: 
+compute_tile_xy:
+	moveq	#0,d0
+	move.b	d7,d0
+	
+	and.b	#0x3F,d0	| x
+	move.w	d7,d1
+	and.w	#0x7FF,d1
+	lsr.w	#6,d1		| Y
+	lsl.w	#3,d1		| times 8
+	rts
+	.endif
+
+
+
+
+*	int const attr = m_colorram[tile_index];
+*	int const code = m_videoram[tile_index] + ((attr & 0xc0) << 2);
+*	int const color = attr & 0x0f;
+
+
+* < D7: 0-0x800 address
+* < D0: tile code
+* < D1: color code
+
+
+update_bg_tile:	
+	moveq	#0,d2			| mask up to 255
+	move.b	d0,d2			| tile code
+	moveq	#0,d3
+	move.b	d1,d3			| CLUT & tile code & flags
+
+	.ifne	OPT_ENABLE_LOGGING
+	lea		character_log_table,a0
+	movem.l	d2-d3,-(a7)
+	and.w	#TILE_CLUT_MASK,d3
+	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a0,d3.l)
+	movem.l	(a7)+,d2-d3
+	.endif
+
+	lea		tiles_layout,a0
+	* layout is a bloody nightmare, directly fetch
+	* the decoded X,Y values from a pre-generated table
+
+
+
+	add.w	d7,d7
+	add.w	d7,d7
+	add.w	d7,a0
+	move.w	(a0)+,d0
+	jmi		2f
+	move.w	(a0),d1
+	
+
+	
+	
+	* updating bitplanes
+	move.l	#BG_SCREEN_PLANE_SIZE,d5
+	move.w	#NB_TILE_PLANES-1,d4
+	.ifdef	OCS_VERSION
+	.ifeq	OPT_ENABLE_DOUBLE_BUFFERING
+	move.l		background_ptr,a1
+	.else 
+	* OCS with double buffering
+	lea		bg_screen_buffer_1,a1
+	lea		bg_screen_buffer_2,a4
+	.endif
+	.else
+	* AGA: no double buffering on background
+	move.l		background_ptr,a1
+	.endif
+	
+	lea		mulBG_NB_BYTES_PER_ROW_table,A2
+	.ifdef	NO68020
+	add.w	d1,d1
+	move.w	(a2,d1.w),d1
+	.else
+	move.w	(a2,d1.w*2),d1
+	.endif
+	add.w	d1,d0
+	add.w	d0,a1
+	.ifdef	OCS_VERSION
+	lea		background_restore_buffer,a3
+	add.w	d0,a3
+	.endif
+	
+	cmp.b	#0x20,d2
+	jeq		11f				| optim: blank tile
+	lea		character_table,a0
+	.ifdef	NO68020
+	add.w	d2,d2
+	add.w	d2,d2	
+	move.l	(a0,d2.w),d0		| tile pointer
+	.else
+	move.l	(a0,d2.w*4),d0		| tile pointer
+	.endif
+	.ifdef	RELEASE
+	jeq		11f					| clear tile, no error (release)
+	.else
+	jne		12f
+	add.w	#VIDEO_ADDRESS,d7
+	lsr.w	#2,d2
+	move.w	#0xF0F,_custom+color
+	jra		11f
+12:
+	.endif
+	move.l	d0,a2
+	move.b	d3,d1
+	and.w	#TILE_CLUT_MASK,d3
+	.ifdef	NO68020
+	add.w	d3,d3
+	add.w	d3,d3
+	move.l	(a2,d3.w),d0			| pointer on tile bitplanes for that CLUT
+	.else
+	move.l	(a2,d3.w*4),d0			| pointer on tile bitplanes for that CLUT	
+	.endif
+	.ifdef	RELEASE
+	jeq		11f						| not necessarily a problem
+	.else
+	jne		12f
+	add.w	#VIDEO_ADDRESS,d7
+	lsr.w	#2,d2
+	lsr.w	#2,d3
+	move.w	#0xF0F,_custom+color
+	jra		11f
+	.endif
+12:
+	move.l	d0,a2					| pointer on bitplanes
+
+
+*	* should we print the tile once or twice?
+*	tst.b	d6
+*	jeq		20f		| just once
+*	* do it twice. Preserve useful registers
+*	movem.l	a1/a2,-(a7)
+*	jbsr		standard_tile
+*	movem.l	(a7)+,a1/a2
+*	* draw the same thing more to the right
+*	add.w	#64,a1
+*	move.w	#NB_TILE_PLANES-1,d4
+*20:
+	
+	.macro	COPY_TILE_PLANE_ROW
+	move.b	d0,(offset,a1)  | buffer
+	.ifdef	OCS_VERSION
+	move.b	d0,(offset,a3)  | restore buffer
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.b	d0,(offset,a4)	| second buffer
+	.endif
+	.endif
+	.endm
+	
+	.macro	CLEAR_TILE_PLANE
+	.set	offset,0
+	.rept	8
+	clr.b	(offset,a1)
+	.ifdef	OCS_VERSION
+	clr.b	(offset,a3)  | restore buffer
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	clr.b	(offset,a4)	| second buffer
+	.endif
+	.endif
+	.set	offset,offset+BG_NB_BYTES_PER_ROW
+	.endr	
+	.endm
+	
+*	.macro	COPY_TILE_PLANE_ROW_BACKBUFFER
+*	COPY_TILE_PLANE_ROW
+*	move.b	d0,(offset,a3)  | backbuffer
+*	.endm
+*	
+*	.macro	CLEAR_TILE_PLANE_BACKBUFFER
+*	.set	offset,0
+*	.rept	8
+*	clr.b	(offset,a1)
+*	clr.b	(offset,a3)
+*	.set	offset,offset+BG_NB_BYTES_PER_ROW
+*	.endr	
+*	.endm
+	
+	.macro	TILE_NEXT_PLANE
+	add.w	d5,a1
+	.ifdef	OCS_VERSION
+	add.w	d5,a3
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	add.w	d5,a4
+	.endif
+	.endif
+	.endm
+	
+* made more complex by 4 tile orientations + the fact that the last
+* tile bitplane should not be copied into the backbuffer as sprites
+* only use 4 planes
+standard_tile:
+
+	* just copy
+
+4:
+	move.l	(a2)+,d0		| next plane
+	jeq		5f
+	move.l	d0,a0
+	.set	offset,0
+	.rept	8
+	move.b	(a0)+,d0
+	COPY_TILE_PLANE_ROW
+	.set	offset,offset+BG_NB_BYTES_PER_ROW
+	.endr
+41:
+	TILE_NEXT_PLANE
+	dbf		d4,4b
+	
+0:
+	rts
+5:
+	CLEAR_TILE_PLANE
+	jra		41b
+
+
+flipped_tile:	
+4:
+	move.l	(a2)+,d0		| next plane
+	jeq		5f
+	move.l	d0,a0
+	.set	offset,8*BG_NB_BYTES_PER_ROW
+	.rept	8
+	.set	offset,offset-BG_NB_BYTES_PER_ROW
+	move.b	(a0)+,d0
+	COPY_TILE_PLANE_ROW
+	.endr
+41:
+	TILE_NEXT_PLANE
+	dbf		d4,4b
+	
+0:
+	rts
+
+	CLEAR_TILE_PLANE
+	jra		41b
+	
+mirror_tile:
+	lea		mirror_bits(pc),a4
+	moveq	#0,d1
+4:
+	move.l	(a2)+,d0		| next plane
+	jeq		5f
+	move.l	d0,a0
+	.set	offset,0
+	.rept	8
+	move.b	(a0)+,d1
+	move.b	(a4,d1.w),d0	| mirror
+	COPY_TILE_PLANE_ROW
+
+	.set	offset,offset+BG_NB_BYTES_PER_ROW
+	.endr
+41:
+	TILE_NEXT_PLANE
+	dbf		d4,4b
+	
+
+0:
+	rts
+1:
+
+5:
+	CLEAR_TILE_PLANE
+	jra		41b
+	
+mirror_flipped_tile:
+	lea		mirror_bits(pc),a4
+	moveq	#0,d1
+4:
+	move.l	(a2)+,d0		| next plane
+	jeq		5f
+	move.l	d0,a0
+	.set	offset,8*BG_NB_BYTES_PER_ROW
+	.rept	8
+	.set	offset,offset-BG_NB_BYTES_PER_ROW
+	move.b	(a0)+,d1
+	move.b	(a4,d1.w),d0	| mirror
+	COPY_TILE_PLANE_ROW
+
+	.endr
+41:
+	TILE_NEXT_PLANE
+	dbf		d4,4b
+
+0:
+	rts
+
+5:
+	CLEAR_TILE_PLANE
+	jra		41b
+
+	* clear tile
+
+11:
+111:
+	CLEAR_TILE_PLANE
+	TILE_NEXT_PLANE
+	dbf		d4,111b
+2:
+	rts
+
+mirror_jump_table:
+	.long	standard_tile
+	.long	mirror_tile
+	.long	flipped_tile
+	.long	mirror_flipped_tile
+	
+mirror_bits:
+	.include "mirror_bits.68k"
+
+tiles_layout:
+	.include "tiles_layout.68k"
+
+	
+* < d0.w: x
+* < d1.w: y
+* < a1: sprite pos table (depending on height)
+* > d0.L: control word
+store_sprite_pos:
+	tst.w	d1
+	jmi	0f
+	cmp.w	#Y_MAX,d1
+	jcc	0f
+
+    move.l  a0,-(a7)
+
+    lea	HW_SpriteXTable(pc),a0
+	
+	.ifdef	NO68020
+    add.w	d0,d0
+    add.w	d0,d0
+    move.l	(a0,d0.w),d0
+	move.w	d1,-(a7)
+    add.w	d1,d1
+    add.w	d1,d1
+    or.l	(a1,d1.w),d0
+	move.w	(a7)+,d1
+	.else
+    move.l	(a0,d0.w*4),d0
+    or.l	(a1,d1.w*4),d0	
+	.endc
+    move.l  (a7)+,a0
+    rts
+0:
+	moveq	#0,d0
+	rts
+	
+
+
+
+HW_SpriteXTable:
+	.set	reptn,0
+	.rept 320
+	.set	x,reptn+0x80
+	.set reptn,reptn+1
+    .byte  0,x>>1,0,x&1
+  .endr
+
+	.macro DEF_HW_SPRITE_Y_TABLE	height
+HW_SpriteYTable_\height:
+  .set	reptn,0
+  .rept 288
+	.set	ys,reptn+0x1c
+	.set	ye,ys+\height
+    .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
+	.set	reptn,reptn+1
+  .endr
+	.endm
+
+	DEF_HW_SPRITE_Y_TABLE	16
+	DEF_HW_SPRITE_Y_TABLE	32
+
+* < A0: copperlist address for bitplane pointers
+* < D0: first bitplane address
+set_background_bitplanes:
+    moveq #NB_TILE_PLANES-1,d1
+ 	move.l	#BG_SCREEN_PLANE_SIZE,d2
+1:
+    swap d0
+    move.w d0,(a0)
+    swap d0
+    move.w d0,(4,a0)    
+    addq.w  #8,a0
+    add.l d2,d0
+    dbf d1,1b
+    rts
+
+	.ifndef	OCS_VERSION
+set_bob_bitplanes:
+	movem.l	a0-a1/d0-d2,-(a7)
+ 	lea	bobs_bitplanes+2,a0
+    moveq #NB_BOB_PLANES-1,d1
+ 	move.l	#FG_SCREEN_PLANE_SIZE,d2
+    move.l	playfield_displayed_screen_ptr,d0
+1:
+    swap d0
+    move.w d0,(a0)
+    swap d0
+    move.w d0,(4,a0)    
+    addq.w  #8,a0
+    add.l d2,d0
+    dbf d1,1b
+	movem.l	(a7)+,a0-a1/d0-d2
+    rts
+	.endif
+	
+osd_debug_hook:
+	rts
+
+* the joystick is 4-way. If a diagonal is attempted we must
+* cancel up/down (on MAME, lateral move has priority) else character
+* doesn't move at all
+
+read_inputs:
+	movem.l	a0/d0/d1,-(a7)
+	lea		keyboard_table(pc),a0
+	GET_MEMORY_START_AND_DP
+	move.b	#0xF0,d1
+	move.l	_joypad_1_state,d0
+	btst	#JPB_BTN_RED,d0
+	jeq		0f
+	bset	#1,d1
+0:
+	tst.b	(0x63,a0)		| "ctrl" key
+	jeq		0f
+	bset	#1,d1	
+0:
+	move.b	d1,(joystick_button_1_4805,a6)
+	
+	move.b	#0xF0,d1
+	btst	#JPB_BTN_BLU,d0
+	jeq		0f
+	bset	#1,d1
+0:
+	tst.b	(0x64,a0)		| left "alt" key
+	jeq		0f
+	bset	#1,d1
+0:
+	move.b	d1,(joystick_button_2_4815,a6)
+	
+	tst.b	(0x4C,a0)		| "up" key
+	beq.b	0f
+	bset	#BIT_UP,d1
+0:
+	btst	#JPB_BTN_UP,d0
+	jeq		0f
+	bset	#BIT_UP,d1	
+0:
+	tst.b	(0x4D,a0)		| "down" key
+	jeq	0f
+	bset	#BIT_DOWN,d1
+0:
+	btst	#JPB_BTN_DOWN,d0
+	jeq		0f
+	bset	#BIT_DOWN,d1	
+0:
+	tst.b	(0x4F,a0)		| "<-" key
+	jne	1f
+	btst	#JPB_BTN_LEFT,d0
+	jeq		0f
+1:
+	bset	#BIT_LEFT,d1
+	* left set, clear up & down, game doesn't support that and blocks
+	bclr	#BIT_DOWN,d1	
+	bclr	#BIT_UP,d1	
+0:
+	tst.b	(0x4E,a0)		| "->" key
+	jne	1f
+0:
+	btst	#JPB_BTN_RIGHT,d0
+	jeq		0f
+1:
+	bset	#BIT_RIGHT,d1
+	* right set, clear up & down, game doesn't support that and blocks
+	bclr	#BIT_LEFT,d1	
+	bclr	#BIT_DOWN,d1	
+	bclr	#BIT_UP,d1	
+0:
+	move.b	d1,(joystick_directions_4804,a6)
+
+	jbsr	is_game_playing
+	jne		10f
+	* game not in play: can insert/start game using joystick
+	btst	#JPB_BTN_RED,d0
+	jeq		0f
+	move.l	_joypad_1_old_state,d1
+	btst	#JPB_BTN_RED,d1
+	jne		0f
+	jbsr	add_one_credit
+0:
+	btst	#JPB_BTN_UP,d0
+	jeq		0f
+	jbsr	start_1p_game
+0:
+	btst	#JPB_BTN_DOWN,d0
+	jeq		0f
+	jbsr	start_2p_game
+0:
+
+10:
+	movem.l	(a7)+,a0/d0/d1
+	rts
+	
+
+	
+	
+osd_read_dsw_1:
+	* actual dipswitches
+	move.b	dip_switches_1(pc),d0
+	not.b	d0		| active low
+	rts
+osd_read_dsw_2:
+	* actual dipswitches
+	move.b	dip_switches_2(pc),d0
+	not.b	d0		| active low
+	*BREAKPOINT	"read dsw2"
+	rts
+osd_read_dsw_3:
+	* actual dipswitches
+	moveq	#-1,d0
+*	move.b	dip_switches_0(pc),d0
+*	not.b	d0		| active low
+	rts
+
+* we have to emulate namco chip, it handles credits
+* and issues "game start" flag only if there were enough credits
+get_nb_credits:
+	move.l	d1,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	(credits_tens_4802,a6),d0
+	and.b	#0xF,d0
+	lsl.b	#4,d0
+	move.b	(credits_unit_4803,a6),d1
+	and.b	#0xF,d1
+	or.b	d1,d0
+	move.l	(a7)+,d1
+	rts
+	
+start_2p_game:
+	movem.l	d0/d1/a5/a6,-(a7)
+	moveq	#2,d1
+	jra		start_xp_game
+start_1p_game:
+	movem.l	d0/d1/a5/a6,-(a7)
+	moveq	#1,d1
+start_xp_game:
+	jbsr	get_nb_credits
+	sbcd	d1,d0
+	jmi		0f			| not enough money
+	or.b	#0xF0,d1
+	move.b	d1,(number_of_players_4801,a6)
+	move.b	d0,d1
+	and.b	#0xF,d0
+	or.b	#0xF0,d0
+	move.b	d0,(credits_unit_4803,a6)
+	lsr.b	#4,d1
+	or.b	#0xF0,d1
+	move.b	d1,(credits_tens_4802,a6)
+0:	
+	movem.l	(a7)+,d0/d1/a5/a6
+	rts
+	
+add_one_credit:
+	movem.l	d0/a5/a6,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	(credits_unit_4803,a6),d0
+	and.b	#0xF,d0
+	addq	#1,d0
+	cmp.b	#0xA,d0
+	jne		1f
+	move.w	d1,-(a7)
+	* increment tens (not that it is useful...)
+	move.b	(credits_tens_4802,a6),d1
+	and.b	#0xF,d1
+	cmp.b	#9,d1
+	jeq		0f
+	addq	#1,d1
+	or.b	#0xF0,d1
+	moveq	#0,d0
+	move.b	d1,(credits_tens_4802,a6)
+0:
+	move.w	(a7)+,d1
+1:
+	or.b	#0xF0,d0
+	move.b	d0,(credits_unit_4803,a6)
+	move.w	#CREDIT_14_SND,d0
+	jbsr	osd_sound_start
+	movem.l	(a7)+,d0/a5/a6
+	rts
+	
+
+level2_interrupt:
+handle_keyboard:
+	movem.l	D0/A0/A5,-(a7)
+	LEA	0x00BFD000,A5
+	MOVEQ	#0x08,D0
+	AND.B	0x1D01(A5),D0
+	jeq		1f
+	MOVE.B	0x1C01(A5),D0
+	NOT.B	D0
+	ROR.B	#1,D0		| raw key code here
+  
+	CLR.B	0x1C01(A5)
+  
+    lea keyboard_table(pc),a0
+    bclr    #7,d0
+    seq (a0,d0.w)       | updates keyboard table
+    jne   2f     | we don't care about key release
+	
+	cmp.b	#1,d0		| "1" key
+	jne		0f
+	jbsr	start_1p_game
+0:
+	cmp.b	#2,d0		| "2" key
+	jne		0f
+	jbsr	start_2p_game
+0:
+	cmp.b	#5,d0		| "5" key
+	jne		0f
+	jbsr	add_one_credit
+0:
+	
+    cmp.b   #0x19,d0	| "P" key
+    bne.b   0f
+
+    bsr	toggle_pause
+0:
+
+	btst	#4,cheat_flags+3
+	jeq		10f
+	* cheat keys
+	cmp.b	#0x50,d0	| F1 key: level skip
+	bne.b	0f
+	move.w	#0x0FF,_custom+color
+
+	st.b	cheat_used
+	jbsr	skip_level
+0:
+	cmp.b	#0x51,d0	| F2 key: toggle monsters
+	bne.b	0f
+	st.b	cheat_used
+	move.w	#0x0FF,_custom+color
+	jbsr	toggle_monsters
+0:
+	cmp.b	#0x52,d0	| F3 key
+	bne.b	0f
+	st.b	cheat_used
+	* add 10000 points
+	move.w	#0x0FF,_custom+color
+	jbsr	add_100000_points
+	
+0:
+	cmp.b	#0x53,d0	| F4 key
+	bne.b	0f
+	st.b	cheat_used
+	move.w	#0x0FF,_custom+color
+	eor.b	#1,invincible_flag
+0:
+*	cmp.b	#0x54,d0	| F5 key
+*	bne.b	0f
+*	st.b	cheat_used
+*	move.w	#0x0FF,_custom+color
+*0:
+*
+10:
+
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.b	#34,d0
+	bne		0f
+	* 'D': dump all logging buffers to data dir
+	jbsr	osd_dump_logs
+0:
+	.endif
+
+	.ifndef	RELEASE
+	
+*	cmp.b	#0x56,d0	| F7 key: lose all l
+*	bne.b	0f
+*	move.w	#0x0FF,_custom+color
+*0:
+	* last life, if killed, direct game over
+	cmp.b	#0x57,d0	| F8 key: lose all lives
+	bne.b	0f
+	move.w	#0x0FF,_custom+color
+	* last life, if killed, direct game over
+	bsr		lose_all_lives
+0:
+	cmp.b	#0x58,d0	| F9 key crashes game (restarts whdload)
+	bne.b	0f
+	illegal
+0:
+
+	.endif
+
+	cmp.b	_keyexit,d0	| "ESC" key or whdload quitkey
+	bne.b	2f
+	BSET	#0x06,0x1E01(A5)
+	moveq	#2,d0
+	bsr	beamdelay
+	BCLR	#0x06,0x1E01(A5)	| acknowledge key
+	bra		quit_to_os
+2:
+	BSET	#0x06,0x1E01(A5)
+	moveq	#2,d0
+	bsr	beamdelay
+	BCLR	#0x06,0x1E01(A5)	| acknowledge key
+
+1:
+	movem.l	(a7)+,d0/a0/a5
+	move.w	#8,_custom+intreq
+	rte
+
+	
+toggle_pause:
+	* pause only within game
+	jbsr		is_game_playing
+	beq.b	0f
+	eor.b   #1,pause_flag
+0:
+	rts
+
+	
+    
+* < D0: numbers of vertical positions to wait
+beamdelay:
+0:
+	move.w  d0,-(a7)
+    move.b	0xdff006,d0	| VPOS
+1:
+	cmp.b	0xdff006,d0
+	beq.s	1b
+	move.w	(a7)+,d0
+	dbf	d0,0b
+	rts
+
+
+SCORE_FILE_SIZE = 0x200-0x1b0
+
+		
+osd_read_high_scores:
+	tst.b	no_io_flag
+	jeq		0f
+	rts
+0:
+	movem.l	d0-d7/a0-a6,-(a7)
+	move.l	_resload,d0
+	beq.b	0f
+	move.l	d0,a2
+	bsr		get_hiscore_name
+ 	jsr		resload_GetFileSize(a2)		
+	tst.l	d0
+	beq.b	1f
+	bsr		get_hiscore_name
+	lea		high_score_buffer(pc),a1
+	jsr		resload_LoadFile(a2)	
+	bra.b	2f
+0:
+	tst.b	highscore_loaded
+	beq.b	1f
+2:
+	* from DOS: just copy buffer
+	GET_MEMORY_START_AND_DP
+	* first just copy buffer as contiguous 
+
+	lea		high_score_buffer(pc),a0
+	lea	high_score_table_11b0(a6),a1
+	move.w	#SCORE_FILE_SIZE-1,d0
+0:
+	move.b	(a0)+,(a1)+
+	dbf		d0,0b
+
+	* update high score (duplicated)
+	lea		high_score_table_11b0(a6),a0
+	lea		high_score_100b(a6),a1
+	moveq	#2,d1
+	* encoding is different
+2:
+	move.b	(a0)+,d0
+	lsl.b	#4,d0
+	or.b	(a0)+,d0
+	move.b	d0,(a1)+
+	dbf		d1,2b
+1:
+	movem.l	(a7)+,d0-d7/a0-a6
+	rts
+	
+osd_write_high_scores:
+	tst.b	no_io_flag
+	jeq		0f
+	rts
+0:
+	movem.l	d0-d7/a0-a6,-(a7)
+	.ifdef	RELEASE
+	tst.b	cheat_used		| don't save score if cheat on
+	bne.b	1f
+	.endif
+	GET_MEMORY_START_AND_DP
+	* just copy buffer as contiguous 
+
+	lea		high_score_buffer(pc),a1
+	lea	high_score_table_11b0(a6),a0
+	move.w	#SCORE_FILE_SIZE-1,d0
+0:
+	move.b	(a0)+,(a1)+
+	dbf		d0,0b
+
+	st.b	highscore_needs_saving
+1:
+	
+	move.l	_resload,d0
+	beq.b	0f
+	move.l	d0,a2
+	move.l	#SCORE_FILE_SIZE,d0
+	lea		high_score_buffer(pc),a1
+	bsr		get_hiscore_name
+	jsr		resload_SaveFile(a2)
+0:
+
+	movem.l	(a7)+,d0-d7/a0-a6
+	rts
+
+	
+get_hiscore_name:
+    lea normal_hiscorename,a0
+	rts
+	
+load_highscores:
+	bsr.b		get_hiscore_name
+    move.l  _resload,d0
+    bne.b   1f
+
+    move.l  _dosbase,a6
+    move.l  a0,d1
+    move.l  #1005,d2
+    jsr     (_LVOOpen,a6)
+    move.l  d0,d1
+    beq.b   1f
+    move.l  d1,d4
+    move.l  #SCORE_FILE_SIZE,d3
+    move.l  #high_score_buffer,d2
+    jsr (_LVORead,a6)
+    move.l  d4,d1
+    jsr (_LVOClose,a6)   
+	st.b	highscore_loaded
+1:
+
+    rts
+
+save_highscores:
+	tst.l	_resload
+	bne.b	1f
+    tst.b   highscore_needs_saving
+    beq.b   1f
+    move.l  _dosbase,a6
+	bsr.b		get_hiscore_name
+    move.l  a0,d1
+    move.l  #1006,d2
+    jsr     (_LVOOpen,a6)
+    move.l  d0,d1
+    beq.b   1f
+    move.l  d1,d4
+    move.l  #SCORE_FILE_SIZE,d3
+    move.l  #high_score_buffer,d2
+    jsr (_LVOWrite,a6)
+    move.l  d4,d1
+    jsr (_LVOClose,a6)   
+1:	
+    rts
+    
+
+osd_music_stop:
+*	movem.l	d0/a0/a6,-(a7)
+*	lea		_custom,a6
+*	move.w	#3,d0
+*	jbsr	_mt_stopfx
+*	movem.l	(a7)+,d0/a0/a6
+
+	tst.b	music_playing
+	jne		0f
+	rts
+
+	* force sound stop
+0:
+	OSD_ENTER
+	movem.l	d0-d1/a0/a6,-(a7)
+	lea		_custom,a6
+	clr.b	start_hurry_tune_timeout
+	move.b	#-1,music_track_start_number
+	clr.b	music_playing
+	clr.b	looped_sound_enabled
+    jsr		_mt_end
+	
+	move.w	last_started_music_sound,d0
+	move.l	a5,d1		| save a5
+	GET_MEMORY_START_AND_DP
+	lea		(sound_level_start_tune_4040,a6),a0	
+	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+
+
+	move.l	d1,a5
+
+	movem.l	(a7)+,d0-d1/a0/a6
+	OSD_EXIT
+	rts
+	
+* handling of tunes is quite a mess on that game.
+
+osd_sound_start:
+	OSD_ENTER
+	movem.l	d0/d1/a0/a6,-(a7)
+
+	.ifdef	SUPER_DEGRADED_OCS_VERSION
+	* extremely low memory: remove in-game music (first module)
+	cmp.w	#MAIN_TUNE_SND,d0
+	jeq		10f
+	cmp.w	#HURRY_TUNE_SND,d0
+	jeq		10f
+	.endif
+	
+	cmp.w	#CAUGHT_SND,d0
+	jeq	1f
+	cmp.w	#KILLED_SND,d0
+	jne	0f
+	* anticipate that the game is going to cut the music
+	* right after playing this sfx. If we don't cut the music
+	* first, the game will stop sound, preventing the "caught" sound
+	* to be played
+1:
+	move.l	a5,d1
+	GET_MEMORY_START_AND_DP
+	clr.w	(sound_level_start_tune_4040,a6)
+	jbsr	osd_music_stop
+	move.l	d1,a5
+0:
+	lea		_custom,a6
+
+	.ifndef	SUPER_DEGRADED_OCS_VERSION
+	cmp.w	#HURRY_TUNE_SND,d0
+	jne		0f
+	st.b	lock_hurry_tune
+	move.w	#WARNING_TUNE_SND,d0
+0:
+	.endif
+	lsl.w	#3,d0
+	lea		sound_table,a0
+
+	move.w	(a0,d0.w),d1	| sound type
+	jeq		11f		| no sound
+	cmp.w	#3,d1
+	jeq		10f		| skipped (normal)
+2:
+	cmp.w	#1,d1
+	bne.b	4f		| music module
+	move.w	(2,a0,d0.w),d1
+	move.l	(4,a0,d0.w),a0
+	lea		_custom,a6
+	tst.w	d1
+	beq.b	3f
+	tst.b	looped_sound_enabled
+	bne.b	3f
+	* looped sound
+	st.b	looped_sound_enabled
+	jsr		_mt_loopfx
+	bra.b	10f
+3:
+	jsr		_mt_playfx
+10:
+	* exiting osd_sound_start
+
+	movem.l	(a7)+,d0/d1/a0/a6
+	OSD_EXIT
+	rts
+11:
+	move.w	d0,d1
+	lsr.w	#3,d1
+
+	BREAKPOINT	"unknown sound (index in D1)"
+	jra		10b
+	
+	* music
+4:
+
+	* handle "lock" on hurry tune until some other tune plays
+	cmp.w	#WARNING_TUNE_SND*8,d0
+	jne		20f
+	tst.b	lock_hurry_tune
+	jeq		21f
+	move.w	#HURRY_TUNE_SND*8,d0
+	jra		21f
+20:
+	clr.b	lock_hurry_tune
+21:
+	
+	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
+
+    movem.l d0-a6,-(a7)
+    lea _custom,a6
+ 	movem.l	d0/a0,-(a7)
+	lea	module_table,a0
+	lsr.w	#1,d0		| divide by 2 as sound number was *8
+	move.l	(a0,d0.w),a0
+	.ifndef	RELEASE
+	cmp.l	#0,a0
+	jne		22f
+	BREAKPOINT	"module not found for index d1"
+22:
+	.endif
+	cmp.b	music_track_start_number(pc),d1
+	jne	23f		| not the track, play
+	cmp.l	current_module,a0
+	jne	23f
+	movem.l	(a7)+,d0/a0
+	jra	5f	| same track, same module -> skip
+23:
+	* we don't force sound stop
+	* it sets memory flags to 0 and triggers events too soon
+	* (game over screen end, in-game music start)
+	move.l	a0,current_module
+	move.b	d1,music_track_start_number
+	move.w	d1,d0
+    sub.l   a1,a1		| samples are in the module
+    jsr _mt_init
+	
+	* 2 first channels are reserved for the music
+	* auto channel selection cannot pick them
+	* no need for this in OCS version as it has no in-game music
+	* let the sfx occupy all channels
+	.ifndef	SUPER_DEGRADED_OCS_VERSION
+	move	#3,d0
+	jbsr	_mt_musicmask	
+	.endif
+	
+	movem.l	(a7)+,d0/a0
+
+    * set master volume a little less loud if needed
+	move.b	(6,a0,d0.w),music_volume
+	move.b	(7,a0,d0.w),music_loops
+	move.w	(2,a0,d0.w),music_pattern	| pattern number in .mod file
+	move.w	(4,a0,d0.w),d2
+
+	lsr.w	#3,d0
+	move.w	d0,last_started_music_sound
+
+    moveq	#0,d0
+	move.b	music_volume(pc),d0
+    jbsr	_mt_mastervol
+	st.b	music_playing
+    jbsr _mt_start
+5:
+    movem.l (a7)+,d0-a6
+	
+6:
+	jra	10b
+
+handle_hurry_music_restart:
+	move.b	start_hurry_tune_timeout,d0
+	jeq		0f
+	subq.b	#1,d0
+	jne		2f
+	jbsr	osd_music_stop
+
+	move.w	#HURRY_TUNE_SND,d0
+	jbsr	osd_sound_start	
+	moveq	#0,d0
+2:
+	move.b	d0,start_hurry_tune_timeout
+0:
+	move.b	start_sfx_10_timeout,d0
+	jeq		0f
+	subq.b	#1,d0
+	jne		2f
+	move.w	#SFX_10_SND,d0
+	jbsr	osd_sound_start
+	moveq	#0,d0
+2:
+	move.b	d0,start_sfx_10_timeout
+0:
+	rts
+	
+handle_music_termination:
+	moveq	#0,d0
+	move.b	_mt_E8Trigger,d0
+	jeq		0f
+	clr.b	_mt_E8Trigger	| ack
+	cmp.b	#4,d0
+	jne		1f
+	* command E8=4 asks to play the rest of "hurry" tune,
+	* which is on a different module so we cannot even chain the tunes
+	* no9 wasn't aware of that, I workarounded that but it's annoying
+	*
+	* problem is: game starts the "warning" tune over and over
+	* so the "hurry" pattern cannot play, unless we tell the game
+	* that this is the same thing: so don't clear the memory flag
+
+	move.b	#10,start_hurry_tune_timeout
+	rts
+1:
+	cmp.b	#3,d0
+	jne		1f
+	* do the usual but also play sfx
+	move.b	#10,start_sfx_10_timeout
+1:
+	* E8 command just issued from module, handle it
+	* those commands are there to signal that some tune is
+	* completed, game is actively waiting on some
+	move.b	#0,0x110
+	lea		music_trigger_address_table(pc),a0
+	move.b	(a0,d0.w),d0
+	move.l	a5,d1		| save a5
+	GET_MEMORY_START_AND_DP
+	lea		(sound_level_start_tune_4040,a6),a0
+	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+	move.l	d1,a5
+0:
+	rts
+	
+lock_hurry_tune:
+	.byte	0
+music_playing:
+	.byte	0
+looped_sound_enabled:
+	.byte	0
+music_loops:
+	.byte	0
+music_volume:
+	.byte	0
+start_hurry_tune_timeout:
+	.byte	0
+start_sfx_10_timeout:
+	.byte	0
+	.align	2
+current_module:
+	.long	0
+music_track_start_number:
+	.word	-1
+music_pattern:
+	.word	0
+last_started_music_sound:
+	.word	0
+
+high_score_buffer:
+	.skip	SCORE_FILE_SIZE
+highscore_needs_saving:
+	.byte	0
+highscore_loaded:
+	.byte	0
+
+music_trigger_address_table:
+	.byte	-1
+	.byte	LEVEL_START_TUNE_SND	| trigger 81
+	.byte	GAME_OVER_TUNE_SND     	| trigger 82
+	.byte	HIGHSCORE_TUNE_SND     	| trigger 83
+	.byte	WARNING_TUNE_SND       	| trigger 84
+	.byte	LEVEL_COMPLETE_TUNE_SND | trigger 85
+	.byte	CAUGHT_SND            	| trigger 86
+	.byte	KILLED_SND            	| trigger 87
+	.byte	-1               	 	| trigger 88
+	
+normal_hiscorename:
+	.asciz	"digdug2.high"
+	.align	2
+	
+
+	.ifndef	OCS_VERSION
+	MUL_TABLE	FG_NB_BYTES_PER_ROW,NB_LINES*2
+	.endif
+	MUL_TABLE	BG_NB_BYTES_PER_ROW,NB_LINES*2
+
+
+
+
+
+
+	.align	4		| leave this long word alignment
+program_args:	ds.l	64,0
+program_args_end:
+	.long	0		| add a longword else it overwrites the read args string in kick 1.3!
+	.align	4
+read_args_string:
+	.byte	read_args_string_end-read_args_string
+	.ascii	"INVINCIBLE/S,INFLIVES/S,"
+	.ascii	"CHEATKEYS/S,SKILL/K/N"
+read_args_string_end:
+	.align	2
+
+
+	.ifndef	RELEASE
+sprite_allocation_error:
+	.asciz	"sprite allocation error"
+write_videoram_out_of_range_error:
+	.asciz	"write videoram out of range (D7)"
+write_colorram_out_of_range_error:
+	.asciz	"write colorram out of range (D7)"
+
+	.align	2
+	.endif
+
+
+old_intena:
+	.long	0
+old_dmacon:
+	.long	0
+old_sysvectors:
+	ds.l	10
+old_vbr:
+	.long	0
+old_syscoplist:
+	.long	0
+old_actiview:
+	.long	0
+old_stack:
+	.long	0
+
+	
+_tag:
+		.long	WHDLTAG_MONITOR_GET
+monitor:
+		.long	0
+		.long	WHDLTAG_CHIPREVBITS_GET
+chiprevbits:
+		.long	0
+		.long	WHDLTAG_ATTNFLAGS_GET
+whd_attn_flags:
+		.long	0
+		.long	WHDLTAG_CUSTOM1_GET
+cheat_flags:
+		.long	0
+
+		.long	WHDLTAG_CUSTOM2_GET
+misc_options:
+		.long	0
+		
+		.long	WHDLTAG_CUSTOM3_GET
+start_level_option:
+		.long	0
+		
+		.long	WHDLTAG_CUSTOM4_GET
+start_lives:
+		.long	0
+
+		.long	WHDLTAG_CUSTOM5_GET
+difficulty_level:
+		.long	0
+	.long	0
+dip_switches_1:
+		.byte	0
+dip_switches_2:
+		.byte	0
+
+	
+mid_screen_interrupt_count:
+	.byte	0
+	.align	2
+system_vbr:
+	.long	0
+
+
+target_usp_value:
+	.word	0
+osd_entry_count:
+	.byte	0
+flip_flop:
+	.byte	0
+
+
+	.align	2
+
+host_sprites:
+	ds.b	8*SPRITE_SIZEOF
+keyboard_table:
+	ds.b	0x100
+
+interrupt_mode:
+	.word	0
+	
+	
+last_known_m6809_pc:
+	.word	-1
+pause_flag:
+	.word	0
+frameskip:
+	.word	0
+
+	* this is the replacement stack space for osd calls so the game
+	* has its stack preserved
+	* we need at least 1k stack else things will go very wrong
+	* with whdload (or cd32load) running
+	.skip	0x400
+osd_stack:
+saved_stack:
+	.long	0
+
+tiles_row_flags:
+	.skip	0x20
+tiles_refresh_table:
+	.skip	0x800
+	
+vbl_counter:
+	.word	0
+_resload:
+	.long	0
+_joypad_1_state:
+	.long	0
+_joypad_1_old_state:
+	.long	0
+_joypad_2_state:
+	.long	0
+
+_gfxbase:
+	.long	0
+_dosbase:
+	.long	0
+
+one_out_of_five:
+	.word	0
+
+
+fg_screen_data_1:
+	.long	0
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+fg_screen_data_2:
+	.long	0
+	.endif
+	
+
+background_ptr:
+	.long	0
+playfield_drawn_screen_ptr:
+	.long	0
+playfield_displayed_screen_ptr:
+	.long	0
+
+	.include	"sound_entries.68k"
+
+	
+update_tile_function:
+	.long	0
+_keyexit:
+	.byte	0x45	| ESC by default unless whdload overwrites it
+
+no_io_flag:
+	.byte	0
+cheat_used:
+	.byte	0
+dosname:
+	.ascii	"dos.library"
+	.byte	0
+graphicsname:
+	.ascii	"graphics.library"
+	.byte	0
+floppy_file:
+	.ascii	"floppy"
+	.byte	0
+temp_filename_buffer:
+	ds.b	255
+_end_of_ng_code:
+	.align 2
+		
+sprite_x_offset_w:
+	.byte	0
+sprite_x_offset:
+	.byte	0
+
+	.align 2
+
+
+
+palette:	
+	.include "palette.68k"
+
+
+
+scroll_table:
+	.ifdef	OCS_VERSION
+	.include	"scroll_table_16.68k"
+	.else
+	.include	"scroll_table_64.68k"
+	.endif
+	
+	* on amiga, this file is included in mpatrol.68k file
+	* so the assembler can optimize by using PC-relative addressing
+	* whenever possible (and it does)
+
+	.ifne	OPT_ENABLE_LOGGING
+	.section	.bsspublic
+
+sprite_log_table:
+	* 16 cluts, 256 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	NB_SPRITE_CLUTS*NB_POSSIBLE_SPRITES
+character_log_table:
+	* 64 cluts, 256 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	NB_TILE_CLUTS*NB_POSSIBLE_TILES
+
+	
+
+log_ptr:
+	.long	0
+
+log_buffer:
+	.skip	LOG_BUFFER_SIZE
+log_buffer_end:
+	.skip	16
+
+cpu_log_enable:
+	.word	0
+
+	.endif
+
+
+
+	.section	.datachip
+
+
+	.macro	DECL_BITPLANES	bpoff_start,nb_planes
+	.set	bpoff,\bpoff_start
+	.rept	\nb_planes
+	dc.w  0xe0+bpoff,0
+	dc.w  0xe2+bpoff,0
+	.set	bpoff,bpoff+4
+	.endr
+	.endm
+
+	
+	.macro	DECL_COLORS	offset,nb_colors
+	.set	colidx,\offset
+	.rept	\nb_colors
+	dc.w	color+(colidx*2),0
+	.set	colidx,colidx+1
+	.endr
+	.endm
+	
+
+	.macro	DECL_EVEN_BITPLANES	bpoff_start,nb_planes
+	.set	bpoff,\bpoff_start
+	.rept	\nb_planes
+	dc.w  bplpt+bpoff,0
+	dc.w  bplpt+bpoff+2,0
+	.set	bpoff,bpoff+8
+	.endr
+	.endm
+
+	.macro	DECL_SPRITES
+	.set	copper_sprite_start,sprpt+0
+	.rept	16
+	* 2 slots
+	.word	copper_sprite_start,0
+	.set	copper_sprite_start,copper_sprite_start+2
+    .endr
+	.endm
+
+
+	
+blank_sprite:
+	.long	0,0
+	
+blank_sound:
+	ds.l	4
+	
+debug_copperlist:
+	dc.w	bplcon0,0x200
+	dc.w	color
+debug_color:
+	dc.w	0
+	dc.l	-2
+	
+
+
+	
+	* main copperlist
+game_copperlist:
+	* all sprites have the same palette no need to specify odd or even
+	* on color bank 1
+	
+	* black color background plane
+
+tiles_colors:			| AGA: tiles, OCS: HW sprites
+	DECL_COLORS	16,TOTAL_NB_COLORS
+bobs_colors:			| AGA: bobs, OCS: tiles+bobs
+	DECL_COLORS	0,TOTAL_NB_COLORS
+
+
+game_sprites:
+	DECL_SPRITES
+game_sprites_end:
+
+
+	* enable sprite colors now
+	.word	0x01+((COPPER_Y_START)*256),0xFFFE
+
+	* set 0-scroll value value for both plane sets
+	.word	bplcon1
+reset_bplcon1_1:
+	.word 	0
+	.ifdef	OCS_VERSION
+
+	
+tiles_bitplanes:
+bobs_bitplanes:
+	DECL_BITPLANES	0,4	
+	.else
+tiles_bitplanes:
+	DECL_EVEN_BITPLANES	4,4
+	* sync to start of line again
+	.word	0x01+((COPPER_Y_START+1)*256),0xFFFE
+bobs_bitplanes:
+	DECL_EVEN_BITPLANES	0,4
+	.endif
+
+	* let the 2 rows from status pass
+	.word	0x01+((COPPER_Y_START+16)*256),0xFFFE
+	
+	.word	bplcon1
+scrolling_bitplanes:
+	.word	0
+	.ifdef	OCS_VERSION
+	DECL_BITPLANES	0,4	
+	.else
+	DECL_EVEN_BITPLANES	4,4
+	.endif
+	* pos 25 in PAL: sprite pos are read
+	* we replace the positions by new ones, allowing to
+	* reuse the same sprite data several times
+	.word	0x01+((25)*256),0xFFFE
+	.set	offset,0
+sprite_control_words:
+	.rept	8
+	.word	spr+offset,0
+	.word	spr+offset+2,0
+	.set	offset,offset+8
+	.endr
+sprite_control_words_end:
+	* not sure if it's really half screen but it doesn't matter
+	.word	0x01+((COPPER_Y_START+120)*256),0xFFFE
+intreq_block_game:
+	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
+
+
+
+	* purple 
+
+	* pal limit
+	.ifdef OCS_VERSION
+    .word  0xFFDF,0xFFFE       | PAL wait
+	.else
+    .word  0xFFCF,0xFFFE       | PAL wait (fmode changes stuff)
+	.endif
+	
+	.word	0x0801,0xFFFE		| must wait a bit else bigger wait doesn't work
+	.word	0x2C01,0xFFFE
+
+
+	.word	bplcon1
+	* set 0-scroll value value for both plane sets
+reset_bplcon1_2:
+	.word	0			| reset scrolling
+
+tiles_bitplanes_end:
+	.ifdef	OCS_VERSION
+	DECL_BITPLANES	0,4	
+	.else
+	DECL_EVEN_BITPLANES	4,4
+	.endif
+
+	| no bobs from now on, get a LOT of drawing time
+	.word	 intreq,0x8010
+
+	* black color sprites
+	*DECL_COLORS	16,16
+
+
+	
+     .long    -2					
+	.ascii	"ENDCPLST"
+
+
+
+	* aligning on 8 bytes so .align will work
+	* in the next datachip sections
+	.align	8
+	
+		.section .bsschip
+		
+	* AGA and OCS: one background buffer
+bg_screen_buffer_1:
+	.skip	BG_SCREEN_SIZE
+	
+	.ifdef	OCS_VERSION
+	* OCS: background restore buffer
+	* and optional extra background buffer for doublebuffer
+	.skip	4
+background_restore_buffer:
+	.skip	BG_SCREEN_SIZE
+
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+bg_screen_buffer_2:
+	.skip	BG_SCREEN_SIZE
+	.endif
+	.else
+	* AGA 1 or 2 front buffers
+fg_screen_buffer_1:
+	.skip	FG_SCREEN_SIZE
+	.skip	FG_NB_BYTES_PER_ROW*12*3
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+fg_screen_buffer_2:
+	.skip	FG_SCREEN_SIZE
+	.skip	FG_NB_BYTES_PER_ROW*12*3
+	.endif
+	.endif
+
+
+		

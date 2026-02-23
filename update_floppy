@@ -1,0 +1,32 @@
+.key nope
+set gamename digdug2
+;set game ${gamename}_aga
+;copy $game.RNC DF0:$game
+set game ${gamename}_ecs
+copy $game.RNC DF0:$game
+protect DF0:$game RWED
+set game ${gamename}_ocs
+copy $game.RNC DF0:$game
+protect DF0:$game RWED
+
+; shell
+set game $gamename
+echo $game
+copy $game DF0:$game
+protect DF0:$game RWED
+copy readme.md df0:
+
+
+if exists df0:$game.high
+   delete df0:$game.high
+endif
+
+set arc ${game}_HD.lha
+if exists ${arc}
+    echo deleting ${arc}...
+    delete ${arc}
+endif
+
+; also archive with lha
+lha a -r $arc ${game}_HD
+
