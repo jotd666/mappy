@@ -1,18 +1,1 @@
-- seems to crash when repeating insert coins with "5"
-- hide title at start like the original
-
-minor/optims:
-
-- make it work with CD32load without the hack. Stack has to be relocated
-  on resload calls
-- pump appears on top status screen at times
-- sometimes lockup at level 11 for instance, then monsters suicide, very rare
-  but still happens
-
-fix random:
-
-bpset aaf5,,{A=0;g}
-bpset 8aa0,,{A=0;PC=$8AB1;g}
-
-don't wait for tune start
-bpset A09C,,{fill 4040,20,0;g}
+A981: ED D8 FE    STD    [-$02,U]
