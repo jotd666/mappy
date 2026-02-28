@@ -89,7 +89,9 @@ with open(source_dir / "conv.s") as f:
         if address == 0xD01F:
             # add mid-code label
             line = "mid_code_base:\n"+line
-
+        elif address in [0xF7E5,0xF7F8]:
+            # remove I/O tests that lead to fatal errors
+            line = remove_instruction(lines,1)
         ################# fix the stray C test ###########
         if address in [0xe32c,0xe342,0xe356,0x0f33b]:
             # save C

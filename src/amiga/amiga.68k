@@ -319,13 +319,7 @@ _user:
 	jsr	(resload_Control,a2)
 	
 	
-	* set user stack different from supervisor stack
-	* this is important as the game uses a task system with stacks
-	* and it's working strangely
-	lea	user_stack_top,a0
-	move.l	a0,usp
-	* set user mode
-	move.w	#0,SR
+
 	
     jra		.no_forbid
 .standard:

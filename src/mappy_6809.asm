@@ -7245,26 +7245,26 @@ F3AD: 6F 80       CLR    ,X+
 F3AF: 8C 12 80    CMPX   #$1280
 F3B2: 26 F9       BNE    $F3AD
 F3B4: 39          RTS
-F3B5: A6 80       LDA    ,X+
+F3B5: A6 80       LDA    ,X+				; [video_address]
 F3B7: 81 2F       CMPA   #$2F
 F3B9: 26 01       BNE    $F3BC
 F3BB: 39          RTS
-F3BC: A7 C4       STA    ,U
+F3BC: A7 C4       STA    ,U				; [video_address]
 F3BE: 33 C8 E0    LEAU   -$20,U
 F3C1: 20 F2       BRA    $F3B5
-F3C3: A6 80       LDA    ,X+
+F3C3: A6 80       LDA    ,X+	; [video_address]
 F3C5: 81 2F       CMPA   #$2F
 F3C7: 26 01       BNE    $F3CA
 F3C9: 39          RTS
-F3CA: A7 C4       STA    ,U
+F3CA: A7 C4       STA    ,U				; [video_address]
 F3CC: 33 5F       LEAU   -$1,U
 F3CE: 20 F3       BRA    $F3C3
-F3D0: A6 80       LDA    ,X+
+F3D0: A6 80       LDA    ,X+        ; [video_address]
 F3D2: 81 2F       CMPA   #$2F
 F3D4: 26 01       BNE    $F3D7
 F3D6: 39          RTS
-F3D7: A7 C4       STA    ,U
-F3D9: E7 C9 08 00 STB    $0800,U
+F3D7: A7 C4       STA    ,U				; [unchecked_address]
+F3D9: E7 C9 08 00 STB    $0800,U		; [video_address]
 F3DD: 33 C8 E0    LEAU   -$20,U
 F3E0: 20 EE       BRA    $F3D0
 F3E2: 8E F4 5F    LDX    #$F45F
@@ -7654,7 +7654,7 @@ F7DC: CE F8 5C    LDU    #$F85C
 F7DF: A6 80       LDA    ,X+
 F7E1: 84 0F       ANDA   #$0F
 F7E3: A1 C0       CMPA   ,U+
-F7E5: 26 5F       BNE    $F846
+F7E5: 26 5F       BNE    error_f846
 F7E7: 8C 48 08    CMPX   #$4808
 F7EA: 26 F3       BNE    $F7DF
 F7EC: 8E 48 11    LDX    #$4811
@@ -7662,7 +7662,7 @@ F7EF: CE F8 5C    LDU    #$F85C
 F7F2: A6 80       LDA    ,X+
 F7F4: 84 0F       ANDA   #$0F
 F7F6: A1 C0       CMPA   ,U+
-F7F8: 26 50       BNE    $F84A
+F7F8: 26 50       BNE    error_f846
 F7FA: 8C 48 18    CMPX   #io_register_4818
 F7FD: 26 F3       BNE    $F7F2
 F7FF: 86 4F       LDA    #$4F
@@ -7694,8 +7694,10 @@ F83C: B7 13 B1    STA    $13B1
 F83F: B6 13 B1    LDA    $13B1
 F842: 26 FB       BNE    $F83F
 F844: 20 1D       BRA    $F863
+error_f846:
 F846: 86 01       LDA    #$01
 F848: 20 02       BRA    $F84C
+error_f84a:
 F84A: 86 02       LDA    #$02
 F84C: B7 06 A4    STA    $06A4
 F84F: 20 FE       BRA    $F84F
@@ -7703,7 +7705,7 @@ F84F: 20 FE       BRA    $F84F
 F863: 8E 00 00    LDX    #$0000                                      
 F866: 86 3A       LDA    #$3A
 F868: C6 10       LDB    #$10
-F86A: A7 81       STA    ,X++
+F86A: A7 81       STA    ,X++	; [video_address_word]
 F86C: 5A          DECB
 F86D: 26 FB       BNE    $F86A
 F86F: 30 88 20    LEAX   $20,X
@@ -7712,7 +7714,7 @@ F875: 26 F1       BNE    $F868
 F877: 8E 00 01    LDX    #$0001
 F87A: 86 3B       LDA    #$3B
 F87C: C6 10       LDB    #$10
-F87E: A7 81       STA    ,X++
+F87E: A7 81       STA    ,X++	; [video_address_word]
 F880: 5A          DECB
 F881: 26 FB       BNE    $F87E
 F883: 30 88 20    LEAX   $20,X
@@ -7721,7 +7723,7 @@ F889: 26 F1       BNE    $F87C
 F88B: 8E 00 20    LDX    #$0020
 F88E: 86 3C       LDA    #$3C
 F890: C6 10       LDB    #$10
-F892: A7 81       STA    ,X++
+F892: A7 81       STA    ,X++	; [video_address_word]
 F894: 5A          DECB
 F895: 26 FB       BNE    $F892
 F897: 30 88 20    LEAX   $20,X
@@ -7730,7 +7732,7 @@ F89D: 26 F1       BNE    $F890
 F89F: 8E 00 21    LDX    #$0021
 F8A2: 86 3D       LDA    #$3D
 F8A4: C6 10       LDB    #$10
-F8A6: A7 81       STA    ,X++
+F8A6: A7 81       STA    ,X++	; [video_address_word]
 F8A8: 5A          DECB
 F8A9: 26 FB       BNE    $F8A6
 F8AB: 30 88 20    LEAX   $20,X

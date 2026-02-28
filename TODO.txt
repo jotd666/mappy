@@ -1,1 +1,4 @@
-A981: ED D8 FE    STD    [-$02,U]
+- address encode/decode not tested
+- fix code at A000 / encode addresses in D020 table copy directly, probably simpler that way
+- rip tiles/sprites
+- check display addresses, look different from Dig Dug??

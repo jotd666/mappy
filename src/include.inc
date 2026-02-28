@@ -441,10 +441,8 @@ get_address:
 0:
 	cmp.w	#0x1000,a0
 	jcc		0f
-	.ifne	OPT_ENABLE_LOGGING
-	jbsr	osd_get_last_known_pc
-	.endif
-	BREAKPOINT	"video address range 0x0000-0x0FFF, PC in D6"
+	move.w	0x102,d6
+	BREAKPOINT	"video address range 0x0000-0x0FFF, PC in d6"
 	jra		10f
 0:
 	
@@ -531,10 +529,11 @@ multiply_ab:
 	addq.w	#4,a7
 	move.w	(a7)+,sr
 	.endm
+	
+	
 	.macro	LOG_REGS	the_pc
 	move.w	sr,-(a7)
-
-	move.w	#0x\the_pc,0x100
+	move.w	#0x\the_pc,0x102
 
 	move.w	(a7)+,sr
 	.endm
