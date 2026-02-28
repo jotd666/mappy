@@ -1,4 +1,4 @@
-PROGNAME = digdug2
+PROGNAME = mappy
 MAIN_AGA = ..\$(PROGNAME)_aga
 MAIN_ECS = ..\$(PROGNAME)_ecs
 MAIN_OCS = ..\$(PROGNAME)_ocs
@@ -45,7 +45,7 @@ all: $(AMIGA_SHELL) $(MAIN_AGA) $(MAIN_ECS) $(MAIN_OCS) $(WHDLOADER_ECS) $(WHDLO
 $(AMIGA_SHELL): shell.o
 	$(GCC_BIN)/m68k-amigaos-ld $(OPT_RELEASE_LINK) -o $(AMIGA_SHELL) shell.o
 
-# don't clean shell "digdug2" program, update_floppy will need it
+# don't clean shell "mappy" program, update_floppy will need it
 clean:
 	del $(AGA_OBJS) $(OCS_OBJS) $(ECS_OBJS) "$(MAIN_AGA)" "$(MAIN_OCS)" "$(MAIN_ECS)"
 	
@@ -56,7 +56,7 @@ $(AMIGASRC)/aga/graphics.68k: $(ASSETS)/convert_graphics_aga.py
 $(AMIGASRC)/ecs/graphics.68k: $(ASSETS)/convert_graphics_ecs.py
 	cmd /c $(ASSETS)\convert_graphics_ecs.py
 
-$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py $(BASE_ASSETS)/sounds/digdug2_main_tune.mod $(BASE_ASSETS)/sounds/digdug2_others.mod 
+$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py   #$(BASE_ASSETS)/sounds/digdug2_main_tune.mod 
 	cmd /c $(ASSETS)\convert_sounds.py
 	del sounds.o sounds_ocs.o 
 	

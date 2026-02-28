@@ -469,7 +469,49 @@ get_address:
 
 	.endif
 
+	* encode 32 bit address to 16 bit relative, using sign and dropping
+	* first bit to gain 2x range
+	.macro	ENCODE_ADDRESS	reg,reg2
+	move.l	\reg,\reg2
+	sub.l	#mid_code_base,\reg2   | "center" address
+	asr.l	#1,\reg2			   | 68k addresses are even, pack to gain range
+	.ifndef	RELEASE
+	* test for overflow
+	swap	\reg2
+	cmp.w	#-1,\reg2
+	jeq		okay\@   | negative, but not too much :)
+	tst.w	\reg2
+	jeq		okay\@   | not too big
+	BREAKPOINT 	"encode address out of range"
+	ILLEGAL
+okay\@:
+	swap	\reg2
+	.endif
+	.endm
+	
+	* decode 16 bit relative address to 32 bit absolute, using sign and dropping
+	* first bit to gain 2x range
+	.macro	DECODE_ADDRESS
+	move.w	a0,d6	| with sign extension
+	ext.w	d6
+	asl.l	#1,d6	| times 2
+	add.l	#mid_code_base,d6
+	move.l	d6,a0	| put back in a0
+	.endm
 
+	.macro	POP_ENCODED_CALLER_ADDRESS_IN_D
+	BREAKPOINT	"pop encoded!!"
+	move.l	(a7)+,d6
+	ENCODE_ADDRESS	d6,d1
+	.endm
+	
+	
+	.macro	JSR_INDIRECT	offset,reg
+	BREAKPOINT	"jsr indirect!!"
+	GET_REG_INDIRECT_ADDRESS	\offset,\reg
+	DECODE_ADDRESS
+	jsr		(a0)
+	.endm
 
 multiply_ab:
 	and.w	#0xFF,d0
@@ -481,7 +523,7 @@ multiply_ab:
 	rts
 	.ifndef	RELEASE
 	* to trace at some virtual PCs, insert this macro
-	.macro	LOG_REGS	the_pc
+	.macro	LOG_REGS_FULL	the_pc
 	move.w	sr,-(a7)
 	move.w	#0x\the_pc,-(a7)
 	move.w	#0,-(a7)
@@ -489,7 +531,7 @@ multiply_ab:
 	addq.w	#4,a7
 	move.w	(a7)+,sr
 	.endm
-	.macro	LOG_REGS_QUICK	the_pc
+	.macro	LOG_REGS	the_pc
 	move.w	sr,-(a7)
 
 	move.w	#0x\the_pc,0x100

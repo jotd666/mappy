@@ -66,7 +66,7 @@ DECL_VERSION:MACRO
 	ENDC
 	ENDM
 _data   dc.b    0
-_name	dc.b	"Dig Dug 2 (AGA)"
+_name	dc.b	"Mappy (AGA)"
 	IFD	CHIP_ONLY
 	dc.b	" (cd32load/chip)"
 	ENDC
@@ -135,5 +135,5 @@ _resload:
 progstart
     dc.l    0
 exe
-	dc.b	"digdug2_aga",0
+	dc.b	"mappy_aga",0
 	

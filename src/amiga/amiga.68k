@@ -648,7 +648,8 @@ dump_and_quit:
 	.endif
 
 correct_push_sr_code:
-	lea	push_sr_table,a0
+	rts
+	*lea	push_sr_table,a0
 0:
 	move.l	(a0)+,d0
 	jeq		1f
@@ -882,7 +883,7 @@ demo_game:
 	
 	moveq	#0,d5		| set D5.L to 0
 	jbsr	cpu_init
-	jmp			reset_e5ba					| pass control to the cpu core
+	jmp			self_tests_over_f768					| pass control to the cpu core
 
 
 * dip switches & I/O memory at start
@@ -917,7 +918,7 @@ do_irq:
 	* we must not change d5 until game irq has been called
 	move.w	target_usp_value,d5
 0:
-	jra		irq_8000					| pass control to the cpu core
+	jra		irq_ff01					| pass control to the cpu core
 	
 * just in case some hardware calls nmi
 _nmi:
@@ -1140,54 +1141,48 @@ osd_is_vblank_interrupt_enabled:
 
 * Z: set if not playing
 is_game_playing:
-	* check game in play flag plus
-	* screen somewhere to avoid insert coin by fire on
-	* "get ready" screen or "best scores"
-	movem.l	a5/a6,-(a7)
-	GET_MEMORY_START_AND_DP
-	cmp.b	#0x52,(0X1AE,a6)	| "R" from ready screen: game considered in play
-	jeq		1f
-	cmp.b	#0x42,(0X228,a6)	| "B" from best scores: game considered in play
-	jeq		1f
-	tst.b	game_in_play_101b(a6)
-0:
-	movem.l	(a7)+,a5/a6
-	rts
-1:
+*	* check game in play flag plus
+*	* screen somewhere to avoid insert coin by fire on
+*	* "get ready" screen or "best scores"
+*	movem.l	a5/a6,-(a7)
+*	GET_MEMORY_START_AND_DP
+*	cmp.b	#0x52,(0X1AE,a6)	| "R" from ready screen: game considered in play
+*	jeq		1f
+*	cmp.b	#0x42,(0X228,a6)	| "B" from best scores: game considered in play
+*	jeq		1f
+*	tst.b	game_in_play_101b(a6)
+*0:
+*	movem.l	(a7)+,a5/a6
+*	rts
+*1:
 	cmp.l	#0,a6		| unset Z
 	jra		0b
 	
 skip_level:
-	movem.l	a6/a5,-(a7)
-	GET_MEMORY_START_AND_DP
-	move.b	#1,level_completed_flag_10d1(a6)
-	movem.l	(a7)+,a6/a5
+*	movem.l	a6/a5,-(a7)
+*	GET_MEMORY_START_AND_DP
+*	move.b	#1,level_completed_flag_10d1(a6)
+*	movem.l	(a7)+,a6/a5
 	rts
 
-toggle_monsters:
-	movem.l	a6/a5,-(a7)
-	GET_MEMORY_START_AND_DP
-	eor.b	#1,enemies_active_10d2(a6)
-	movem.l	(a7)+,a6/a5
-	rts
 
 lose_all_lives:
-	movem.l	a6/a5,-(a7)
-	GET_MEMORY_START_AND_DP
-	move.b	#1,nb_lives_1703(a6)					| no more lives
-	movem.l	(a7)+,a6/a5
+*	movem.l	a6/a5,-(a7)
+*	GET_MEMORY_START_AND_DP
+*	move.b	#1,nb_lives_1703(a6)					| no more lives
+*	movem.l	(a7)+,a6/a5
 	rts
 
 add_100000_points:
-	movem.l	a5/a6,-(a7)
-	GET_MEMORY_START_AND_DP
-	movem.w	d0/d7,-(a7)
-	move.b	player_1_score_1700(a6),d0
-	MOVEQ	#1,d7
-	abcd	d7,d0
-	move.b	d0,player_1_score_1700(a6)
-	movem.w	(a7)+,d0/d7
-	movem.l	(a7)+,a5/a6
+*	movem.l	a5/a6,-(a7)
+*	GET_MEMORY_START_AND_DP
+*	movem.w	d0/d7,-(a7)
+*	move.b	player_1_score_1700(a6),d0
+*	MOVEQ	#1,d7
+*	abcd	d7,d0
+*	move.b	d0,player_1_score_1700(a6)
+*	movem.w	(a7)+,d0/d7
+*	movem.l	(a7)+,a5/a6
 	rts
 
 
@@ -1222,7 +1217,7 @@ really_update_scroll:
 	lea		scroll_table,a2
 	move.l		background_ptr,a4
 	moveq	#0,d5
-	move.b	(scroll_value_1008,a6),d5	| scroll value 0=>0xFF
+	move.b	(scroll_value_1389,a6),d5	| scroll value 0=>0xFF
 	not.b	d5
 	.ifdef	OCS_VERSION
 	move.b	d5,sprite_x_offset
@@ -3384,13 +3379,13 @@ handle_keyboard:
 	st.b	cheat_used
 	jbsr	skip_level
 0:
-	cmp.b	#0x51,d0	| F2 key: toggle monsters
+	cmp.b	#0x51,d0	| F2 key: -
 	bne.b	0f
 	st.b	cheat_used
 	move.w	#0x0FF,_custom+color
-	jbsr	toggle_monsters
+
 0:
-	cmp.b	#0x52,d0	| F3 key
+	cmp.b	#0x52,d0	| F3 key: add to score
 	bne.b	0f
 	st.b	cheat_used
 	* add 10000 points
@@ -3482,7 +3477,7 @@ beamdelay:
 	rts
 
 
-SCORE_FILE_SIZE = 0x200-0x1b0
+SCORE_FILE_SIZE = 0x200-0x1b0  | wrong
 
 		
 osd_read_high_scores:
@@ -3510,16 +3505,16 @@ osd_read_high_scores:
 	GET_MEMORY_START_AND_DP
 	* first just copy buffer as contiguous 
 
-	lea		high_score_buffer(pc),a0
-	lea	high_score_table_11b0(a6),a1
+*	lea		high_score_buffer(pc),a0
+*	lea	high_score_table_11b0(a6),a1
 	move.w	#SCORE_FILE_SIZE-1,d0
 0:
 	move.b	(a0)+,(a1)+
 	dbf		d0,0b
 
 	* update high score (duplicated)
-	lea		high_score_table_11b0(a6),a0
-	lea		high_score_100b(a6),a1
+*	lea		high_score_table_11b0(a6),a0
+*	lea		high_score_100b(a6),a1
 	moveq	#2,d1
 	* encoding is different
 2:
@@ -3545,8 +3540,8 @@ osd_write_high_scores:
 	GET_MEMORY_START_AND_DP
 	* just copy buffer as contiguous 
 
-	lea		high_score_buffer(pc),a1
-	lea	high_score_table_11b0(a6),a0
+*	lea		high_score_buffer(pc),a1
+*	lea	high_score_table_11b0(a6),a0
 	move.w	#SCORE_FILE_SIZE-1,d0
 0:
 	move.b	(a0)+,(a1)+
@@ -3641,8 +3636,8 @@ osd_music_stop:
 	move.w	last_started_music_sound,d0
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	lea		(sound_level_start_tune_4040,a6),a0	
-	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+	*lea		(sound_level_start_tune_4040,a6),a0	
+	*clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
 
 
 	move.l	d1,a5
@@ -3676,7 +3671,7 @@ osd_sound_start:
 1:
 	move.l	a5,d1
 	GET_MEMORY_START_AND_DP
-	clr.w	(sound_level_start_tune_4040,a6)
+	*clr.w	(sound_level_start_tune_4040,a6)
 	jbsr	osd_music_stop
 	move.l	d1,a5
 0:
@@ -3856,8 +3851,8 @@ handle_music_termination:
 	move.b	(a0,d0.w),d0
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	lea		(sound_level_start_tune_4040,a6),a0
-	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+	*lea		(sound_level_start_tune_4040,a6),a0
+	*clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
 	move.l	d1,a5
 0:
 	rts
