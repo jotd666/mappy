@@ -1011,6 +1011,11 @@ level3_interrupt:
 	eor.b	#1,flip_flop
 	jeq		23f
 0:
+
+	* wait for blits to complete (via soft flag that last blitter command
+	* sets when reaching the end of the list) and reset list pointers
+	
+
 	jbsr		really_update_sprites
 	
 	
@@ -1019,6 +1024,7 @@ level3_interrupt:
 	.endif
 
 	jbsr		really_update_tiles
+
 	
 23:
 	jbsr	read_inputs
