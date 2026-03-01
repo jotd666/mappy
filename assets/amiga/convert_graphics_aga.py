@@ -258,7 +258,7 @@ def add_hw_sprite(index,name,cluts=[0]):
 title_pic = Image.open(sheets_path / "title.png")
 
 sprite_sheet_dict = {i:Image.open(sheets_path / "sprites" / f"pal_{i:02x}.png") for i in range(NB_SPRITE_CLUTS)}
-tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(NB_TILE_CLUTS)}
+tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1A)}
 
 tile_palette = set()
 tile_set_list = []
@@ -299,8 +299,8 @@ for clut_index,tsd in sprite_sheet_dict.items():
     sprite_palette.update(sp)
 
 # destroy title tiles we don't need them (clut=1)
-for i in range(0xE0,0xF5):
-    sprite_set_list[1][i] = None
+##for i in range(0xE0,0xF5):
+##    sprite_set_list[1][i] = None
 
 sprite_palette = sorted(sprite_palette)
 magi = sprite_palette.index(magenta)
@@ -409,7 +409,7 @@ sprite_table,next_cache_id = read_tileset(sprite_set_list,sprite_palette,[True,F
 sprite_table_x_size,next_cache_id = read_tileset(sprite_set_list_x_size,sprite_palette,[True,False,True,False],cache=bob_plane_cache, is_bob=True,next_cache_id=next_cache_id)
 
 
-title_bitplane_data = bitplanelib.palette_image2raw(title_pic,None,sprite_palette,generate_mask=True,mask_color=magenta)
+title_bitplane_data = bytes(200)  #bitplanelib.palette_image2raw(title_pic,None,sprite_palette,generate_mask=True,mask_color=magenta)
 
 full_title,next_cache_id = split_bitplane_data(title_bitplane_data,nb_planes+1,bob_plane_cache,title_pic.size[0]//8 + 2,title_pic.size[1],0,next_cache_id)
 
@@ -559,18 +559,18 @@ with open(os.path.join(aga_src_dir,"graphics.68k"),"w") as f:
                             elif orientation == "mirror":
                                 f.write(f"\t.word\t-1  | no mirror declared\n")
 
-    if possible_hw_sprites:
-        f.write("hws_table:\n")
-        for i,tile_entry in enumerate(sprite_table_no_size):
-            for orientation in ['standard','mirror']:
-                f.write("\t.long\t")
-                if any(t and "sprdat" in t[orientation] for t in tile_entry):
-                    prefix = sprite_names.get(i,"bob")
-                    prefix = f"hws_{prefix}_{i:02x}_{orientation}"
-                    f.write(prefix)
-                else:
-                    f.write("0")
-                f.write("\n")
+
+    f.write("hws_table:\n")
+    for i,tile_entry in enumerate(sprite_table_no_size):
+        for orientation in ['standard','mirror']:
+            f.write("\t.long\t")
+            if possible_hw_sprites and any(t and "sprdat" in t[orientation] for t in tile_entry):
+                prefix = sprite_names.get(i,"bob")
+                prefix = f"hws_{prefix}_{i:02x}_{orientation}"
+                f.write(prefix)
+            else:
+                f.write("0")
+            f.write("\n")
 
         # HW sprites clut declaration
         for i,tile_entry in enumerate(sprite_table_no_size):

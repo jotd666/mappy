@@ -113,7 +113,12 @@ with open(source_dir / "conv.s") as f:
             line = "\ttst.b\td6\n"+change_instruction("jeq\tl_f346",lines,i)
             lines[i+1] = remove_error(lines[i+1])
         ###################################################
-
+        if address == 0xA05F:
+            # replace stack push by target stack push, game needs that and changes that
+            line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\td2,-(a0)  | pushing on target stack\n"
+        if address == 0xa063:
+            # replace stack pull by target stack pull, game needs that and changes that
+            line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\t(a0),d2  | pulling from target stack\n"
         if address in [0xfa4e,0xe94b]:
             line = line.replace("move.w\t#","lea\t")
             line = line.replace(",d",",a")

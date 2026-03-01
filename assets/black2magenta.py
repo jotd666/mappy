@@ -14,16 +14,16 @@ src_sprite_dir = this_dir / "sheets" / "sprites_black"
 dst_sprite_dir = this_dir / "sheets" / "sprites"
 
 red_image = Image.open(src_sprite_dir / "pal_05.png")
-
+##
 red_pixels = set()
-
-# this palette has the nice property of having black not merged with background
-# black colors in other palettes are there red, so we can backport the black color in other palettes
-for x in range(red_image.size[0]):
-    for y in range(red_image.size[1]):
-        p = red_image.getpixel((x,y))
-        if p == (255,0,0):
-            red_pixels.add((x,y))
+##
+### this palette has the nice property of having black not merged with background
+### black colors in other palettes are there red, so we can backport the black color in other palettes
+##for x in range(red_image.size[0]):
+##    for y in range(red_image.size[1]):
+##        p = red_image.getpixel((x,y))
+##        if p == (255,0,0):
+##            red_pixels.add((x,y))
 
 for i in range(16):
     imgname = f"pal_{i:02X}.png"

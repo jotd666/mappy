@@ -167,7 +167,7 @@ A135: 27 03       BEQ    $A13A
 A137: 7E A9 94    JMP    $A994
 A13A: 8E 07 80    LDX    #$0780
 A13D: 86 20       LDA    #$20
-A13F: A7 80       STA    ,X+
+A13F: A7 80       STA    ,X+	; [video_address]
 A141: 8C 07 C0    CMPX   #$07C0
 A144: 26 F9       BNE    $A13F
 A146: BD E0 00    JSR    $E000
@@ -186,7 +186,7 @@ A191: 86 47       LDA    #$47
 A193: BD F3 69    JSR    $F369
 A196: 8E 00 00    LDX    #$0000
 A199: CC 5D 5D    LDD    #$5D5D
-A19C: ED 81       STD    ,X++
+A19C: ED 81       STD    ,X++		; [video_address_word]
 A19E: 8C 07 80    CMPX   #$0780
 A1A1: 25 F9       BCS    $A19C
 A1A3: 86 FF       LDA    #$FF
@@ -4934,13 +4934,14 @@ D019: 6F C9 01 00 CLR    $0100,U
 D01D: 6F 84       CLR    ,X
 D01F: 39          RTS
 
+; diverts function sequence loop at A05D, change return X after call
 save_context_d08a:
 D08A: 35 06       PULS   D  		; get return address                                        
-D08C: FE 17 7E    LDU    $177E                                      
-D08F: ED D8 FE    STD    [-$02,U]                                   
-D092: 39          RTS                                               
+D08C: FE 17 7E    LDU    $177E   	; stack_top_1780-2,  pushed at A05F
+D08F: ED D8 FE    STD    [-$02,U]   ; change next X (pulled at A063)
+D092: 39          RTS              
+                                 
 D093: B7 13 B2    STA    $13B2
-
 save_context_d096:
 D096: 35 06       PULS   D
 D098: FD 13 A0    STD    $13A0
@@ -4982,12 +4983,12 @@ D0E4: 20 D3       BRA    $D0B9
 
 E000: CE 07 B0    LDU    #$07B0                                       
 E003: CC 20 20    LDD    #$2020                                       
-E006: ED C1       STD    ,U++                                         
+E006: ED C1       STD    ,U++            ; [video_address_word]                             
 E008: 11 83 07 C0 CMPU   #$07C0                                       
 E00C: 26 F8       BNE    $E006
 E00E: 8E 0F B3    LDX    #$0FB3
 E011: 86 42       LDA    #$42
-E013: A7 80       STA    ,X+
+E013: A7 80       STA    ,X+		; [video_address]
 E015: 8C 0F BC    CMPX   #$0FBC
 E018: 26 F9       BNE    $E013
 E01A: B6 48 02    LDA    credits_tens_4802
@@ -5005,16 +5006,16 @@ E036: CE 07 B5    LDU    #$07B5
 E039: B6 48 02    LDA    credits_tens_4802
 E03C: 84 0F       ANDA   #$0F
 E03E: 27 0A       BEQ    $E04A
-E040: A7 C2       STA    ,-U
+E040: A7 C2       STA    ,-U		; [video_address]
 E042: B6 48 03    LDA    credits_unit_4803
 E045: 84 0F       ANDA   #$0F
-E047: A7 C2       STA    ,-U
+E047: A7 C2       STA    ,-U		; [video_address]
 E049: 39          RTS
 E04A: B6 48 03    LDA    credits_unit_4803
 E04D: 84 0F       ANDA   #$0F
-E04F: A7 C2       STA    ,-U
+E04F: A7 C2       STA    ,-U		; [video_address]
 E051: 86 20       LDA    #$20
-E053: A7 C2       STA    ,-U
+E053: A7 C2       STA    ,-U		; [video_address]
 E055: 39          RTS
 
 E068: 96 31       LDA    <$31                                        
@@ -5026,8 +5027,8 @@ E070: B7 13 8C    STA    $138C
 E073: BD F4 C7    JSR    $F4C7
 E076: CE 07 82    LDU    #$0782
 E079: 86 20       LDA    #$20
-E07B: A7 C8 20    STA    $20,U
-E07E: A7 C0       STA    ,U+
+E07B: A7 C8 20    STA    $20,U					; [video_address]
+E07E: A7 C0       STA    ,U+				; [video_address]
 E080: 11 83 07 90 CMPU   #$0790
 E084: 26 F5       BNE    $E07B
 E086: CE 07 82    LDU    #$0782
@@ -5038,18 +5039,18 @@ E08E: 54          LSRB
 E08F: 54          LSRB
 E090: 27 26       BEQ    $E0B8
 E092: 86 27       LDA    #$27
-E094: A7 41       STA    $1,U
+E094: A7 41       STA    $1,U					; [unchecked_address]
 E096: 4C          INCA
-E097: A7 C4       STA    ,U
+E097: A7 C4       STA    ,U				; [unchecked_address]
 E099: 4C          INCA
-E09A: A7 C8 21    STA    $21,U
+E09A: A7 C8 21    STA    $21,U				; [unchecked_address]
 E09D: 4C          INCA
-E09E: A7 C8 20    STA    $20,U
+E09E: A7 C8 20    STA    $20,U					; [unchecked_address]
 E0A1: 86 1A       LDA    #$1A
-E0A3: A7 C9 08 00 STA    $0800,U
-E0A7: A7 C9 08 01 STA    $0801,U
-E0AB: A7 C9 08 20 STA    $0820,U
-E0AF: A7 C9 08 21 STA    $0821,U
+E0A3: A7 C9 08 00 STA    $0800,U		; [video_address]
+E0A7: A7 C9 08 01 STA    $0801,U        ; [video_address]
+E0AB: A7 C9 08 20 STA    $0820,U        ; [video_address]
+E0AF: A7 C9 08 21 STA    $0821,U        ; [video_address]
 E0B3: 33 42       LEAU   $2,U
 E0B5: 5A          DECB
 E0B6: 26 DA       BNE    $E092
@@ -5059,29 +5060,29 @@ E0BD: C1 05       CMPB   #$05
 E0BF: 25 25       BCS    $E0E6
 E0C1: C0 05       SUBB   #$05
 E0C3: 86 23       LDA    #$23
-E0C5: A7 41       STA    $1,U
+E0C5: A7 41       STA    $1,U   ; [unchecked_address]
 E0C7: 4C          INCA
-E0C8: A7 C4       STA    ,U
+E0C8: A7 C4       STA    ,U   ; [unchecked_address]
 E0CA: 4C          INCA
-E0CB: A7 C8 21    STA    $21,U
+E0CB: A7 C8 21    STA    $21,U    ; [unchecked_address]
 E0CE: 4C          INCA
-E0CF: A7 C8 20    STA    $20,U
+E0CF: A7 C8 20    STA    $20,U     ; [unchecked_address]
 E0D2: 86 19       LDA    #$19
-E0D4: A7 C9 08 00 STA    $0800,U
-E0D8: A7 C9 08 01 STA    $0801,U
-E0DC: A7 C9 08 20 STA    $0820,U
-E0E0: A7 C9 08 21 STA    $0821,U
+E0D4: A7 C9 08 00 STA    $0800,U      ; [video_address]
+E0D8: A7 C9 08 01 STA    $0801,U      ; [video_address]
+E0DC: A7 C9 08 20 STA    $0820,U      ; [video_address]
+E0E0: A7 C9 08 21 STA    $0821,U      ; [video_address]
 E0E4: 33 42       LEAU   $2,U
 E0E6: 5D          TSTB
 E0E7: 26 01       BNE    $E0EA
 E0E9: 39          RTS
 E0EA: 86 21       LDA    #$21
-E0EC: A7 C4       STA    ,U
+E0EC: A7 C4       STA    ,U      ; [unchecked_address]
 E0EE: 4C          INCA
-E0EF: A7 C8 20    STA    $20,U
+E0EF: A7 C8 20    STA    $20,U  ; [unchecked_address]
 E0F2: 86 18       LDA    #$18
-E0F4: A7 C9 08 00 STA    $0800,U
-E0F8: A7 C9 08 20 STA    $0820,U
+E0F4: A7 C9 08 00 STA    $0800,U       ; [video_address]
+E0F8: A7 C9 08 20 STA    $0820,U       ; [video_address]
 E0FC: 33 41       LEAU   $1,U
 E0FE: 5A          DECB
 E0FF: 20 E5       BRA    $E0E6
@@ -5094,19 +5095,19 @@ E110: 10 8E D5 24 LDY    #$D524
 E114: BD E1 91    JSR    $E191
 E117: CE 00 66    LDU    #$0066
 E11A: 86 A7       LDA    #$A7
-E11C: A7 C4       STA    ,U
+E11C: A7 C4       STA    ,U				; [unchecked_address]
 E11E: 5F          CLRB
-E11F: E7 C9 08 00 STB    $0800,U
+E11F: E7 C9 08 00 STB    $0800,U		; [video_address]
 E123: 86 19       LDA    #$19
 E125: 33 C8 20    LEAU   $20,U
-E128: A7 C4       STA    ,U
-E12A: E7 C9 08 00 STB    $0800,U
+E128: A7 C4       STA    ,U				; [unchecked_address]
+E12A: E7 C9 08 00 STB    $0800,U			; [video_address]
 E12E: 33 C8 20    LEAU   $20,U
 E131: 11 83 03 A6 CMPU   #$03A6
 E135: 26 F1       BNE    $E128
 E137: 86 A8       LDA    #$A8
-E139: A7 C4       STA    ,U
-E13B: E7 C9 08 00 STB    $0800,U
+E139: A7 C4       STA    ,U			; [unchecked_address]
+E13B: E7 C9 08 00 STB    $0800,U	; [video_address]			
 E13F: 8E 00 67    LDX    #$0067
 E142: 86 1D       LDA    #$1D
 E144: A7 80       STA    ,X+
@@ -5151,10 +5152,10 @@ E19F: 3D          MUL
 E1A0: 30 8B       LEAX   D,X
 E1A2: C6 06       LDB    #$06
 E1A4: A6 80       LDA    ,X+
-E1A6: A7 C4       STA    ,U
+E1A6: A7 C4       STA    ,U			; [unchecked_address]
 E1A8: B6 13 91    LDA    $1391
 E1AB: 8B 40       ADDA   #$40
-E1AD: A7 C9 08 00 STA    $0800,U
+E1AD: A7 C9 08 00 STA    $0800,U	; [video_address]
 E1B1: 33 C8 20    LEAU   $20,U
 E1B4: 5A          DECB
 E1B5: 26 ED       BNE    $E1A4
