@@ -84,7 +84,10 @@ with open(source_dir / "conv.s") as f:
 
         if address in context_save:
             # code does a PULS D to get caller address
-            line = change_instruction("POP_ENCODED_CALLER_ADDRESS_IN_D",lines,i)
+            line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td1",lines,i)
+        elif address == 0xA96B:
+            # code does a PULS D to get caller address
+            line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td4",lines,i)
         elif address == 0xd08f:
             # remove the MAKE_D that destroys D1 value
             if "MAKE_D" in lines[i-1]:
@@ -121,7 +124,7 @@ with open(source_dir / "conv.s") as f:
             line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\td2,-(a0)  | pushing on target stack\n"
         if address == 0xa063:
             # replace stack pull by target stack pull, game needs that and changes that
-            line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\t(a0),d2  | pulling from target stack\n"
+            line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\t(-2,a0),d2  | pulling from target stack\n"
         if address in [0xfa4e,0xe94b]:
             line = line.replace("move.w\t#","lea\t")
             line = line.replace(",d",",a")

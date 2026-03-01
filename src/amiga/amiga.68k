@@ -1447,6 +1447,8 @@ cgo_ok_\@:
 * */
 
 really_update_hw_sprites:
+	rts
+	
 	************************************************
 	* draw current sprites from 6809 sprite memory *
 	************************************************

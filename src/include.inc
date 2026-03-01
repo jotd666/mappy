@@ -468,9 +468,9 @@ get_address:
 	move.l	\reg,\reg2
 	sub.l	#mid_code_base,\reg2   | "center" address
 	asr.l	#1,\reg2			   | 68k addresses are even, pack to gain range
-	.ifndef	RELEASE
-	* test for overflow
+	* test for overflow / remove negative lsb
 	swap	\reg2
+	.ifndef	RELEASE
 	cmp.w	#-1,\reg2
 	jeq		okay\@   | negative, but not too much :)
 	tst.w	\reg2
@@ -478,8 +478,9 @@ get_address:
 	BREAKPOINT 	"encode address out of range"
 	ILLEGAL
 okay\@:
-	swap	\reg2
 	.endif
+	clr		\reg2
+	swap	\reg2
 	.endm
 	
 	* decode 16 bit relative address to 32 bit absolute, using sign and dropping
@@ -492,11 +493,11 @@ okay\@:
 	move.l	d6,a0	| put back in a0
 	.endm
 
-	.macro	POP_ENCODED_CALLER_ADDRESS_IN_D
-	BREAKPOINT	"pop encoded!!"
+	.macro	POP_ENCODED_CALLER_ADDRESS	reg
 	move.l	(a7)+,d6
-	ENCODE_ADDRESS	d6,d1
+	ENCODE_ADDRESS	d6,\reg
 	.endm
+	
 	
 	
 	.macro	JSR_INDIRECT	offset,reg
