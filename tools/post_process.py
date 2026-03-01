@@ -85,7 +85,10 @@ with open(source_dir / "conv.s") as f:
         if address in context_save:
             # code does a PULS D to get caller address
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS_IN_D",lines,i)
-
+        elif address == 0xd08f:
+            # remove the MAKE_D that destroys D1 value
+            if "MAKE_D" in lines[i-1]:
+                lines[i-1] = ""
         if address == 0xD01F:
             # add mid-code label
             line = "mid_code_base:\n"+line

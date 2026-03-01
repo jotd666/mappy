@@ -4938,7 +4938,7 @@ D01F: 39          RTS
 save_context_d08a:
 D08A: 35 06       PULS   D  		; get return address                                        
 D08C: FE 17 7E    LDU    $177E   	; stack_top_1780-2,  pushed at A05F
-D08F: ED D8 FE    STD    [-$02,U]   ; change next X (pulled at A063)
+D08F: ED D8 FE    STD    [-$02,U]   ; change value pointed by next X (pulled at A063)
 D092: 39          RTS              
                                  
 D093: B7 13 B2    STA    $13B2
