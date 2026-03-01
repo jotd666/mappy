@@ -43,9 +43,9 @@ A007: FD 13 E4    STD    $13E4
 ; install jump table in ram
 A00A: 8E D0 20    LDX    #function_and_args_table_d020
 A00D: CE 14 00    LDU    #$1400
-A010: EC 81       LDD    ,X++
+A010: EC 81       LDD    ,X++		; ROM entry
 A012: 27 06       BEQ    $A01A
-A014: EE 81       LDU    ,X++
+A014: EE 81       LDU    ,X++		; destination address in RAM
 A016: ED C4       STD    ,U
 A018: 20 F6       BRA    $A010
 A01A: 7F 48 09    CLR    $4809
@@ -107,15 +107,15 @@ A09A: 1F 8B       TFR    A,DP
 A09C: BD F3 76    JSR    $F376
 A09F: 8E 0F 80    LDX    #$0F80
 A0A2: 86 00       LDA    #$00
-A0A4: A7 80       STA    ,X+
+A0A4: A7 80       STA    ,X+		; [video_address]
 A0A6: 8C 0F C0    CMPX   #$0FC0
 A0A9: 26 F9       BNE    $A0A4
 A0AB: 86 43       LDA    #$43
-A0AD: A7 80       STA    ,X+
+A0AD: A7 80       STA    ,X+		; [video_address]
 A0AF: 8C 0F E0    CMPX   #$0FE0
 A0B2: 26 F9       BNE    $A0AD
 A0B4: 86 49       LDA    #$49
-A0B6: A7 80       STA    ,X+
+A0B6: A7 80       STA    ,X+		; [video_address]
 A0B8: 8C 10 00    CMPX   #$1000
 A0BB: 26 F9       BNE    $A0B6
 A0BD: 8E A1 7A    LDX    #$A17A
@@ -130,7 +130,7 @@ A0D4: B7 13 86    STA    $1386
 A0D7: 7F 13 85    CLR    $1385
 A0DA: 7F 13 87    CLR    $1387
 A0DD: 8E 07 ED    LDX    #$07ED
-A0E0: 6F 80       CLR    ,X+
+A0E0: 6F 80       CLR    ,X+		; [video_address]
 A0E2: 8C 07 F0    CMPX   #$07F0
 A0E5: 26 F9       BNE    $A0E0
 A0E7: 4F          CLRA
@@ -7573,6 +7573,7 @@ F70D: B7 07 02    STA    $0702
 F710: 86 4D       LDA    #$4D
 F712: B7 06 E2    STA    $06E2
 F715: C6 01       LDB    #$01
+; checksum of part of the game ROM
 F717: 8E A0 00    LDX    #$A000
 F71A: 4F          CLRA
 F71B: AB 80       ADDA   ,X+
@@ -7581,6 +7582,7 @@ F720: 8C C0 00    CMPX   #$C000
 F723: 26 F6       BNE    $F71B
 F725: 81 11       CMPA   #$11
 F727: 26 37       BNE    $F760
+; checksum of part of the game ROM (up to this code)
 F729: 5C          INCB
 F72A: 4F          CLRA
 F72B: AB 80       ADDA   ,X+
@@ -7607,6 +7609,7 @@ F759: 27 F6       BEQ    $F751
 F75B: 84 FF       ANDA   #$FF
 F75D: 27 09       BEQ    $F768
 F75F: 5C          INCB
+; error
 F760: F7 06 A2    STB    $06A2
 F763: F7 80 00    STB    watchdog_8000
 F766: 20 FB       BRA    $F763

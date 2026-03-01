@@ -863,10 +863,21 @@ demo_game:
 0:
 	move.l	(a0)+,(a1)+
 	dbf		d0,0b
-
-
 	
 	GET_MEMORY_START_AND_DP
+	* special patch: change ROM addresses to match the encoded versions
+	* of 32-bit addresses of ported code
+	lea	rom_function_table,a1
+	GET_ADDRESS		function_and_args_table_d020
+10:
+	move.l	(a1)+,d0
+	jeq		11f
+	ENCODE_ADDRESS	d0,d1
+	move.w	d1,(a0)
+	addq	#4,a0
+	jra		10b
+11:
+	
 	* initialize namco IO
 	lea	namco_io_start_memory_4800(pc),a0
 	lea	(namco_io_4800,a6),a1
@@ -879,6 +890,34 @@ demo_game:
 	jbsr	cpu_init
 	jmp			self_tests_over_f768					| pass control to the cpu core
 
+rom_function_table:
+    .long   l_a098
+    .long   l_c000
+    .long   l_c013
+    .long   l_c029
+    .long   l_c04b
+    .long   l_c0ea
+    .long   l_c108
+    .long   l_c123
+    .long   l_c1e1
+    .long   l_c328
+    .long   l_c395
+    .long   l_c57b
+    .long   l_c5db
+    .long   l_c638
+    .long   l_c6db
+    .long   l_ce19
+    .long   l_c81a
+    .long   l_ca00
+    .long   l_cad6
+    .long   l_cbba
+    .long   l_ce80
+    .long   l_ccd3
+    .long   l_cd22
+    .long   l_c7e5
+    .long   l_cf81
+    .long   l_cfd0
+    .long   0
 
 * dip switches & I/O memory at start
 * the settings are encoded with 3 lives, level select enabled, bonus life 30k/80k

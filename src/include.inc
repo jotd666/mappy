@@ -21,11 +21,6 @@
 
 	.include	"options.inc"
 	
-NATIVE_STACK_SIZE = 0x3000
-
-* if change here change also in "ram.68k"
-TASK_STACK_BITSHIFT = 8
-TASK_STACK_SIZE = (1<<TASK_STACK_BITSHIFT)
 
 
 	
@@ -491,7 +486,7 @@ okay\@:
 	* first bit to gain 2x range
 	.macro	DECODE_ADDRESS
 	move.w	a0,d6	| with sign extension
-	ext.w	d6
+	ext.l	d6
 	asl.l	#1,d6	| times 2
 	add.l	#mid_code_base,d6
 	move.l	d6,a0	| put back in a0
@@ -505,8 +500,8 @@ okay\@:
 	
 	
 	.macro	JSR_INDIRECT	offset,reg
-	BREAKPOINT	"jsr indirect!!"
-	GET_REG_INDIRECT_ADDRESS	\offset,\reg
+	GET_REG_ADDRESS	\offset,\reg
+	READ_BE_WORD	a0
 	DECODE_ADDRESS
 	jsr		(a0)
 	.endm

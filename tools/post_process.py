@@ -181,6 +181,34 @@ with open(source_dir / "mappy.68k","w") as fw:
 \t.global\tirq_ff01
 \t.global\tself_tests_over_f768
 
+.global    l_a098
+.global    l_c000
+.global    l_c013
+.global    l_c029
+.global    l_c04b
+.global    l_c0ea
+.global    l_c108
+.global    l_c123
+.global    l_c1e1
+.global    l_c328
+.global    l_c395
+.global    l_c57b
+.global    l_c5db
+.global    l_c638
+.global    l_c6db
+.global    l_ce19
+.global    l_c81a
+.global    l_ca00
+.global    l_cad6
+.global    l_cbba
+.global    l_ce80
+.global    l_ccd3
+.global    l_cd22
+.global    l_c7e5
+.global    l_cf81
+.global    l_cfd0
+.global mid_code_base
+
 play_sound:
     move.l  d0,-(a7)
     move.l  a0,d0
