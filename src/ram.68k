@@ -51,7 +51,11 @@ ram_start_0000:
 	.long	0
 	.endif
 
-	
+	.ifndef	RELEASE
+	.global	encoded_addresses
+encoded_addresses:
+	.skip	0x10000
+	.endif 
 
 high_score_beaten:
 	.word	0

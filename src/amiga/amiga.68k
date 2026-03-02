@@ -867,12 +867,13 @@ demo_game:
 	* of 32-bit addresses of ported code
 	lea	rom_function_table,a1
 	GET_ADDRESS		function_and_args_table_d020
+	move.l	a0,a2
 10:
 	move.l	(a1)+,d0
 	jeq		11f
 	ENCODE_ADDRESS	d0,d1
-	move.w	d1,(a0)
-	addq	#4,a0
+	move.w	d1,(a2)
+	addq	#4,a2
 	jra		10b
 11:
 	
@@ -930,8 +931,7 @@ do_irq:
 	* set base for RAM
 	jbsr	cpu_init
 	GET_MEMORY_START_AND_DP
-	clr.b	(0x4040,a6)		| temp music end!
-	
+	clr.b	(0x4040,a6)			| temp tell music that it has stopped
 	* should we set a saved copy of S or use the one that existed
 	* when the game was interrupted? depends if the game was interrupted
 	* in the original game code or in an osd function

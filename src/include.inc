@@ -481,14 +481,30 @@ get_address:
 	ILLEGAL
 okay\@:
 	.endif
+
 	clr		\reg2
 	swap	\reg2
+	
+	.ifndef	RELEASE
+	* log the encoded address, so it's legal
+	lea		encoded_addresses,a0
+	st.b (a0,\reg2\().l)
+	.endif
 	.endm
 	
 	* decode 16 bit relative address to 32 bit absolute, using sign and dropping
 	* first bit to gain 2x range
 	.macro	DECODE_ADDRESS
 	move.w	a0,d6	| with sign extension
+	.ifndef	RELEASE
+	and.l	#0xFFFF,d6
+	* log the encoded address, so it's legal
+	lea		encoded_addresses,a0
+	tst.b (a0,d6.l)
+	jne		known\@
+	BREAKPOINT	"encoded address in D6 not known!"
+known\@:
+	.endif	
 	ext.l	d6
 	asl.l	#1,d6	| times 2
 	add.l	#mid_code_base,d6
