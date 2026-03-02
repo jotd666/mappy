@@ -864,6 +864,8 @@ demo_game:
 	move.l	(a0)+,(a1)+
 	dbf		d0,0b
 	
+	move.l	#mid_code_base,0x124
+
 	GET_MEMORY_START_AND_DP
 	* special patch: change ROM addresses to match the encoded versions
 	* of 32-bit addresses of ported code
@@ -877,6 +879,7 @@ demo_game:
 	addq	#4,a0
 	jra		10b
 11:
+	
 	
 	* initialize namco IO
 	lea	namco_io_start_memory_4800(pc),a0

@@ -85,6 +85,9 @@ with open(source_dir / "conv.s") as f:
         if address in context_save:
             # code does a PULS D to get caller address
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td1",lines,i)
+        elif address == 0xa04a:
+            # encode address before writing to 1400
+            line = "\tmove.l\t#l_aa7e,d2\n\tENCODE_ADDRESS\td2,d6  | encode the address else it's wrongly decoded!\n\tmove.w\td6,d2\n"
         elif address == 0xA96B:
             # code does a PULS D to get caller address
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td4",lines,i)

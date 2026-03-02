@@ -530,7 +530,6 @@ multiply_ab:
 	.macro	LOG_REGS	the_pc
 	move.w	sr,-(a7)
 	move.w	#0x\the_pc,0x102
-
 	move.w	(a7)+,sr
 	.endm
 	
