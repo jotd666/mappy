@@ -1,4 +1,4 @@
 - sprites not displayed except title (double width/height not taken into account)
-- lockup on demo or starting game
-- highscore 20000 not shown
+- highscore 20000 not shown: 7E0 7E1
 - find a way to make display higher (remove the gap between house and scores?)
+- lockup on demo or starting game: check read on 48xx?

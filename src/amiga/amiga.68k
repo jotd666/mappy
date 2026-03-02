@@ -171,10 +171,6 @@ SIZE_X_BIT = 3
 
 
 * system bits
-BIT_INSERT_COIN_1 = 0
-BIT_INSERT_COIN_2 = 1
-
-
 
 
 BIT_UP = 0
@@ -923,11 +919,10 @@ rom_function_table:
     .long   0
 
 * dip switches & I/O memory at start
-* the settings are encoded with 3 lives, level select enabled, bonus life 30k/80k
-* nb lives are at 4814. F2 means 5 lives
+* TODO understand settings
 namco_io_start_memory_4800:
-	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF3,0xF0,0xF1,0xF1,0xF1,0xF1,0xF0,0xF0
-	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF4,0xF0,0xF4,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0
+	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF3,0xF1,0xF1,0xF1,0xF1,0xF1,0xF0,0xF0
+	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF4,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0
 
 
 
@@ -935,13 +930,6 @@ do_irq:
 	* set base for RAM
 	jbsr	cpu_init
 	GET_MEMORY_START_AND_DP
-* uncomment to ignore the wait for end of tunes that the game expects
-*	clr.l	(0x4040,a6)  | start music is done
-*	clr.l	(0x4044,a6)  | game over music is done
-*	clr.l	(0x4048,a6)  | game over music is done
-*	clr.l	(0x404C,a6)  | game over music is done
-*	clr.l	(0x4050,a6)  | death sfx is done & others
-*	clr.b	(0x404D,a6)  | death sfx is done
 
 	* should we set a saved copy of S or use the one that existed
 	* when the game was interrupted? depends if the game was interrupted
@@ -1094,13 +1082,13 @@ osd_read_4802:
 	.endm
 	
 osd_log_cpu:
+
 	* first, check that registers don't have a wrong longword mask
 	CHECK_ZERO_MSW	d1
 	CHECK_ZERO_MSW	d2
 	CHECK_ZERO_MSW	d3
 	CHECK_ZERO_MSW	d4
-	move.w	(6,a7),last_known_m6809_pc
-	
+	move.w	(4,a7),last_known_m6809_pc
 	move.w	last_known_m6809_pc,0x100
 	
 	move.l	a6,-(a7)
@@ -1186,17 +1174,17 @@ is_game_playing:
 *	* check game in play flag plus
 *	* screen somewhere to avoid insert coin by fire on
 *	* "get ready" screen or "best scores"
-*	movem.l	a5/a6,-(a7)
-*	GET_MEMORY_START_AND_DP
+	movem.l	a5/a6,-(a7)
+	GET_MEMORY_START_AND_DP
 *	cmp.b	#0x52,(0X1AE,a6)	| "R" from ready screen: game considered in play
 *	jeq		1f
 *	cmp.b	#0x42,(0X228,a6)	| "B" from best scores: game considered in play
 *	jeq		1f
 *	tst.b	game_in_play_101b(a6)
-*0:
-*	movem.l	(a7)+,a5/a6
-*	rts
-*1:
+0:
+	movem.l	(a7)+,a5/a6
+	rts
+1:
 	cmp.l	#0,a6		| unset Z
 	jra		0b
 	
@@ -1407,16 +1395,17 @@ cgo_ok_\@:
 	* jumps to 2f if not active
 	* returns d0 and d1 decoded
 	.macro		COMPUTE_SPRITE_COORDS
+	moveq	#0,d1
+	move.b	(TARGET_SPRITE_X_1,a0),d1
+	jeq		2f			| if zero then it's disabled in this game
 	moveq	#0,d2
 	move.b	(TARGET_SPRITE_COLOR,a0),d2
-	jeq		2f			| all sprites are black when color = 0
 	moveq	#0,d0
 	move.b	(TARGET_SPRITE_X_2,a0),d0
 	bclr	#2,d0
 	jne		2f	| if ((spriteram_3[offs+1] & 2) == 0)
 	
 	* compute sx
-	moveq	#0,d1
 	and.w	#0x1,d0
 	lsl.w	#8,d0		| times 0x100
 	sub.w	#40,d0
@@ -1876,21 +1865,21 @@ update_one_bob:
 	move.b	(TARGET_SPRITE_CODE,a0),d3
 
 	
-	cmp.b	#0x32+SPRITE_Y_CORRECTION,d0			| position of first "D" of dig dug title
-	jne		0f
-	cmp.b	#0xE0,d3
-	jcs		0f
-	jne		1f
-	* left top title sprite: draw entire title
-	move.l	a0,-(a7)
-	lea		title_pic,a0
-	jra		101f    | bypass sprite clut/mirror shit stuff, proceed to blit
-1:
-	cmp.b	#0xF5,d3
-	jcc		0f
-	* don't draw title sprites
-	rts
-0:
+*	cmp.b	#0x32+SPRITE_Y_CORRECTION,d0			| position of first "D" of dig dug title
+*	jne		0f
+*	cmp.b	#0xE0,d3
+*	jcs		0f
+*	jne		1f
+*	* left top title sprite: draw entire title
+*	move.l	a0,-(a7)
+*	lea		title_pic,a0
+*	jra		101f    | bypass sprite clut/mirror shit stuff, proceed to blit
+*1:
+*	cmp.b	#0xF5,d3
+*	jcc		0f
+*	* don't draw title sprites
+*	rts
+*0:
 
 	* load properties (for X size mostly, used for dragons and flames,
 	* where sprite tiles can be used with or without X size, which makes it
@@ -3330,6 +3319,7 @@ start_2p_game:
 start_1p_game:
 	movem.l	d0/d1/a5/a6,-(a7)
 	moveq	#1,d1
+	
 start_xp_game:
 	jbsr	get_nb_credits
 	sbcd	d1,d0

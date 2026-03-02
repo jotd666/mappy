@@ -29,6 +29,14 @@ def get_line_address(line):
     except (ValueError,IndexError):
         return None
 
+write_to_48xx = {0xFFA4,
+0xAA87,0xFC87,
+0xFC8A,
+0xFC8D,
+0xFF0A,
+
+
+}
 context_save = {0xc322,
 0xc575,
 0xcad0,
@@ -85,6 +93,8 @@ with open(source_dir / "conv.s") as f:
         if address in context_save:
             # code does a PULS D to get caller address
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td1",lines,i)
+##        elif address in write_to_48xx:
+##            line = remove_instruction(lines,i)
         elif address == 0xa04a:
             # encode address before writing to 1400
             line = "\tmove.l\t#l_aa7e,d2\n\tENCODE_ADDRESS\td2,d6  | encode the address else it's wrongly decoded!\n\tmove.w\td6,d2\n"
@@ -138,6 +148,18 @@ with open(source_dir / "conv.s") as f:
                 offset = "0"
             m68k_reg = "d4" if register == "u" else "d2"  # only u and x
             line = change_instruction(f"JSR_INDIRECT\t0x{offset},{m68k_reg}",lines,i)
+
+        # address E4D8 is written several times to resume context here, we have to encode the real address there!
+
+        if address in [0xA5A2,0xBD63] and ",d1" in line:
+            line = change_instruction("move.l\t#l_e4d8,d1",lines,i)+"\tENCODE_ADDRESS    D1,D1\n"
+            if "MAKE_D" in lines[i+1]:
+                lines[i+1] = ""
+
+        elif address in [0xBCF7,0xBDF9]:
+            line = change_instruction("move.l\t#l_e4d8,d4",lines,i)+"\tENCODE_ADDRESS    D4,D4\n"
+        elif address in [0xAB41]:
+            line = change_instruction("move.l\t#l_e4d8,d2",lines,i)+"\tENCODE_ADDRESS    D2,D2\n"
 
         if "GET_ADDRESS" in line:
             val = line.split()[1]

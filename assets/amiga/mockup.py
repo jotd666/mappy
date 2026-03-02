@@ -62,8 +62,6 @@ def get_single_image(color,sprite,flipx,flipy):
 
 def process(the_dump,name_filter=None,hide_named_sprite=None):
     the_dump = pathlib.Path(the_dump)
-    # in input, we use a MAME memory dump: save sprites,$A000,$400
-    # (0x200 are read, but there's a kind of double buffering
     with open(the_dump,"rb") as f:
         mem_1780 = bytearray(f.read())
 
@@ -82,9 +80,14 @@ def process(the_dump,name_filter=None,hide_named_sprite=None):
     for offs in range(0,0x80,2):
         if ((spriteram_3[offs+1] & 2) == 0):
             color = spriteram[offs+1]
-            if color != 0:
-                sprite = spriteram[offs]
-                sx = spriteram_2[offs+1] + 0x100 * (spriteram_3[offs+1] & 1) - 40
+            sprite = spriteram[offs]
+
+            sx1 = spriteram_2[offs+1]
+            sx2 = (spriteram_3[offs+1])
+
+            if sx1:
+
+                sx = sx1 + 0x100 * (sx2 & 1) - 40
                 sy = spriteram_2[offs] - 1
                 flipx = (spriteram_3[offs] & 0x01)
                 flipy = (spriteram_3[offs] & 0x02) >> 1
@@ -151,5 +154,5 @@ def process(the_dump,name_filter=None,hide_named_sprite=None):
     print(f"nb active: {nb_active}")
 
 
-process(r"sprite_ram_1780")
+process(r"sprites")
 

@@ -23,20 +23,24 @@ video_stuff_500a = $500A
 function_and_args_table_d020 = $d020
 scroll_registers_3800 = $3800
 scroll_value_1389 = $1389
+copy_of_namco_io_1370 = $1370
 
 ; set by namco chip when enough credits, 0: none, 1: 1 player, 2: 2 players
 number_of_players_4801 = $4801
 credits_tens_4802 = $4802
 credits_unit_4803 = $4803
 ; bit 3 bot both
-start_1p_4805 = $4805
-start_2p_4807 = $4807
 joystick_directions_4804 = $4804
 joystick_button_1_4805 = $4805
+joystick_button_2_4815 = $4815
+start_1p_4805 = $4805
+start_2p_4807 = $4807
 joystick_button_2_4815 = $4815
 io_register_4818 = $4818
 namco_io_4800 = $4800
 sync_1382 = $1382
+saved_address_1399 = $1399
+saved_address_13a0 = $13a0
 
 A000: 10 CE 17 80 LDS    #stack_top_1780
 A004: CC 00 00    LDD    #$0000
@@ -824,15 +828,16 @@ A962: 26 21       BNE    $A985
 A964: 86 3C       LDA    #$3C
 A966: 8D 03       BSR    $A96B
 A968: 7E A1 85    JMP    $A185
+
 A96B: 35 40       PULS   U			; pops up caller address
-A96D: FF 13 99    STU    $1399
+A96D: FF 13 99    STU    saved_address_1399
 A970: B7 13 B2    STA    $13B2
 A973: BD D0 8A    JSR    save_context_d08a
 l_a976:
 A976: B6 13 B2    LDA    $13B2
 A979: 26 0A       BNE    $A985
 A97B: FE 17 7E    LDU    $177E
-A97E: FC 13 99    LDD    $1399
+A97E: FC 13 99    LDD    saved_address_1399
 A981: ED D8 FE    STD    [-$02,U]
 A984: 39          RTS
 A985: B6 48 03    LDA    credits_unit_4803
@@ -955,6 +960,7 @@ AAC3: 20 1D       BRA    $AAE2
 AAC5: 7F 13 80    CLR    $1380
 AAC8: 86 40       LDA    #$40
 AACA: B7 14 02    STA    $1402
+; clear screen
 AACD: 86 20       LDA    #$20
 AACF: 8E 07 C5    LDX    #$07C5
 AAD2: A7 80       STA    ,X+          ; [video_address]
@@ -1004,6 +1010,7 @@ AB33: BD D0 AB    JSR    $D0AB
 AB36: 7C 13 96    INC    $1396
 AB39: BD D0 8A    JSR    save_context_d08a
 l_ab3c:
+; reached when game is started
 AB3C: 86 60       LDA    #$60
 AB3E: B7 14 02    STA    $1402
 AB41: 8E E4 D8    LDX    #$E4D8
@@ -1017,6 +1024,7 @@ AB52: B7 14 05    STA    $1405
 AB55: BD D0 8A    JSR    save_context_d08a
 l_ab58:
 AB58: 7E B7 34    JMP    $B734
+
 AB5B: BD F3 AA    JSR    $F3AA
 AB5E: BD F3 5B    JSR    $F35B
 AB61: BD D0 8A    JSR    save_context_d08a
@@ -2192,6 +2200,8 @@ B753: B7 40 40    STA    $4040
 B756: BD B9 38    JSR    $B938
 B759: BD D0 8A    JSR    save_context_d08a
 l_b75c:
+; screen is cleared just after game start
+; install "now the story" tiles
 B75C: 8E 04 1E    LDX    #$041E
 B75F: CC 5C 5C    LDD    #$5C5C
 B762: ED 84       STD    ,X			; [video_address_word]
@@ -2208,6 +2218,7 @@ B77D: C6 00       LDB    #$00
 B77F: BD F3 D0    JSR    $F3D0
 B782: B6 13 81    LDA    $1381
 B785: 4C          INCA
+; screen tiles are installed
 B786: A7 C9 01 20 STA    $0120,U		; [video_address]
 B78A: B6 13 63    LDA    $1363
 B78D: 34 02       PSHS   A
@@ -2250,10 +2261,12 @@ B7ED: 7C 14 45    INC    $1445
 B7F0: 7C 14 44    INC    $1444
 B7F3: BD D0 8A    JSR    save_context_d08a
 l_b7f6:
+; sprites are now visible in story intro
 B7F6: 8E 22 90    LDX    #$2290
 B7F9: A6 88 26    LDA    $26,X
 B7FC: 26 01       BNE    $B7FF
 B7FE: 39          RTS
+; called when mouse is at the center (in intro animation)
 B7FF: 86 FE       LDA    #$FE
 B801: A7 84       STA    ,X
 B803: BD D0 8A    JSR    save_context_d08a
@@ -3839,14 +3852,14 @@ C669: AE 86       LDX    A,X
 C66B: 3A          ABX
 C66C: C6 05       LDB    #$05
 C66E: A6 80       LDA    ,X+
-C670: A7 C4       STA    ,U
+C670: A7 C4       STA    ,U			; [video_address]
 C672: 33 C8 E0    LEAU   -$20,U
 C675: 5A          DECB
 C676: 26 F6       BNE    $C66E
 C678: 33 C9 00 81 LEAU   $0081,U
 C67C: C6 03       LDB    #$03
 C67E: A6 80       LDA    ,X+
-C680: A7 C4       STA    ,U
+C680: A7 C4       STA    ,U			; [video_address]
 C682: 33 C8 E0    LEAU   -$20,U
 C685: 5A          DECB
 C686: 26 F6       BNE    $C67E
@@ -3864,13 +3877,13 @@ C69E: 10 8E C6 D6 LDY    #$C6D6
 C6A2: A6 02       LDA    $2,X
 C6A4: A6 A6       LDA    A,Y
 C6A6: C6 05       LDB    #$05
-C6A8: A7 C4       STA    ,U
+C6A8: A7 C4       STA    ,U			; [video_address]
 C6AA: 33 C8 E0    LEAU   -$20,U
 C6AD: 5A          DECB
 C6AE: 26 F8       BNE    $C6A8
 C6B0: 33 C9 00 81 LEAU   $0081,U
 C6B4: C6 03       LDB    #$03
-C6B6: A7 C4       STA    ,U
+C6B6: A7 C4       STA    ,U			; [video_address]
 C6B8: 33 C8 E0    LEAU   -$20,U
 C6BB: 5A          DECB
 C6BC: 26 F8       BNE    $C6B6
@@ -4945,13 +4958,13 @@ D092: 39          RTS
 D093: B7 13 B2    STA    $13B2
 save_context_d096:
 D096: 35 06       PULS   D
-D098: FD 13 A0    STD    $13A0
+D098: FD 13 A0    STD    saved_address_13a0
 D09B: BD D0 8A    JSR    save_context_d08a
 l_d09e:
 D09E: B6 13 B2    LDA    $13B2
 D0A1: 27 01       BEQ    $D0A4
 D0A3: 39          RTS
-D0A4: FE 13 A0    LDU    $13A0
+D0A4: FE 13 A0    LDU    saved_address_13a0
 D0A7: FF 14 00    STU    $1400
 D0AA: 39          RTS
 D0AB: D6 30       LDB    <$30
@@ -5580,7 +5593,7 @@ E563: A6 04       LDA    $4,X
 E565: 81 20       CMPA   #$20
 E567: 10 23 00 85 LBLS   $E5F0
 E56B: BD F0 47    JSR    $F047
-E56E: A6 C4       LDA    ,U
+E56E: A6 C4       LDA    ,U		; [video_address]
 E570: 81 20       CMPA   #$20
 E572: 27 7C       BEQ    $E5F0
 E574: 81 1D       CMPA   #$1D
@@ -5658,7 +5671,7 @@ E617: 20 06       BRA    $E61F
 E619: CC FF 00    LDD    #$FF00
 E61C: FD 13 89    STD    scroll_value_1389
 E61F: BD F0 9A    JSR    $F09A
-E622: A6 C4       LDA    ,U
+E622: A6 C4       LDA    ,U		; [video_address]
 E624: 81 20       CMPA   #$20
 E626: 27 4A       BEQ    $E672
 E628: 81 A8       CMPA   #$A8
@@ -5944,7 +5957,7 @@ E89D: 81 04       CMPA   #$04
 E89F: 24 06       BCC    $E8A7
 E8A1: EF 88 15    STU    $15,X
 E8A4: 7E E9 24    JMP    $E924
-E8A7: A6 9F 13 C0 LDA    [$13C0]
+E8A7: A6 9F 13 C0 LDA    [$13C0]		; [video_address]
 E8AB: 81 19       CMPA   #$19
 E8AD: 27 08       BEQ    $E8B7
 E8AF: 81 1C       CMPA   #$1C
@@ -6132,7 +6145,7 @@ EA2C: BD F0 ED    JSR    $F0ED
 EA2F: A6 04       LDA    $4,X
 EA31: 81 18       CMPA   #$18
 EA33: 23 19       BLS    $EA4E
-EA35: A6 C4       LDA    ,U
+EA35: A6 C4       LDA    ,U			; [video_address]
 EA37: 81 19       CMPA   #$19
 EA39: 27 13       BEQ    $EA4E
 EA3B: E6 88 18    LDB    $18,X
@@ -6264,14 +6277,14 @@ EB4B: A6 04       LDA    $4,X
 EB4D: 81 20       CMPA   #$20
 EB4F: 23 7B       BLS    $EBCC
 EB51: BD F0 47    JSR    $F047
-EB54: A6 C4       LDA    ,U
+EB54: A6 C4       LDA    ,U		; [video_address]
 EB56: 81 8C       CMPA   #$8C
 EB58: 27 2B       BEQ    $EB85
 EB5A: 81 1D       CMPA   #$1D
 EB5C: 27 1A       BEQ    $EB78
 EB5E: D6 29       LDB    <$29
 EB60: 27 6A       BEQ    $EBCC
-EB62: A6 41       LDA    $1,U
+EB62: A6 41       LDA    $1,U		; [video_address]
 EB64: 81 1D       CMPA   #$1D
 EB66: 27 10       BEQ    $EB78
 EB68: 81 20       CMPA   #$20
@@ -6350,14 +6363,14 @@ EC0C: AE 86       LDX    A,X
 EC0E: EE 25       LDU    $5,Y
 EC10: C6 05       LDB    #$05
 EC12: A6 80       LDA    ,X+
-EC14: A7 C4       STA    ,U
+EC14: A7 C4       STA    ,U		; [video_address]
 EC16: 33 C8 E0    LEAU   -$20,U
 EC19: 5A          DECB
 EC1A: 26 F6       BNE    $EC12
 EC1C: 33 C8 7F    LEAU   $7F,U
 EC1F: C6 03       LDB    #$03
 EC21: A6 80       LDA    ,X+
-EC23: A7 C4       STA    ,U
+EC23: A7 C4       STA    ,U		; [video_address]
 EC25: 33 C8 E0    LEAU   -$20,U
 EC28: 5A          DECB
 EC29: 26 F6       BNE    $EC21
@@ -6366,13 +6379,13 @@ EC2D: EE 25       LDU    $5,Y
 EC2F: 33 C9 08 00 LEAU   $0800,U
 EC33: 86 00       LDA    #$00
 EC35: C6 05       LDB    #$05
-EC37: A7 C4       STA    ,U
+EC37: A7 C4       STA    ,U		; [video_address]
 EC39: 33 C8 E0    LEAU   -$20,U
 EC3C: 5A          DECB
 EC3D: 26 F8       BNE    $EC37
 EC3F: 33 C9 00 81 LEAU   $0081,U
 EC43: C6 03       LDB    #$03
-EC45: A7 C4       STA    ,U
+EC45: A7 C4       STA    ,U		; [video_address]
 EC47: 33 C8 E0    LEAU   -$20,U
 EC4A: 5A          DECB
 EC4B: 26 F8       BNE    $EC45
@@ -7994,6 +8007,7 @@ FB1C: 26 F4       BNE    $FB12
 FB1E: 11 83 07 80 CMPU   #$0780
 FB22: 25 EA       BCS    $FB0E
 FB24: 20 FE       BRA    $FB24
+
 FB26: E6 01       LDB    $1,X
 FB28: E7 84       STB    ,X
 FB2A: E6 02       LDB    $2,X
@@ -8007,6 +8021,7 @@ FB37: A4 01       ANDA   $1,X
 FB39: A4 84       ANDA   ,X
 FB3B: A7 04       STA    $4,X
 FB3D: 39          RTS
+
 FB3E: B6 13 7E    LDA    $137E
 FB41: 44          LSRA
 FB42: 44          LSRA
@@ -8385,7 +8400,7 @@ FF6F: 6A 80       DEC    ,X+
 FF71: 8C 13 B8    CMPX   #$13B8
 FF74: 26 F9       BNE    $FF6F
 FF76: 8E 48 00    LDX    #namco_io_4800
-FF79: CE 13 70    LDU    #$1370
+FF79: CE 13 70    LDU    #copy_of_namco_io_1370
 FF7C: C6 08       LDB    #$08
 FF7E: A6 80       LDA    ,X+
 FF80: 84 0F       ANDA   #$0F

@@ -436,7 +436,7 @@ get_address:
 0:
 	cmp.w	#0x1000,a0
 	jcc		0f
-	move.w	0x102,d6
+	move.w	0x100,d6
 	BREAKPOINT	"video address range 0x0000-0x0FFF, PC in d6"
 	jra		10f
 0:
@@ -465,7 +465,9 @@ get_address:
 	* encode 32 bit address to 16 bit relative, using sign and dropping
 	* first bit to gain 2x range
 	.macro	ENCODE_ADDRESS	reg,reg2
+	.if		\reg!=\reg2
 	move.l	\reg,\reg2
+	.endif
 	sub.l	#mid_code_base,\reg2   | "center" address
 	asr.l	#1,\reg2			   | 68k addresses are even, pack to gain range
 	* test for overflow / remove negative lsb
@@ -503,6 +505,7 @@ okay\@:
 	.macro	JSR_INDIRECT	offset,reg
 	GET_REG_ADDRESS	\offset,\reg
 	READ_BE_WORD	a0
+
 	DECODE_ADDRESS
 	jsr		(a0)
 	.endm
@@ -517,19 +520,18 @@ multiply_ab:
 	rts
 	.ifndef	RELEASE
 	* to trace at some virtual PCs, insert this macro
-	.macro	LOG_REGS_FULL	the_pc
+	.macro	LOG_REGS	the_pc
 	move.w	sr,-(a7)
 	move.w	#0x\the_pc,-(a7)
-	move.w	#0,-(a7)
 	jbsr	osd_log_cpu
-	addq.w	#4,a7
+	addq.w	#2,a7
 	move.w	(a7)+,sr
 	.endm
 	
 	
-	.macro	LOG_REGS	the_pc
+	.macro	LOG_REGS_LIGHT	the_pc
 	move.w	sr,-(a7)
-	move.w	#0x\the_pc,0x102
+	move.w	#0x\the_pc,0x100
 	move.w	(a7)+,sr
 	.endm
 	
