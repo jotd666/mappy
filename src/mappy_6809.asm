@@ -5552,9 +5552,9 @@ E507: 23 1D       BLS    $E526
 E509: BD F0 47    JSR    $F047
 E50C: BD F1 94    JSR    $F194
 E50F: EE 88 12    LDU    $12,X
-E512: A6 C4       LDA    ,U
+E512: A6 C4       LDA    ,U		; [video_address]
 E514: 27 10       BEQ    $E526
-E516: A6 9F 13 C4 LDA    [$13C4]
+E516: A6 9F 13 C4 LDA    [$13C4]	; [video_address]
 E51A: 81 5D       CMPA   #$5D
 E51C: 27 1E       BEQ    $E53C
 E51E: 81 88       CMPA   #$88
@@ -5748,7 +5748,7 @@ E6C7: A6 04       LDA    $4,X
 E6C9: 81 20       CMPA   #$20
 E6CB: 10 23 00 8E LBLS   $E75D
 E6CF: BD F0 47    JSR    $F047
-E6D2: A6 C4       LDA    ,U
+E6D2: A6 C4       LDA    ,U		; [video_address]
 E6D4: 81 20       CMPA   #$20
 E6D6: 10 27 00 83 LBEQ   $E75D
 E6DA: 81 1D       CMPA   #$1D
@@ -5828,7 +5828,7 @@ E782: 20 06       BRA    $E78A
 E784: CC 18 00    LDD    #$1800
 E787: FD 13 89    STD    scroll_value_1389
 E78A: BD F0 9A    JSR    $F09A
-E78D: A6 C4       LDA    ,U
+E78D: A6 C4       LDA    ,U			; [video_address]
 E78F: 81 20       CMPA   #$20
 E791: 27 3D       BEQ    $E7D0
 E793: 81 1B       CMPA   #$1B
@@ -6456,7 +6456,7 @@ ECD9: A6 C4       LDA    ,U
 ECDB: 81 2F       CMPA   #$2F
 ECDD: 27 1F       BEQ    $ECFE
 ECDF: BD F0 9A    JSR    $F09A
-ECE2: A6 C4       LDA    ,U
+ECE2: A6 C4       LDA    ,U		; [video_address]
 ECE4: 81 1A       CMPA   #$1A
 ECE6: 27 53       BEQ    $ED3B
 ECE8: 81 60       CMPA   #$60
