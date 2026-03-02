@@ -97,7 +97,7 @@ with open(source_dir / "conv.s") as f:
 ##            line = remove_instruction(lines,i)
         elif address == 0xa04a:
             # encode address before writing to 1400
-            line = "\tmove.l\t#l_aa7e,d2\n\tENCODE_ADDRESS\td2,d6  | encode the address else it's wrongly decoded!\n\tmove.w\td6,d2\n"
+            line = "\tmove.l\t#l_aa7e,d2\n\tENCODE_ADDRESS\td2,d2  | encode the address else it's wrongly decoded!\n"
         elif address == 0xA96B:
             # code does a PULS D to get caller address
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td4",lines,i)
@@ -151,15 +151,31 @@ with open(source_dir / "conv.s") as f:
 
         # address E4D8 is written several times to resume context here, we have to encode the real address there!
 
-        if address in [0xA5A2,0xBD63] and ",d1" in line:
-            line = change_instruction("move.l\t#l_e4d8,d1",lines,i)+"\tENCODE_ADDRESS    D1,D1\n"
-            if "MAKE_D" in lines[i+1]:
-                lines[i+1] = ""
+        if "[function_address]" in line:
+            # we have to patch this code as it takes an immediate value which
+            # is actually an address
+            inst,arg = line.split("|")[1].strip().strip("[]").split(":")[1].split("]")[0].split()
+            if inst!="ldd" or ",d1" in line:
+                dest_reg = {"d":"d1","u":"d4","x":"d2","y":"d3"}[inst[2]]  # d,u,x
+                dest_addr = arg[2:]
+                line = change_instruction(f"move.l\t#l_{dest_addr},{dest_reg}",lines,i)
+                line += f"\tENCODE_ADDRESS\t{dest_reg},{dest_reg}\n"
+                if inst=="ldd" and "MAKE_D" in lines[i+1]:
+                    lines[i+1] = ""
 
-        elif address in [0xBCF7,0xBDF9]:
-            line = change_instruction("move.l\t#l_e4d8,d4",lines,i)+"\tENCODE_ADDRESS    D4,D4\n"
-        elif address in [0xAB41]:
-            line = change_instruction("move.l\t#l_e4d8,d2",lines,i)+"\tENCODE_ADDRESS    D2,D2\n"
+##        if address in [0xA5A2,0xBD63] and ",d1" in line:
+##            line = change_instruction("move.l\t#l_e4d8,d1",lines,i)+"\tENCODE_ADDRESS    D1,D1\n"
+##            if :
+##                lines[i+1] = ""
+##        elif address in [0xBD23,0xCAC9] and ",d1" in line:
+##            line = change_instruction("move.l\t#l_ca3c,d1",lines,i)+"\tENCODE_ADDRESS    D1,D1\n"
+##            if "MAKE_D" in lines[i+1]:
+##                lines[i+1] = ""
+##
+##        elif address in [0xBCF7,0xBDF9]:
+##            line = change_instruction("move.l\t#l_e4d8,d4",lines,i)+"\tENCODE_ADDRESS    D4,D4\n"
+##        elif address in [0xAB41]:
+##            line = change_instruction("move.l\t#l_e4d8,d2",lines,i)+"\tENCODE_ADDRESS    D2,D2\n"
 
         if "GET_ADDRESS" in line:
             val = line.split()[1]
