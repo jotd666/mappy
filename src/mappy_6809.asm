@@ -2279,6 +2279,7 @@ B80F: 86 FE       LDA    #$FE
 B811: A7 84       STA    ,X
 B813: BD D0 8A    JSR    save_context_d08a
 l_b816:
+; still intro 
 B816: 8E 22 30    LDX    #$2230
 B819: A6 88 26    LDA    $26,X
 B81C: 26 01       BNE    $B81F
@@ -2286,6 +2287,7 @@ B81E: 39          RTS
 B81F: 7F 14 44    CLR    $1444
 B822: BD D0 8A    JSR    save_context_d08a
 l_b825:
+; still intro, only 2 characters on screen 
 B825: 8E 22 00    LDX    #$2200
 B828: A6 88 26    LDA    $26,X
 B82B: 26 01       BNE    $B82E
@@ -2293,6 +2295,7 @@ B82D: 39          RTS
 B82E: 7F 14 45    CLR    $1445
 B831: BD D0 8A    JSR    save_context_d08a
 l_b834:
+; still intro, only mouse police on screen
 B834: DC 01       LDD    <$01
 B836: 2B 01       BMI    $B839
 B838: 39          RTS
@@ -2302,6 +2305,7 @@ B83F: 39          RTS
 B840: 7F 14 42    CLR    $1442
 B843: 7F 11 9A    CLR    $119A
 B846: BD D0 8A    JSR    save_context_d08a
+; wait for music to stop?
 l_b849:
 B849: B6 40 40    LDA    $4040
 B84C: 27 01       BEQ    $B84F
@@ -4034,9 +4038,9 @@ C803: 27 04       BEQ    $C809
 C805: BD F3 C3    JSR    $F3C3
 C808: 39          RTS
 C809: 86 20       LDA    #$20
-C80B: A7 C4       STA    ,U
-C80D: A7 C2       STA    ,-U
-C80F: A7 C2       STA    ,-U
+C80B: A7 C4       STA    ,U        ; [video_address]
+C80D: A7 C2       STA    ,-U       ; [video_address]
+C80F: A7 C2       STA    ,-U       ; [video_address]
 C811: 39          RTS
 
 l_c81a:
