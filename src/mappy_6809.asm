@@ -1468,7 +1468,7 @@ AF55: BD F3 D0    JSR    $F3D0
 AF58: B6 13 81    LDA    $1381
 AF5B: 8B 01       ADDA   #$01
 AF5D: 33 C8 E0    LEAU   -$20,U
-AF60: A7 C4       STA    ,U
+AF60: A7 C4       STA    ,U			; [video_address]
 AF62: 86 F0       LDA    #$F0
 AF64: 97 04       STA    <$04
 AF66: 8E 22 36    LDX    #$2236
@@ -1624,11 +1624,11 @@ B101: 27 1D       BEQ    $B120
 B103: 86 02       LDA    #$02
 B105: BD D0 93    JSR    $D093
 B108: 8E 0E 46    LDX    #$0E46
-B10B: A6 84       LDA    ,X
+B10B: A6 84       LDA    ,X			; [video_address]
 B10D: 4C          INCA
 B10E: 84 07       ANDA   #$07
 B110: CE B6 93    LDU    #$B693
-B113: A7 84       STA    ,X
+B113: A7 84       STA    ,X			; [video_address]
 B115: 30 88 E0    LEAX   -$20,X
 B118: E6 C0       LDB    ,U+
 B11A: C1 2F       CMPB   #$2F
@@ -1648,28 +1648,28 @@ B13A: BD D0 8A    JSR    save_context_d08a
 B13D: 8E 00 7C    LDX    #$007C
 B140: 86 1E       LDA    #$1E
 B142: C6 04       LDB    #$04
-B144: A7 80       STA    ,X+
+B144: A7 80       STA    ,X+			; [video_address]
 B146: 5A          DECB
 B147: 26 FB       BNE    $B144
 B149: 30 01       LEAX   $1,X
 B14B: 86 5B       LDA    #$5B
-B14D: A7 80       STA    ,X+
+B14D: A7 80       STA    ,X+			; [video_address]
 B14F: 86 1D       LDA    #$1D
 B151: C6 19       LDB    #$19
-B153: A7 80       STA    ,X+
+B153: A7 80       STA    ,X+			; [video_address]
 B155: 5A          DECB
 B156: 26 FB       BNE    $B153
 B158: 86 AC       LDA    #$AC
-B15A: A7 80       STA    ,X+
+B15A: A7 80       STA    ,X+			; [video_address]
 B15C: 86 5C       LDA    #$5C
 B15E: C6 04       LDB    #$04
-B160: A7 80       STA    ,X+
+B160: A7 80       STA    ,X+			; [video_address]
 B162: 5A          DECB
 B163: 26 FB       BNE    $B160
 B165: 30 88 1C    LEAX   $1C,X
 B168: 86 1F       LDA    #$1F
 B16A: C6 04       LDB    #$04
-B16C: A7 80       STA    ,X+
+B16C: A7 80       STA    ,X+			; [video_address]
 B16E: 5A          DECB
 B16F: 26 FB       BNE    $B16C
 B171: 8C 07 80    CMPX   #$0780
@@ -1683,7 +1683,7 @@ B181: B7 07 41    STA    $0741
 B184: 8E 00 A1    LDX    #$00A1
 B187: 86 19       LDA    #$19
 B189: C6 05       LDB    #$05
-B18B: A7 84       STA    ,X
+B18B: A7 84       STA    ,X			; [video_address]
 B18D: 30 88 20    LEAX   $20,X
 B190: 5A          DECB
 B191: 26 F8       BNE    $B18B
@@ -1710,20 +1710,20 @@ B1B5: F3 13 9C    ADDD   $139C
 B1B8: CE 01 46    LDU    #$0146
 B1BB: 33 CB       LEAU   D,U
 B1BD: CC 20 20    LDD    #$2020
-B1C0: ED C1       STD    ,U++
-B1C2: ED C1       STD    ,U++
-B1C4: A7 C4       STA    ,U
+B1C0: ED C1       STD    ,U++					; [video_address_word]
+B1C2: ED C1       STD    ,U++			; [video_address_word]
+B1C4: A7 C4       STA    ,U		; [video_address]
 B1C6: 20 D6       BRA    $B19E
 B1C8: BD BE 64    JSR    $BE64
 B1CB: BD E2 78    JSR    $E278
 B1CE: 8E 20 E0    LDX    #$20E0
 B1D1: EE 05       LDU    $5,X
 B1D3: 86 AC       LDA    #$AC
-B1D5: A7 C8 1F    STA    $1F,U
-B1D8: A7 C9 FF 5F STA    -$00A1,U
+B1D5: A7 C8 1F    STA    $1F,U		; [video_address]
+B1D8: A7 C9 FF 5F STA    -$00A1,U   ; [video_address]
 B1DC: 86 A9       LDA    #$A9
-B1DE: A7 C8 20    STA    $20,U
-B1E1: A7 C9 FF 60 STA    -$00A0,U
+B1DE: A7 C8 20    STA    $20,U     ; [video_address]
+B1E1: A7 C9 FF 60 STA    -$00A0,U  ; [video_address]
 B1E5: A6 07       LDA    $7,X
 B1E7: 81 FF       CMPA   #$FF
 B1E9: 27 04       BEQ    $B1EF
@@ -6740,6 +6740,7 @@ EF0A: 96 3D       LDA    <$3D
 EF0C: 85 01       BITA   #$01
 EF0E: 26 01       BNE    $EF11
 EF10: 39          RTS
+; fire pressed, check for door to open
 EF11: 96 04       LDA    <$04
 EF13: 44          LSRA
 EF14: 44          LSRA
