@@ -2024,18 +2024,18 @@ B4AE: 44          LSRA
 B4AF: 44          LSRA
 B4B0: 44          LSRA
 B4B1: 44          LSRA
-B4B2: A7 C4       STA    ,U
-B4B4: E7 C9 08 00 STB    $0800,U
+B4B2: A7 C4       STA    ,U          ; [unchecked_address]
+B4B4: E7 C9 08 00 STB    $0800,U     ; [video_address]
 B4B8: 33 C8 E0    LEAU   -$20,U
 B4BB: B6 13 8E    LDA    $138E
 B4BE: 84 0F       ANDA   #$0F
-B4C0: A7 C4       STA    ,U
-B4C2: E7 C9 08 00 STB    $0800,U
+B4C0: A7 C4       STA    ,U          ; [unchecked_address]
+B4C2: E7 C9 08 00 STB    $0800,U     ; [video_address]
 B4C6: 33 C8 E0    LEAU   -$20,U
-B4C9: 6F C4       CLR    ,U
-B4CB: E7 C9 08 00 STB    $0800,U
-B4CF: 6F C8 E0    CLR    -$20,U
-B4D2: E7 C9 07 E0 STB    $07E0,U
+B4C9: 6F C4       CLR    ,U            ; [unchecked_address]
+B4CB: E7 C9 08 00 STB    $0800,U       ; [video_address]
+B4CF: 6F C8 E0    CLR    -$20,U        ; [unchecked_address]
+B4D2: E7 C9 07 E0 STB    $07E0,U       ; [video_address]
 B4D6: 79 13 8E    ROL    $138E
 B4D9: 79 13 8D    ROL    $138D
 B4DC: 79 13 8E    ROL    $138E
@@ -2086,15 +2086,15 @@ B54B: C6 01       LDB    #$01
 B54D: B6 13 9F    LDA    $139F
 B550: 27 08       BEQ    $B55A
 B552: 86 02       LDA    #$02
-B554: A7 C4       STA    ,U
-B556: E7 C9 08 00 STB    $0800,U
+B554: A7 C4       STA    ,U           ; [unchecked_address]
+B556: E7 C9 08 00 STB    $0800,U      ; [video_address]
 B55A: 33 C8 E0    LEAU   -$20,U
-B55D: 6F C4       CLR    ,U
-B55F: E7 C9 08 00 STB    $0800,U
-B563: 6F C8 E0    CLR    -$20,U
-B566: E7 C9 07 E0 STB    $07E0,U
-B56A: 6F C8 C0    CLR    -$40,U
-B56D: E7 C9 07 C0 STB    $07C0,U
+B55D: 6F C4       CLR    ,U           ; [unchecked_address]
+B55F: E7 C9 08 00 STB    $0800,U      ; [video_address]
+B563: 6F C8 E0    CLR    -$20,U       ; [unchecked_address]
+B566: E7 C9 07 E0 STB    $07E0,U      ; [video_address]
+B56A: 6F C8 C0    CLR    -$40,U       ; [unchecked_address]
+B56D: E7 C9 07 C0 STB    $07C0,U      ; [video_address]
 B571: 86 3C       LDA    #$3C
 B573: BD D0 93    JSR    $D093
 B576: 8E B6 BD    LDX    #$B6BD
@@ -2102,9 +2102,9 @@ B579: CE 06 F3    LDU    #$06F3
 B57C: C6 07       LDB    #$07
 B57E: BD F3 D0    JSR    $F3D0
 B581: 86 AB       LDA    #$AB
-B583: A7 C4       STA    ,U
+B583: A7 C4       STA    ,U			; [unchecked_address]
 B585: C6 07       LDB    #$07
-B587: E7 C9 08 00 STB    $0800,U
+B587: E7 C9 08 00 STB    $0800,U    ; [video_address]
 B58B: 86 14       LDA    #$14
 B58D: BD D0 93    JSR    $D093
 B590: CE 05 13    LDU    #$0513
@@ -2121,15 +2121,15 @@ B5A6: BB 13 8D    ADDA   $138D
 B5A9: 19          DAA
 B5AA: B7 13 8D    STA    $138D
 B5AD: 86 05       LDA    #$05
-B5AF: A7 C4       STA    ,U
-B5B1: E7 C9 08 00 STB    $0800,U
+B5AF: A7 C4       STA    ,U            ; [unchecked_address]
+B5B1: E7 C9 08 00 STB    $0800,U       ; [video_address]
 B5B5: 33 C8 E0    LEAU   -$20,U
-B5B8: 6F C4       CLR    ,U
-B5BA: E7 C9 08 00 STB    $0800,U
-B5BE: 6F C8 E0    CLR    -$20,U
-B5C1: E7 C9 07 E0 STB    $07E0,U
-B5C5: 6F C8 C0    CLR    -$40,U
-B5C8: E7 C9 07 C0 STB    $07C0,U
+B5B8: 6F C4       CLR    ,U            ; [unchecked_address]
+B5BA: E7 C9 08 00 STB    $0800,U       ; [video_address]
+B5BE: 6F C8 E0    CLR    -$20,U        ; [unchecked_address]
+B5C1: E7 C9 07 E0 STB    $07E0,U       ; [video_address]
+B5C5: 6F C8 C0    CLR    -$40,U        ; [unchecked_address]
+B5C8: E7 C9 07 C0 STB    $07C0,U       ; [video_address]
 B5CC: 86 3C       LDA    #$3C
 B5CE: BD D0 93    JSR    $D093
 B5D1: 8E B6 D1    LDX    #$B6D1
@@ -2137,9 +2137,9 @@ B5D4: CE 06 19    LDU    #$0619
 B5D7: C6 0B       LDB    #$0B
 B5D9: BD F3 D0    JSR    $F3D0
 B5DC: 86 AB       LDA    #$AB
-B5DE: A7 C4       STA    ,U
+B5DE: A7 C4       STA    ,U			; [unchecked_address]
 B5E0: C6 07       LDB    #$07
-B5E2: E7 C9 08 00 STB    $0800,U
+B5E2: E7 C9 08 00 STB    $0800,U    ; [video_address]
 B5E6: 86 14       LDA    #$14
 B5E8: BD D0 93    JSR    $D093
 B5EB: CE 05 19    LDU    #$0519
@@ -2147,25 +2147,25 @@ B5EE: B6 13 8D    LDA    $138D
 B5F1: 84 10       ANDA   #$10
 B5F3: 27 12       BEQ    $B607
 B5F5: 86 01       LDA    #$01
-B5F7: A7 C4       STA    ,U
-B5F9: 6F C8 E0    CLR    -$20,U
-B5FC: 6F C8 C0    CLR    -$40,U
-B5FF: 6F C8 A0    CLR    -$60,U
-B602: 6F C8 80    CLR    -$80,U
+B5F7: A7 C4       STA    ,U          ; [video_address]
+B5F9: 6F C8 E0    CLR    -$20,U      ; [video_address]
+B5FC: 6F C8 C0    CLR    -$40,U      ; [video_address]
+B5FF: 6F C8 A0    CLR    -$60,U      ; [video_address]
+B602: 6F C8 80    CLR    -$80,U      ; [video_address]
 B605: 20 1B       BRA    $B622
 B607: B6 13 8D    LDA    $138D
 B60A: 84 0F       ANDA   #$0F
 B60C: 27 02       BEQ    $B610
-B60E: A7 C4       STA    ,U
+B60E: A7 C4       STA    ,U			; [video_address]
 B610: 33 C8 E0    LEAU   -$20,U
 B613: B6 13 8E    LDA    $138E
 B616: 44          LSRA
 B617: 44          LSRA
 B618: 44          LSRA
 B619: 44          LSRA
-B61A: A7 C4       STA    ,U
-B61C: 6F C8 E0    CLR    -$20,U
-B61F: 6F C8 C0    CLR    -$40,U
+B61A: A7 C4       STA    ,U          ; [video_address]
+B61C: 6F C8 E0    CLR    -$20,U      ; [video_address]
+B61F: 6F C8 C0    CLR    -$40,U      ; [video_address]
 B622: 86 28       LDA    #$28
 B624: BD D0 93    JSR    $D093
 B627: 8E 13 8D    LDX    #$138D
@@ -2184,8 +2184,8 @@ B645: A6 80       LDA    ,X+
 B647: 80 31       SUBA   #$31
 B649: 81 2F       CMPA   #$2F
 B64B: 27 0B       BEQ    $B658
-B64D: A7 C4       STA    ,U
-B64F: E7 C9 08 00 STB    $0800,U
+B64D: A7 C4       STA    ,U        ; [unchecked_address]
+B64F: E7 C9 08 00 STB    $0800,U   ; [video_address]
 B653: 33 C8 E0    LEAU   -$20,U
 B656: 20 ED       BRA    $B645
 B658: CE 06 FF    LDU    #$06FF
@@ -2193,8 +2193,8 @@ B65B: C6 07       LDB    #$07
 B65D: A6 80       LDA    ,X+
 B65F: 81 2F       CMPA   #$2F
 B661: 27 10       BEQ    $B673
-B663: A7 C4       STA    ,U
-B665: E7 C9 08 00 STB    $0800,U
+B663: A7 C4       STA    ,U        ; [unchecked_address]
+B665: E7 C9 08 00 STB    $0800,U   ; [video_address]
 B669: 33 C8 E0    LEAU   -$20,U
 B66C: 20 EF       BRA    $B65D
 B66E: 86 5A       LDA    #$5A

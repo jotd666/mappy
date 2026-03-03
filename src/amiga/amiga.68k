@@ -65,6 +65,7 @@ BASE_BPLCON0_VALUE = 0x0610+BORDERBLANK
 COPPER_Y_START = 0x24
 BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 16!
 BASE_BPLCON2_VALUE = 0x0024		| sprites above all playfields
+UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
 
 HW_SPRITE_X_CORRECTION = 9
 	.ifdef	OCS_VERSION
@@ -4248,6 +4249,9 @@ game_copperlist:
 	* all sprites have the same palette no need to specify odd or even
 	* on color bank 1
 	
+	.word	bplcon2
+	.word	UPPER_BPLCON2_VALUE
+	
 	* black color background plane
 
 tiles_colors:			| AGA: tiles, OCS: HW sprites
@@ -4289,6 +4293,8 @@ bobs_bitplanes:
 	.word	bplcon1
 scrolling_bitplanes:
 	.word	0
+	
+	
 	.ifdef	OCS_VERSION
 	DECL_BITPLANES	0,4	
 	.else
@@ -4306,6 +4312,11 @@ sprite_control_words:
 	.set	offset,offset+8
 	.endr
 sprite_control_words_end:
+
+	.word	0x6801,0xFFFE
+	.word	bplcon2
+	.word	BASE_BPLCON2_VALUE
+
 	* not sure if it's really half screen but it doesn't matter
 	.word	0x01+((COPPER_Y_START+120)*256),0xFFFE
 intreq_block_game:
