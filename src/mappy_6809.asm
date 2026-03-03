@@ -35,13 +35,21 @@ joystick_button_1_4805 = $4805
 joystick_button_2_4815 = $4815
 start_1p_4805 = $4805
 start_2p_4807 = $4807
+namco_io_4808 = $4808
+namco_io_4814 = $4814
+namco_io_4809 = $4809
+namco_io_4806 = $4806
+namco_io_480a = $480a
 joystick_button_2_4815 = $4815
 io_register_4818 = $4818
 namco_io_4800 = $4800
+namco_io_4809 = $4809
 sync_1382 = $1382
 saved_address_1399 = $1399
 saved_address_13a0 = $13a0
+copy_of_joy_directions_1374 = $1374
 
+game_start_a000:
 A000: 10 CE 17 80 LDS    #stack_top_1780
 A004: CC 00 00    LDD    #$0000
 A007: FD 13 E4    STD    $13E4
@@ -53,7 +61,7 @@ A012: 27 06       BEQ    $A01A
 A014: EE 81       LDU    ,X++		; destination address in RAM
 A016: ED C4       STD    ,U
 A018: 20 F6       BRA    $A010
-A01A: 7F 48 09    CLR    $4809
+A01A: 7F 48 09    CLR    namco_io_4809
 A01D: 4F          CLRA
 A01E: B7 13 82    STA    sync_1382
 A021: B6 13 82    LDA    sync_1382
@@ -63,7 +71,7 @@ A029: 85 08       BITA   #$08
 A02B: 10 26 55 47 LBNE   $F576
 A02F: 4F          CLRA
 A030: B7 13 82    STA    sync_1382
-A033: B6 48 14    LDA    $4814
+A033: B6 48 14    LDA    namco_io_4814
 A036: 85 04       BITA   #$04
 A038: 27 02       BEQ    $A03C
 A03A: 0C 32       INC    <$32
@@ -157,7 +165,7 @@ A110: EC 81       LDD    ,X++
 A112: ED C1       STD    ,U++
 A114: 31 3F       LEAY   -$1,Y
 A116: 26 F8       BNE    $A110
-A118: B6 48 14    LDA    $4814
+A118: B6 48 14    LDA    namco_io_4814
 A11B: 84 02       ANDA   #$02
 A11D: B7 13 A5    STA    $13A5
 A120: 8E D2 F3    LDX    #$D2F3
@@ -934,7 +942,7 @@ l_aa7e:
 AA7E: B6 13 71    LDA    $1371
 AA81: 26 01       BNE    $AA84
 AA83: 39          RTS
-AA84: 7C 48 09    INC    $4809
+AA84: 7C 48 09    INC    namco_io_4809
 AA87: 7F 48 01    CLR    number_of_players_4801
 AA8A: 81 01       CMPA   #$01
 AA8C: 27 37       BEQ    $AAC5
@@ -1492,7 +1500,7 @@ AFD5: 20 03       BRA    $AFDA
 AFD7: 8E 18 00    LDX    #$1800
 AFDA: A6 88 30    LDA    $30,X
 AFDD: 26 03       BNE    $AFE2
-AFDF: 7F 48 09    CLR    $4809
+AFDF: 7F 48 09    CLR    namco_io_4809
 AFE2: BD F3 5B    JSR    $F35B
 AFE5: 86 FF       LDA    #$FF
 AFE7: B7 13 89    STA    scroll_value_1389
@@ -2344,7 +2352,6 @@ B894: B7 14 40    STA    $1440
 B897: 86 08       LDA    #$08
 B899: B7 14 05    STA    $1405
 B89C: BD D0 8A    JSR    save_context_d08a
-l_b89f:
 B89F: B6 40 41    LDA    $4041
 B8A2: 27 01       BEQ    $B8A5
 B8A4: 39          RTS
@@ -2359,9 +2366,10 @@ B8B4: 27 01       BEQ    $B8B7
 B8B6: 39          RTS
 B8B7: 8E 00 7B    LDX    #$007B
 B8BA: 86 1D       LDA    #$1D
-B8BC: A7 80       STA    ,X+
-B8BE: A7 80       STA    ,X+
-B8C0: A7 84       STA    ,X
+; close the right wall
+B8BC: A7 80       STA    ,X+        ; [video_address]
+B8BE: A7 80       STA    ,X+        ; [video_address]
+B8C0: A7 84       STA    ,X         ; [video_address]
 B8C2: 86 18       LDA    #$18
 B8C4: B7 13 B2    STA    $13B2
 B8C7: BD D0 8A    JSR    save_context_d08a
@@ -2385,17 +2393,17 @@ B8EB: 86 1E       LDA    #$1E
 B8ED: BD D0 93    JSR    $D093
 l_b8f0:
 B8F0: 9E 15       LDX    <$15
-B8F2: EE 05       LDU    $5,X
+B8F2: EE 05       LDU    $5,X		; [video_address]
 B8F4: 33 C9 08 00 LEAU   $0800,U
 B8F8: 86 00       LDA    #$00
 B8FA: C6 05       LDB    #$05
-B8FC: A7 C4       STA    ,U
+B8FC: A7 C4       STA    ,U		; [video_address]
 B8FE: 33 C8 E0    LEAU   -$20,U
 B901: 5A          DECB
 B902: 26 F8       BNE    $B8FC
 B904: 33 C9 00 81 LEAU   $0081,U
 B908: C6 03       LDB    #$03
-B90A: A7 C4       STA    ,U
+B90A: A7 C4       STA    ,U		; [video_address]
 B90C: 33 C8 E0    LEAU   -$20,U
 B90F: 5A          DECB
 B910: 26 F8       BNE    $B90A
@@ -2411,7 +2419,7 @@ B923: DD 01       STD    <$01
 B925: 86 70       LDA    #$70
 B927: B7 14 02    STA    $1402
 B92A: 9E 15       LDX    <$15
-B92C: 6F 02       CLR    $2,X
+B92C: 6F 02       CLR    $2,X	; [video_address]
 B92E: 0C 3E       INC    <$3E
 B930: 0C 3F       INC    <$3F
 B932: 7F 13 96    CLR    $1396
@@ -3096,7 +3104,7 @@ l_c000:
 C000: B6 14 40    LDA    $1440
 C003: 26 01       BNE    $C006
 C005: 39          RTS
-C006: 8E 13 74    LDX    #$1374
+C006: 8E 13 74    LDX    #copy_of_joy_directions_1374
 C009: B6 13 93    LDA    $1393
 C00C: 48          ASLA
 C00D: F6 14 05    LDB    $1405
@@ -3118,9 +3126,9 @@ C029: B6 13 60    LDA    $1360
 C02C: 26 0A       BNE    $C038
 C02E: B6 13 75    LDA    $1375
 C031: 97 3D       STA    <$3D
-C033: B6 13 74    LDA    $1374
+C033: B6 13 74    LDA    copy_of_joy_directions_1374
 C036: 20 0E       BRA    $C046
-C038: 8E 13 74    LDX    #$1374
+C038: 8E 13 74    LDX    #copy_of_joy_directions_1374
 C03B: F6 13 81    LDB    $1381
 C03E: 58          ASLB
 C03F: 3A          ABX
@@ -4894,14 +4902,14 @@ CFA0: 44          LSRA
 CFA1: 44          LSRA
 CFA2: 26 1E       BNE    $CFC2
 CFA4: 86 20       LDA    #$20
-CFA6: A7 C2       STA    ,-U
+CFA6: A7 C2       STA    ,-U		; [video_address]
 CFA8: A6 80       LDA    ,X+
 CFAA: C1 01       CMPB   #$01
 CFAC: 27 18       BEQ    $CFC6
 CFAE: 84 0F       ANDA   #$0F
 CFB0: 26 16       BNE    $CFC8
 CFB2: 86 20       LDA    #$20
-CFB4: A7 C2       STA    ,-U
+CFB4: A7 C2       STA    ,-U		; [video_address]
 CFB6: 5A          DECB
 CFB7: 26 01       BNE    $CFBA
 CFB9: 39          RTS
@@ -4911,10 +4919,10 @@ CFBE: 44          LSRA
 CFBF: 44          LSRA
 CFC0: 44          LSRA
 CFC1: 44          LSRA
-CFC2: A7 C2       STA    ,-U
+CFC2: A7 C2       STA    ,-U		; [video_address]
 CFC4: A6 80       LDA    ,X+
 CFC6: 84 0F       ANDA   #$0F
-CFC8: A7 C2       STA    ,-U
+CFC8: A7 C2       STA    ,-U		; [video_address]
 CFCA: 5A          DECB
 CFCB: 26 01       BNE    $CFCE
 CFCD: 39          RTS
@@ -4936,7 +4944,7 @@ CFEB: 2B 2C       BMI    $D019
 CFED: 10 B3 13 CC CMPD   $13CC
 CFF1: 25 26       BCS    $D019
 CFF3: 86 34       LDA    #$34
-CFF5: A7 C4       STA    ,U
+CFF5: A7 C4       STA    ,U				; [video_address]
 CFF7: 6C 07       INC    $7,X
 CFF9: A6 07       LDA    $7,X
 CFFB: 44          LSRA
@@ -4946,15 +4954,15 @@ CFFF: 25 03       BCS    $D004
 D001: 4F          CLRA
 D002: 6F 07       CLR    $7,X
 D004: 84 03       ANDA   #$03
-D006: A7 41       STA    $1,U
+D006: A7 41       STA    $1,U				; [video_address]
 D008: 86 08       LDA    #$08
-D00A: A7 C9 01 00 STA    $0100,U
+D00A: A7 C9 01 00 STA    $0100,U				; [video_address]
 D00E: A6 04       LDA    $4,X
 D010: B7 13 E3    STA    $13E3
 D013: EC 01       LDD    $1,X
 D015: BD F2 34    JSR    $F234
 D018: 39          RTS
-D019: 6F C9 01 00 CLR    $0100,U
+D019: 6F C9 01 00 CLR    $0100,U		; [video_address]
 D01D: 6F 84       CLR    ,X
 D01F: 39          RTS
 
@@ -7603,7 +7611,7 @@ F710: 86 4D       LDA    #$4D
 F712: B7 06 E2    STA    $06E2
 F715: C6 01       LDB    #$01
 ; checksum of part of the game ROM
-F717: 8E A0 00    LDX    #$A000
+F717: 8E A0 00    LDX    #$a000     ; game_start_a000
 F71A: 4F          CLRA
 F71B: AB 80       ADDA   ,X+
 F71D: B7 80 00    STA    watchdog_8000
@@ -7667,7 +7675,7 @@ F79E: 8E F8 51    LDX    #$F851
 F7A1: CE 07 24    LDU    #$0724
 F7A4: BD F3 B5    JSR    $F3B5
 F7A7: 8E F8 55    LDX    #$F855
-F7AA: CE 48 09    LDU    #$4809
+F7AA: CE 48 09    LDU    #namco_io_4809
 F7AD: A6 80       LDA    ,X+
 F7AF: A7 C0       STA    ,U+
 F7B1: 11 83 48 10 CMPU   #$4810
@@ -7691,7 +7699,7 @@ F7DF: A6 80       LDA    ,X+
 F7E1: 84 0F       ANDA   #$0F
 F7E3: A1 C0       CMPA   ,U+
 F7E5: 26 5F       BNE    error_f846
-F7E7: 8C 48 08    CMPX   #$4808
+F7E7: 8C 48 08    CMPX   #namco_io_4808
 F7EA: 26 F3       BNE    $F7DF
 F7EC: 8E 48 11    LDX    #$4811
 F7EF: CE F8 5C    LDU    #$F85C
@@ -7716,7 +7724,7 @@ F81A: 86 02       LDA    #$02
 F81C: B7 13 B1    STA    $13B1
 F81F: B6 13 B1    LDA    $13B1
 F822: 26 FB       BNE    $F81F
-F824: 8E 48 09    LDX    #$4809
+F824: 8E 48 09    LDX    #namco_io_4809
 F827: 86 FF       LDA    #$FF
 F829: A7 80       STA    ,X+
 F82B: 8C 48 10    CMPX   #$4810
@@ -7917,7 +7925,7 @@ FA33: 8E 15 05    LDX    #$1505
 FA36: B6 48 05    LDA    start_1p_4805
 FA39: BD FB 26    JSR    $FB26
 FA3C: 8E 15 0A    LDX    #$150A
-FA3F: B6 48 06    LDA    $4806
+FA3F: B6 48 06    LDA    namco_io_4806
 FA42: BD FB 26    JSR    $FB26
 FA45: 8E 15 0F    LDX    #$150F
 FA48: B6 48 07    LDA    start_2p_4807
@@ -8109,7 +8117,7 @@ FBD7: 24 02       BCC    $FBDB
 FBD9: C6 FF       LDB    #$FF
 FBDB: F7 13 89    STB    scroll_value_1389
 FBDE: B6 48 04    LDA    joystick_directions_4804
-FBE1: BA 48 06    ORA    $4806
+FBE1: BA 48 06    ORA    namco_io_4806
 FBE4: 84 0F       ANDA   #$0F
 FBE6: 26 07       BNE    $FBEF
 FBE8: BA 48 07    ORA    start_2p_4807
@@ -8159,7 +8167,7 @@ FC54: B7 13 B1    STA    $13B1
 FC57: B6 13 B1    LDA    $13B1
 FC5A: 26 FB       BNE    $FC57
 FC5C: 8E 13 67    LDX    #$1367
-FC5F: CE 48 09    LDU    #$4809
+FC5F: CE 48 09    LDU    #namco_io_4809
 FC62: A6 80       LDA    ,X+
 FC64: A7 C0       STA    ,U+
 FC66: 8C 13 6B    CMPX   #$136B
@@ -8176,9 +8184,9 @@ FC7D: B7 13 B1    STA    $13B1
 FC80: B6 13 B1    LDA    $13B1
 FC83: 26 FB       BNE    $FC80
 FC85: 86 01       LDA    #$01
-FC87: B7 48 09    STA    $4809
-FC8A: B7 48 0A    STA    $480A
-FC8D: B7 48 0A    STA    $480A
+FC87: B7 48 09    STA    namco_io_4809
+FC8A: B7 48 0A    STA    namco_io_480a
+FC8D: B7 48 0A    STA    namco_io_480a
 FC90: 86 03       LDA    #$03
 FC92: B7 13 83    STA    $1383
 FC95: 86 02       LDA    #$02
@@ -8187,10 +8195,10 @@ FC9A: B6 13 B1    LDA    $13B1
 FC9D: 26 FB       BNE    $FC9A
 FC9F: 8E 48 00    LDX    #namco_io_4800
 FCA2: 6F 80       CLR    ,X+
-FCA4: 8C 48 08    CMPX   #$4808
+FCA4: 8C 48 08    CMPX   #namco_io_4808
 FCA7: 26 F9       BNE    $FCA2
 FCA9: 7F 13 6D    CLR    $136D
-FCAC: 7E A0 00    JMP    $A000
+FCAC: 7E A0 00    JMP    game_start_a000
 
 FD45: BF 10 20    STX    $1020                                      
 FD48: 30 8B       LEAX   D,X                                        
@@ -8366,12 +8374,12 @@ irq_ff01:
 FF01: B7 80 00    STA    watchdog_8000                                        
 FF04: B7 50 02    STA    video_stuff_5002
 FF07: B6 13 83    LDA    $1383
-FF0A: B7 48 08    STA    $4808
+FF0A: B7 48 08    STA    namco_io_4808
 FF0D: B6 13 84    LDA    $1384
 FF10: B7 48 18    STA    io_register_4818
 FF13: B6 13 6D    LDA    $136D
 FF16: 26 0B       BNE    $FF23
-FF18: B6 48 14    LDA    $4814
+FF18: B6 48 14    LDA    namco_io_4814
 FF1B: 85 08       BITA   #$08
 FF1D: 27 04       BEQ    $FF23
 FF1F: B7 50 03    STA    video_stuff_5003
@@ -8429,7 +8437,7 @@ FF91: 84 0F       ANDA   #$0F
 FF93: A7 C0       STA    ,U+
 FF95: 5A          DECB
 FF96: 26 F7       BNE    $FF8F
-FF98: B6 48 08    LDA    $4808
+FF98: B6 48 08    LDA    namco_io_4808
 FF9B: 84 0F       ANDA   #$0F
 FF9D: 81 03       CMPA   #$03
 FF9F: 26 0B       BNE    $FFAC

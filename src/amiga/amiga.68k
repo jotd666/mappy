@@ -877,6 +877,13 @@ demo_game:
 	jra		10b
 11:
 	
+	* add credit :)
+	GET_ADDRESS		0xA25C
+	move.l	#0x204a4f54,(a0)+
+	move.b	#0x44,(a0)
+	GET_ADDRESS		0xA486
+	move.l	#0x204a4f54,(a0)+
+	move.b	#0x44,(a0)
 	
 	* initialize namco IO
 	lea	namco_io_start_memory_4800(pc),a0
@@ -932,6 +939,13 @@ do_irq:
 	jbsr	cpu_init
 	GET_MEMORY_START_AND_DP
 	clr.b	(0x4040,a6)			| temp tell music that it has stopped
+	clr.b	(0x4041,a6)			| temp tell music that it has stopped
+	clr.b	(0x4042,a6)			| temp tell music that it has stopped
+	clr.b	(0x4043,a6)			| temp tell music that it has stopped
+	clr.b	(0x4044,a6)			| temp tell music that it has stopped
+	clr.b	(0x4045,a6)			| temp tell music that it has stopped
+	clr.b	(0x4046,a6)			| temp tell music that it has stopped
+	clr.b	(0x4047,a6)			| temp tell music that it has stopped
 	* should we set a saved copy of S or use the one that existed
 	* when the game was interrupted? depends if the game was interrupted
 	* in the original game code or in an osd function
@@ -3209,11 +3223,11 @@ read_inputs:
 	jeq		0f
 	bset	#1,d1
 0:
-	tst.b	(0x64,a0)		| left "alt" key
-	jeq		0f
-	bset	#1,d1
-0:
-	move.b	d1,(joystick_button_2_4815,a6)
+*	tst.b	(0x64,a0)		| left "alt" key
+*	jeq		0f
+*	bset	#1,d1
+*0:
+*	move.b	d1,(joystick_button_2_4815,a6)
 	
 	tst.b	(0x4C,a0)		| "up" key
 	beq.b	0f

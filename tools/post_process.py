@@ -187,6 +187,14 @@ with open(source_dir / "conv.s") as f:
                     line = remove_instruction(lines,i)
                 lines[i+1] = remove_instruction(lines,i+1)
 
+            # remove all writes into namco register area
+##            if val[-5:-2] == "_48" and "|" in line:
+##                orig = line.split("|")[1].split()
+##                if orig[1] in ["sta","clr"]:  # write operation
+##                    line = remove_instruction(lines,i)
+
+
+
 
         elif "unsupported instruction rti" in line:
             line = change_instruction("rts",lines,i)

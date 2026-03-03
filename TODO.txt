@@ -1,6 +1,5 @@
-- tag double sprites
 - highscore 20000 not shown: 7E0 7E1
 - find a way to make display higher (remove the gap between house and scores?)
 - lockup on starting game breakpoints follow
-- BC7A copy 4xxx ????
+- write in 4041: trigger tick and clear after a while
 
