@@ -936,9 +936,35 @@ namco_io_start_memory_4800:
 
 do_irq:
 	* set base for RAM
-	jbsr	cpu_init
 	GET_MEMORY_START_AND_DP
-
+	clr.b	(0x4040,a6)		| as long as we don't have the intro tune we have to do that
+	move.w	sfx_01_timeout,d0
+	jeq		0f
+	subq	#1,d0
+	move.w	d0,sfx_01_timeout
+	jne		0f
+	* down to 0:
+	clr.b	(0x4041,a6)		| as long as we don't have the intro tune we have to do that	
+0:
+	move.w	killed_tune_timeout,d0
+	jeq		0f
+	subq	#1,d0
+	move.w	d0,killed_tune_timeout
+	jne		0f
+	* down to 0:
+	clr.b	(0x4046,a6)		| as long as we don't have the intro tune we have to do that	
+0:
+	move.w	completed_tune_timeout,d0
+	jeq		0f
+	subq	#1,d0
+	move.w	d0,completed_tune_timeout
+	jne		0f
+	* down to 0:
+	clr.b	(0x4045,a6)		| as long as we don't have the intro tune we have to do that	
+0:
+	
+	
+	jbsr	cpu_init
 	* should we set a saved copy of S or use the one that existed
 	* when the game was interrupted? depends if the game was interrupted
 	* in the original game code or in an osd function
@@ -3221,21 +3247,21 @@ read_inputs:
 *0:
 *	move.b	d1,(joystick_button_2_4815,a6)
 	
-	tst.b	(0x4C,a0)		| "up" key
-	beq.b	0f
-	bset	#BIT_UP,d1
-0:
-	btst	#JPB_BTN_UP,d0
-	jeq		0f
-	bset	#BIT_UP,d1	
-0:
-	tst.b	(0x4D,a0)		| "down" key
-	jeq	0f
-	bset	#BIT_DOWN,d1
-0:
-	btst	#JPB_BTN_DOWN,d0
-	jeq		0f
-	bset	#BIT_DOWN,d1	
+*	tst.b	(0x4C,a0)		| "up" key
+*	beq.b	0f
+*	bset	#BIT_UP,d1
+*0:
+*	btst	#JPB_BTN_UP,d0
+*	jeq		0f
+*	bset	#BIT_UP,d1	
+*0:
+*	tst.b	(0x4D,a0)		| "down" key
+*	jeq	0f
+*	bset	#BIT_DOWN,d1
+*0:
+*	btst	#JPB_BTN_DOWN,d0
+*	jeq		0f
+*	bset	#BIT_DOWN,d1	
 0:
 	tst.b	(0x4F,a0)		| "<-" key
 	jne	1f
@@ -3243,9 +3269,6 @@ read_inputs:
 	jeq		0f
 1:
 	bset	#BIT_LEFT,d1
-	* left set, clear up & down, game doesn't support that and blocks
-	bclr	#BIT_DOWN,d1	
-	bclr	#BIT_UP,d1	
 0:
 	tst.b	(0x4E,a0)		| "->" key
 	jne	1f
@@ -3254,10 +3277,8 @@ read_inputs:
 	jeq		0f
 1:
 	bset	#BIT_RIGHT,d1
-	* right set, clear up & down, game doesn't support that and blocks
+	* right set, clear left
 	bclr	#BIT_LEFT,d1	
-	bclr	#BIT_DOWN,d1	
-	bclr	#BIT_UP,d1	
 0:
 	move.b	d1,(joystick_directions_4804,a6)
 
@@ -3695,7 +3716,18 @@ osd_sound_start:
 	
 	lea		_custom,a6
 
-
+	cmp.b	#SFX_01_SND,d0
+	jne		0f
+	move.w	#50,sfx_01_timeout
+0:
+	cmp.b	#6,d0
+	jne		0f
+	move.w	#400,killed_tune_timeout
+0:
+	cmp.b	#5,d0
+	jne		0f
+	move.w	#400,completed_tune_timeout
+0:
 	lsl.w	#3,d0
 	lea		sound_table,a0
 
@@ -4085,7 +4117,12 @@ sprite_x_offset:
 
 	.align 2
 
-
+sfx_01_timeout:
+	.word	0
+killed_tune_timeout:
+	.word	0
+completed_tune_timeout:
+	.word	0
 
 palette:	
 	.include "palette.68k"

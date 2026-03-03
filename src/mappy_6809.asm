@@ -24,6 +24,7 @@ function_and_args_table_d020 = $d020
 scroll_registers_3800 = $3800
 scroll_value_1389 = $1389
 copy_of_namco_io_1370 = $1370
+copy_of_button_state_1375 = $1375
 
 sound_4040 = $4040
 sound_4041 = $4041
@@ -1076,7 +1077,7 @@ AB8E: C6 00       LDB    #$00
 AB90: BD F3 D0    JSR    $F3D0
 AB93: B6 13 81    LDA    $1381
 AB96: 4C          INCA
-AB97: A7 C9 01 20 STA    $0120,U
+AB97: A7 C9 01 20 STA    $0120,U		; [video_address]
 AB9B: 86 3C       LDA    #$3C
 AB9D: BD D0 93    JSR    $D093
 l_aba0:
@@ -1091,8 +1092,8 @@ ABB1: BD F3 D0    JSR    $F3D0
 ABB4: 33 C8 E0    LEAU   -$20,U
 ABB7: B6 13 8D    LDA    $138D
 ABBA: 27 12       BEQ    $ABCE
-ABBC: A7 C4       STA    ,U
-ABBE: E7 C9 08 00 STB    $0800,U
+ABBC: A7 C4       STA    ,U       ; [unchecked_address]
+ABBE: E7 C9 08 00 STB    $0800,U  ; [video_address]
 ABC2: 33 C8 E0    LEAU   -$20,U
 ABC5: B6 13 8E    LDA    $138E
 ABC8: 44          LSRA
@@ -1112,8 +1113,8 @@ ABDB: E7 C9 08 00 STB    $0800,U
 ABDF: 33 C8 E0    LEAU   -$20,U
 ABE2: B6 13 8E    LDA    $138E
 ABE5: 84 0F       ANDA   #$0F
-ABE7: A7 C4       STA    ,U
-ABE9: E7 C9 08 00 STB    $0800,U
+ABE7: A7 C4       STA    ,U					; [unchecked_address]
+ABE9: E7 C9 08 00 STB    $0800,U			; [video_address]
 ABED: 86 3C       LDA    #$3C
 ABEF: BD D0 93    JSR    $D093
 ABF2: 8E F4 5F    LDX    #$F45F
@@ -1851,16 +1852,16 @@ B30E: 81 09       CMPA   #$09
 B310: 22 26       BHI    $B338
 B312: B6 13 77    LDA    $1377
 B315: 20 03       BRA    $B31A
-B317: B6 13 75    LDA    $1375
+B317: B6 13 75    LDA    copy_of_button_state_1375
 B31A: 85 04       BITA   #$04
 B31C: 27 0E       BEQ    $B32C
 B31E: 20 07       BRA    $B327
-B320: B6 13 75    LDA    $1375
+B320: B6 13 75    LDA    copy_of_button_state_1375
 B323: 85 01       BITA   #$01
 B325: 27 05       BEQ    $B32C
 B327: 7C 15 15    INC    $1515
 B32A: 20 0F       BRA    $B33B
-B32C: B6 13 75    LDA    $1375
+B32C: B6 13 75    LDA    copy_of_button_state_1375
 B32F: 84 01       ANDA   #$01
 B331: BA 13 77    ORA    $1377
 B334: 84 05       ANDA   #$05
@@ -3132,7 +3133,7 @@ l_c013:
 C013: B6 14 41    LDA    $1441
 C016: 26 01       BNE    $C019
 C018: 39          RTS
-C019: 8E 13 75    LDX    #$1375
+C019: 8E 13 75    LDX    #copy_of_button_state_1375
 C01C: B6 13 93    LDA    $1393
 C01F: 48          ASLA
 C020: F6 14 08    LDB    $1408
@@ -3142,7 +3143,7 @@ C028: 39          RTS
 l_c029:
 C029: B6 13 60    LDA    $1360
 C02C: 26 0A       BNE    $C038
-C02E: B6 13 75    LDA    $1375
+C02E: B6 13 75    LDA    copy_of_button_state_1375
 C031: 97 3D       STA    <$3D
 C033: B6 13 74    LDA    copy_of_joy_directions_1374
 C036: 20 0E       BRA    $C046

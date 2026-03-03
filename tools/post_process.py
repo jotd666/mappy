@@ -273,7 +273,7 @@ play_sound:
     move.l  d0,-(a7)
     move.l  a0,d0
     sub.l   a6,d0
-    sub.w   #0x403F,d0
+    sub.w   #0x4040,d0
     jbsr    osd_sound_start
     move.l  (a7)+,d0
     rts
