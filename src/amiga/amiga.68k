@@ -938,14 +938,7 @@ do_irq:
 	* set base for RAM
 	jbsr	cpu_init
 	GET_MEMORY_START_AND_DP
-	clr.b	(0x4040,a6)			| temp tell music that it has stopped
-	clr.b	(0x4041,a6)			| temp tell music that it has stopped
-	clr.b	(0x4042,a6)			| temp tell music that it has stopped
-	clr.b	(0x4043,a6)			| temp tell music that it has stopped
-	clr.b	(0x4044,a6)			| temp tell music that it has stopped
-	clr.b	(0x4045,a6)			| temp tell music that it has stopped
-	clr.b	(0x4046,a6)			| temp tell music that it has stopped
-	clr.b	(0x4047,a6)			| temp tell music that it has stopped
+
 	* should we set a saved copy of S or use the one that existed
 	* when the game was interrupted? depends if the game was interrupted
 	* in the original game code or in an osd function
@@ -998,9 +991,8 @@ level3_interrupt:
 	bne.b	0f
 	bsr		toggle_pause
 0:
-	* countdown active to start "hurry" tune?
+
 	jbsr	handle_music_termination
-	jbsr	handle_hurry_music_restart
 	
 	* ack vbl twice (040/pistorm bug)
 	move.w	#0x20,(intreq,a5)
@@ -3375,7 +3367,7 @@ add_one_credit:
 1:
 	or.b	#0xF0,d0
 	move.b	d0,(credits_unit_4803,a6)
-	move.w	#CREDIT_14_SND,d0
+	move.w	#CREDIT_15_SND,d0
 	jbsr	osd_sound_start
 	movem.l	(a7)+,d0/a5/a6
 	rts
@@ -3700,39 +3692,10 @@ osd_music_stop:
 osd_sound_start:
 	OSD_ENTER
 	movem.l	d0/d1/a0/a6,-(a7)
-
-	.ifdef	SUPER_DEGRADED_OCS_VERSION
-	* extremely low memory: remove in-game music (first module)
-	cmp.w	#MAIN_TUNE_SND,d0
-	jeq		10f
-	cmp.w	#HURRY_TUNE_SND,d0
-	jeq		10f
-	.endif
 	
-	cmp.w	#CAUGHT_SND,d0
-	jeq	1f
-	cmp.w	#KILLED_SND,d0
-	jne	0f
-	* anticipate that the game is going to cut the music
-	* right after playing this sfx. If we don't cut the music
-	* first, the game will stop sound, preventing the "caught" sound
-	* to be played
-1:
-	move.l	a5,d1
-	GET_MEMORY_START_AND_DP
-	*clr.w	(sound_level_start_tune_4040,a6)
-	jbsr	osd_music_stop
-	move.l	d1,a5
-0:
 	lea		_custom,a6
 
-	.ifndef	SUPER_DEGRADED_OCS_VERSION
-	cmp.w	#HURRY_TUNE_SND,d0
-	jne		0f
-	st.b	lock_hurry_tune
-	move.w	#WARNING_TUNE_SND,d0
-0:
-	.endif
+
 	lsl.w	#3,d0
 	lea		sound_table,a0
 
@@ -3772,16 +3735,6 @@ osd_sound_start:
 	* music
 4:
 
-	* handle "lock" on hurry tune until some other tune plays
-	cmp.w	#WARNING_TUNE_SND*8,d0
-	jne		20f
-	tst.b	lock_hurry_tune
-	jeq		21f
-	move.w	#HURRY_TUNE_SND*8,d0
-	jra		21f
-20:
-	clr.b	lock_hurry_tune
-21:
 	
 	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
 
@@ -3844,30 +3797,7 @@ osd_sound_start:
 6:
 	jra	10b
 
-handle_hurry_music_restart:
-	move.b	start_hurry_tune_timeout,d0
-	jeq		0f
-	subq.b	#1,d0
-	jne		2f
-	jbsr	osd_music_stop
 
-	move.w	#HURRY_TUNE_SND,d0
-	jbsr	osd_sound_start	
-	moveq	#0,d0
-2:
-	move.b	d0,start_hurry_tune_timeout
-0:
-	move.b	start_sfx_10_timeout,d0
-	jeq		0f
-	subq.b	#1,d0
-	jne		2f
-	move.w	#SFX_10_SND,d0
-	jbsr	osd_sound_start
-	moveq	#0,d0
-2:
-	move.b	d0,start_sfx_10_timeout
-0:
-	rts
 	
 handle_music_termination:
 	moveq	#0,d0
@@ -3939,13 +3869,13 @@ highscore_loaded:
 
 music_trigger_address_table:
 	.byte	-1
-	.byte	LEVEL_START_TUNE_SND	| trigger 81
-	.byte	GAME_OVER_TUNE_SND     	| trigger 82
-	.byte	HIGHSCORE_TUNE_SND     	| trigger 83
-	.byte	WARNING_TUNE_SND       	| trigger 84
-	.byte	LEVEL_COMPLETE_TUNE_SND | trigger 85
-	.byte	CAUGHT_SND            	| trigger 86
-	.byte	KILLED_SND            	| trigger 87
+	.byte	-1 | trigger 81
+	.byte	-1 | trigger 82
+	.byte	-1 | trigger 83
+	.byte	-1 | trigger 84
+	.byte	-1 | trigger 85
+	.byte	-1 | trigger 86
+	.byte	-1 | trigger 87
 	.byte	-1               	 	| trigger 88
 	
 normal_hiscorename:

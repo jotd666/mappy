@@ -16,6 +16,7 @@ sound_settings_dict = { 0x14 : {"channel":3,"priority":1},  # credit
 0x13 : {"priority":80},
 
 }
+sound_settings_dict = {}
 
 def convert(low_memory):
     if not shutil.which("sox"):
@@ -36,7 +37,7 @@ def convert(low_memory):
 
     EMPTY_SND = "EMPTY_SND"
 
-    dummy_sounds = {0x9,0xb}  # TODO: check if useful to keep that
+    dummy_sounds = {0x11,0x0B,0x03,0x0D,0x0E,0x00,0x2,0x4,0x5,0x6}
     if low_memory:
         dummy_sounds.update({1,2,0x15,0x14,0x13,0x1F})  # remove tunes & some non-essential samples
 
@@ -66,25 +67,24 @@ def convert(low_memory):
 
 
 
-    main_mod = "digdug2_main_tune"
-    others = "digdug2_others"
+    main_mod = "main_tune"
 
 
-    sound_dict.update({
-    "MAIN_TUNE_SND"      :{"index":1,"pattern":0,"volume":32,"module":main_mod},
-    "GAME_OVER_TUNE_SND"      :{"index":0x4,"pattern":1,"volume":32,"module":others},
-    "HIGHSCORE_TUNE_SND"      :{"index":0xA,"pattern":2,"volume":32,"module":others},
-    "LEVEL_COMPLETE_TUNE_SND"      :{"index":0x12,"pattern":5,"volume":32,"module":others},
-    "LEVEL_START_TUNE_SND"      :{"index":0x0,"pattern":0,"volume":32,"module":others},
-    "CAUGHT_SND"      :{"index":0xD,"pattern":6,"volume":32,"module":others},
-    "KILLED_SND"      :{"index":0x11,"pattern":7,"volume":32,"module":others},
-    }
-    )
-    if not low_memory:
-        sound_dict.update(
-        {"WARNING_TUNE_SND"      :{"index":0x2,"pattern":4,"volume":32,"module":others},
-        "HURRY_TUNE_SND"      :{"index":0x1F,"pattern":1,"volume":32,"module":main_mod},  # fake, should chain with "warning"
-})
+##    sound_dict.update({
+##    "MAIN_TUNE_SND"      :{"index":1,"pattern":0,"volume":32},
+##    "GAME_OVER_TUNE_SND"      :{"index":0x4,"pattern":1,"volume":32},
+##    "HIGHSCORE_TUNE_SND"      :{"index":0xA,"pattern":2,"volume":32},
+##    "LEVEL_COMPLETE_TUNE_SND"      :{"index":0x12,"pattern":5,"volume":32},
+##    "LEVEL_START_TUNE_SND"      :{"index":0x0,"pattern":0,"volume":32},
+##    "CAUGHT_SND"      :{"index":0xD,"pattern":6,"volume":32},
+##    "KILLED_SND"      :{"index":0x11,"pattern":7,"volume":32},
+##    }
+##    )
+##    if not low_memory:
+##        sound_dict.update(
+##        {"WARNING_TUNE_SND"      :{"index":0x2,"pattern":4,"volume":32},
+##        "HURRY_TUNE_SND"      :{"index":0x1F,"pattern":1,"volume":32},
+##})
 
 
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
@@ -250,14 +250,13 @@ def convert(low_memory):
                 write_asm(contents,fw)
 
 
-        input_mods = [None,others] if low_memory else [main_mod,others]
-        for mmod,name in zip(input_mods,[main_mod,others]):
-            if mmod:
-                with open(os.path.join(sound_dir,f"{mmod}.mod"),"rb") as f:
-                    contents = f.read()
-            fw.write(f"{name}_tunes:\n")    # write empty label on low memory setup
-            if mmod:
-                write_asm(contents,fw)
+##        for mmod,name in zip(input_mods,[main_mod,others]):
+##            if mmod:
+##                with open(os.path.join(sound_dir,f"{mmod}.mod"),"rb") as f:
+##                    contents = f.read()
+##            fw.write(f"{name}_tunes:\n")    # write empty label on low memory setup
+##            if mmod:
+##                write_asm(contents,fw)
 
 
         fw.write("\t.align\t8\n")
@@ -270,7 +269,7 @@ def convert(low_memory):
             fst.write(" | {}\n".format(i))
 
 
-convert(low_memory=True)
+#convert(low_memory=True)
 convert(low_memory=False)
 
 

@@ -1,5 +1,6 @@
 - highscore 20000 not shown: 7E0 7E1
 - find a way to make display higher (remove the gap between house and scores?)
-- lockup on starting game breakpoints follow
-- write in 4041: trigger tick and clear after a while
+- lockup after demo screen full of 000000
+- write in 4041: trigger tick and clear after a while: implement sound first
 
+https://vgmrips.net/packs/pack/mappy-nec-pc-8801
