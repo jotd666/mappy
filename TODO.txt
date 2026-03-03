@@ -2,7 +2,7 @@
 - handle black color
 - find a way to make display higher (remove the gap between house and scores?)
 - lockup after demo screen full of 000000
-- score < 1000 !!
+- score < 1000 !! 2036 holds the real score killed carry at f281
 - change priority of playfields (house roof)
 - game over timeout music: 4043<=0
 - level skip

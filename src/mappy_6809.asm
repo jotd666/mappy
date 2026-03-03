@@ -25,6 +25,7 @@ scroll_registers_3800 = $3800
 scroll_value_1389 = $1389
 copy_of_namco_io_1370 = $1370
 copy_of_button_state_1375 = $1375
+player_1_score_2036 = $2036
 
 sound_4040 = $4040
 sound_4041 = $4041
@@ -1494,7 +1495,7 @@ AF98: 8E 13 8F    LDX    #$138F
 AF9B: CE 10 14    LDU    #$1014
 AF9E: C6 02       LDB    #$02
 AFA0: BD E3 37    JSR    $E337
-AFA3: 8E 20 36    LDX    #$2036
+AFA3: 8E 20 36    LDX    #player_1_score_2036
 AFA6: CE 10 17    LDU    #$1017
 AFA9: EC 81       LDD    ,X++
 AFAB: ED C1       STD    ,U++
@@ -2451,7 +2452,7 @@ B943: 86 00       LDA    #$00
 B945: BD F3 69    JSR    $F369
 B948: 39          RTS
 
-B95D: 8E 20 36    LDX    #$2036                                      
+B95D: 8E 20 36    LDX    #player_1_score_2036                                      
 B960: CE 14 80    LDU    #$1480
 B963: EC 84       LDD    ,X
 B965: A3 C4       SUBD   ,U
@@ -2485,7 +2486,7 @@ B9A3: 31 3F       LEAY   -$1,Y
 B9A5: 26 F8       BNE    $B99F
 B9A7: 35 40       PULS   U
 B9A9: 34 40       PSHS   U
-B9AB: 8E 20 36    LDX    #$2036
+B9AB: 8E 20 36    LDX    #player_1_score_2036
 B9AE: 10 8E 00 04 LDY    #$0004
 B9B2: EC 81       LDD    ,X++
 B9B4: ED C1       STD    ,U++
@@ -4911,8 +4912,9 @@ CF8A: B6 13 81    LDA    $1381
 CF8D: 27 05       BEQ    $CF94
 CF8F: CE 07 EB    LDU    #$07EB
 CF92: 20 03       BRA    $CF97
+; copy score to screen (player 1)
 CF94: CE 07 FE    LDU    #$07FE
-CF97: 8E 20 36    LDX    #$2036
+CF97: 8E 20 36    LDX    #player_1_score_2036
 CF9A: C6 03       LDB    #$03
 CF9C: A6 84       LDA    ,X
 CF9E: 44          LSRA
@@ -7150,6 +7152,7 @@ F270: 86 01       LDA    #$01
 F272: B7 14 4D    STA    $144D
 F275: EC 84       LDD    ,X
 F277: DD 34       STD    <$34
+; add to score
 F279: 8E 20 39    LDX    #$2039
 F27C: 96 35       LDA    <$35
 F27E: AB 82       ADDA   ,-X
