@@ -80,8 +80,7 @@ def get_double_size_x_sprites():
     return rval
 
 def get_double_size_xy_sprites():
-    return {0x64:False,0x68:False,0x6c:False,0x70:False,0x74:False}
-    return set(range(0xC8,0xE0,4))   # inflating monsters
+    return {0x50:False,0x54:False,0x64:False,0x68:False,0x6c:False,0x70:False,0x74:False}
 
 def get_mirror_sprites():
     """ return the index of the sprites that need mirroring

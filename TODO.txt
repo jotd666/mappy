@@ -1,13 +1,12 @@
 - highscore 20000 not shown: 7E0 7E1
 - handle black color
 - find a way to make display higher (remove the gap between house and scores?)
-- lockup after demo screen full of 000000
-- score < 1000 !! 2036 holds the real score killed carry at f281
-- change priority of playfields (house roof)
+- lockup after demo screen full of 000000: highscore screen doesn't display properly
 - game over timeout music: 4043<=0
 - level skip
 - invincible
 - add to score
+- F8 lose lives
 - try to use HW sprites maybe only for ECS
 
 problem with assembler: 00006dfc 1d81 0170 0000 4805      move.b d1,(a6,$00004805) == $00034805 [f0]

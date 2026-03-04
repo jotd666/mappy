@@ -111,6 +111,19 @@ with open(source_dir / "conv.s") as f:
         elif address in [0xF7E5,0xF7F8]:
             # remove I/O tests that lead to fatal errors
             line = remove_instruction(lines,1)
+
+        elif address == 0xf285:
+            lines[i-1]=""  # remove subq
+            # make up for subq, without changing carry/x flag
+            line = change_instruction("GET_REG_ADDRESS\t-1,d2",lines,i,continuing_lines=False)
+            lines[i+2] = remove_error(lines[i+2])
+        elif address == 0xf28a:
+            lines[i-1]=""  # remove subq
+            # make up for subq, without changing carry/x flag
+            line = change_instruction("GET_REG_ADDRESS\t-2,d2",lines,i,continuing_lines=False)
+            lines[i+3] = remove_error(lines[i+3])
+        elif address == 0xf28f:
+            line = change_instruction("subq\t#2,d2",lines,i)
         ################# fix the stray C test ###########
         if address in [0xe32c,0xe342,0xe356,0x0f33b]:
             # save C

@@ -25,12 +25,14 @@ scroll_registers_3800 = $3800
 scroll_value_1389 = $1389
 copy_of_namco_io_1370 = $1370
 copy_of_button_state_1375 = $1375
-player_1_score_2036 = $2036
+player_score_2036 = $2036
+player_lives_2030 = $2030
+player_hit_flag_2033 = $2033
 
 sound_4040 = $4040
 sound_4041 = $4041
 sound_4042 = $4042
-sound_4043 = $4043
+sound_game_over_4043 = $4043
 sound_4044 = $4044
 sound_4045 = $4045
 sound_4046 = $4046
@@ -40,7 +42,7 @@ sound_4049 = $4049
 sound_404a = $404a
 sound_404b = $404b
 sound_404c = $404c
-sound_404d = $404d
+sound_highscore_404d = $404d
 sound_404e = $404e
 sound_404f = $404f
 
@@ -101,7 +103,7 @@ A045: B6 13 71    LDA    $1371
 A048: 27 0C       BEQ    $A056
 A04A: 8E AA 7E    LDX    #$AA7E		; [function_address]
 A04D: BF 14 00    STX    $1400
-A050: 7F 40 4D    CLR    sound_404D
+A050: 7F 40 4D    CLR    sound_highscore_404D
 A053: 7F 40 4E    CLR    sound_404E
 A056: 8E D0 20    LDX    #function_and_args_table_d020
 ; call function chain in a loop
@@ -1480,7 +1482,7 @@ AF71: 8C 24 16    CMPX   #$2416
 AF74: 26 F6       BNE    $AF6C
 AF76: 7C 14 44    INC    $1444
 AF79: 86 01       LDA    #$01
-AF7B: B7 40 43    STA    sound_4043
+AF7B: B7 40 43    STA    sound_game_over_4043
 AF7E: BD D0 8A    JSR    save_context_d08a
 AF81: 96 31       LDA    <$31
 AF83: 4C          INCA
@@ -1495,7 +1497,7 @@ AF98: 8E 13 8F    LDX    #$138F
 AF9B: CE 10 14    LDU    #$1014
 AF9E: C6 02       LDB    #$02
 AFA0: BD E3 37    JSR    $E337
-AFA3: 8E 20 36    LDX    #player_1_score_2036
+AFA3: 8E 20 36    LDX    #player_score_2036
 AFA6: CE 10 17    LDU    #$1017
 AFA9: EC 81       LDD    ,X++
 AFAB: ED C1       STD    ,U++
@@ -1509,9 +1511,10 @@ AFBC: CE 10 08    LDU    #$1008
 AFBF: C6 03       LDB    #$03
 AFC1: BD E3 37    JSR    $E337
 AFC4: BD D0 8A    JSR    save_context_d08a
-AFC7: B6 40 43    LDA    sound_4043
+AFC7: B6 40 43    LDA    sound_game_over_4043
 AFCA: 27 01       BEQ    $AFCD
 AFCC: 39          RTS
+; game over tune ended
 AFCD: B6 13 81    LDA    $1381
 AFD0: 26 05       BNE    $AFD7
 AFD2: 8E 1A 00    LDX    #$1A00
@@ -1527,7 +1530,9 @@ AFEA: 7F 14 44    CLR    $1444
 AFED: BD F3 AA    JSR    $F3AA
 AFF0: 86 1E       LDA    #$1E
 AFF2: BD D0 93    JSR    $D093
-AFF5: 7E B9 5D    JMP    $B95D
+AFF5: 7E B9 5D    JMP    should_we_display_highscores_b95d
+
+display_title_aff8:
 AFF8: B6 13 81    LDA    $1381
 AFFB: 26 08       BNE    $B005
 AFFD: 8E 1A 00    LDX    #$1A00
@@ -1734,7 +1739,7 @@ B1EF: BD D0 8A    JSR    save_context_d08a
 B1F2: 8E 20 00    LDX    #$2000
 B1F5: CC 00 00    LDD    #$0000
 B1F8: ED 81       STD    ,X++
-B1FA: 8C 20 30    CMPX   #$2030
+B1FA: 8C 20 30    CMPX   #player_lives_2030
 B1FD: 26 F9       BNE    $B1F8
 B1FF: CC 01 9C    LDD    #$019C
 B202: DD 01       STD    <$01
@@ -2452,7 +2457,8 @@ B943: 86 00       LDA    #$00
 B945: BD F3 69    JSR    $F369
 B948: 39          RTS
 
-B95D: 8E 20 36    LDX    #player_1_score_2036                                      
+should_we_display_highscores_b95d:
+B95D: 8E 20 36    LDX    #player_score_2036                                      
 B960: CE 14 80    LDU    #$1480
 B963: EC 84       LDD    ,X
 B965: A3 C4       SUBD   ,U
@@ -2461,7 +2467,9 @@ B969: 25 06       BCS    $B971
 B96B: A6 02       LDA    $2,X
 B96D: A0 42       SUBA   $2,U
 B96F: 24 03       BCC    $B974
-B971: 7E AF F8    JMP    $AFF8
+; score not eligible for highscore: go to title
+B971: 7E AF F8    JMP    display_title_aff8
+; player score is among 5 best scores
 B974: 10 8E 00 04 LDY    #$0004
 B978: EC 81       LDD    ,X++
 B97A: ED C1       STD    ,U++
@@ -2471,7 +2479,7 @@ B980: 86 04       LDA    #$04
 B982: B7 13 97    STA    $1397
 B985: 8E 14 78    LDX    #$1478
 B988: CE 14 80    LDU    #$1480
-B98B: 34 10       PSHS   X
+B98B: 34 10       PSHS   X		; save X
 B98D: EC C4       LDD    ,U
 B98F: A3 84       SUBD   ,X
 B991: 22 08       BHI    $B99B
@@ -2484,15 +2492,15 @@ B99F: EC 81       LDD    ,X++
 B9A1: ED C1       STD    ,U++
 B9A3: 31 3F       LEAY   -$1,Y
 B9A5: 26 F8       BNE    $B99F
-B9A7: 35 40       PULS   U
-B9A9: 34 40       PSHS   U
-B9AB: 8E 20 36    LDX    #player_1_score_2036
+B9A7: 35 40       PULS   U		; restore U
+B9A9: 34 40       PSHS   U		; save U
+B9AB: 8E 20 36    LDX    #player_score_2036
 B9AE: 10 8E 00 04 LDY    #$0004
 B9B2: EC 81       LDD    ,X++
 B9B4: ED C1       STD    ,U++
 B9B6: 31 3F       LEAY   -$1,Y
 B9B8: 26 F8       BNE    $B9B2
-B9BA: 35 40       PULS   U
+B9BA: 35 40       PULS   U		; restore U
 B9BC: 11 83 14 60 CMPU   #$1460
 B9C0: 26 05       BNE    $B9C7
 B9C2: 7F 13 97    CLR    $1397
@@ -2524,7 +2532,7 @@ B9FD: BB 13 97    ADDA   $1397
 BA00: 8E 0B 4F    LDX    #$0B4F
 BA03: 30 86       LEAX   A,X
 BA05: 86 02       LDA    #$02
-BA07: A7 84       STA    ,X
+BA07: A7 84       STA    ,X			; [video_address]
 BA09: 30 88 E0    LEAX   -$20,X
 BA0C: 8C 08 CF    CMPX   #$08CF
 BA0F: 22 F6       BHI    $BA07
@@ -2540,9 +2548,10 @@ BA24: CE E4 DE    LDU    #$E4DE		; [function_address]
 BA27: EF 0E       STU    $E,X
 BA29: 6F 88 1B    CLR    $1B,X
 BA2C: 7C 14 45    INC    $1445
-BA2F: 7C 40 4D    INC    sound_404D
+BA2F: 7C 40 4D    INC    sound_highscore_404D
 BA32: BD D0 8A    JSR    save_context_d08a
 BA35: BD BC 06    JSR    $BC06
+; scroll the highscore screen to show it
 BA38: B6 13 89    LDA    scroll_value_1389
 BA3B: 80 02       SUBA   #$02
 BA3D: B7 13 89    STA    scroll_value_1389
@@ -2577,7 +2586,7 @@ BA84: 86 00       LDA    #$00
 BA86: B7 14 08    STA    $1408
 BA89: BD D0 8A    JSR    save_context_d08a
 BA8C: BD BC 06    JSR    $BC06
-BA8F: B6 40 4D    LDA    sound_404D
+BA8F: B6 40 4D    LDA    sound_highscore_404D
 BA92: 26 0B       BNE    $BA9F
 BA94: A6 9F 14 8C LDA    [$148C]
 BA98: A7 9F 14 88 STA    [$1488]
@@ -2645,7 +2654,7 @@ BB22: 86 5A       LDA    #$5A
 BB24: A7 84       STA    ,X
 BB26: 39          RTS
 BB27: BD BC 06    JSR    $BC06
-BB2A: 7F 40 4D    CLR    sound_404D
+BB2A: 7F 40 4D    CLR    sound_highscore_404D
 BB2D: 8E 03 48    LDX    #$0348
 BB30: 86 20       LDA    #$20
 BB32: A7 84       STA    ,X
@@ -2720,7 +2729,7 @@ BBDC: BD D0 8A    JSR    save_context_d08a
 BBDF: B6 40 4E    LDA    sound_404E
 BBE2: 27 01       BEQ    $BBE5
 BBE4: 39          RTS
-BBE5: 7E AF F8    JMP    $AFF8
+BBE5: 7E AF F8    JMP    display_title_aff8
 BBE8: B6 13 B5    LDA    $13B5
 BBEB: 85 08       BITA   #$08
 BBED: 27 01       BEQ    $BBF0
@@ -2757,7 +2766,7 @@ BC43: 26 FB       BNE    $BC40
 BC45: 7F 14 53    CLR    $1453
 BC48: 39          RTS
 BC49: 7F 13 81    CLR    $1381
-BC4C: 8E 20 30    LDX    #$2030
+BC4C: 8E 20 30    LDX    #player_lives_2030
 BC4F: B6 13 64    LDA    $1364
 BC52: A7 80       STA    ,X+
 BC54: 6F 80       CLR    ,X+
@@ -2777,7 +2786,7 @@ BC70: 97 3B       STA    <$3B
 BC72: BD BE 0D    JSR    $BE0D
 BC75: B6 13 80    LDA    $1380
 BC78: 27 1E       BEQ    $BC98
-BC7A: 8E 20 30    LDX    #$2030
+BC7A: 8E 20 30    LDX    #player_lives_2030
 BC7D: CE 1A 30    LDU    #$1A30
 BC80: 10 8E 00 90 LDY    #$0090
 BC84: EC 81       LDD    ,X++
@@ -2802,7 +2811,7 @@ BCAE: 7E BD 42    JMP    $BD42
 BCB1: 8E 20 00    LDX    #$2000
 BCB4: CC 00 00    LDD    #$0000
 BCB7: ED 81       STD    ,X++
-BCB9: 8C 20 30    CMPX   #$2030
+BCB9: 8C 20 30    CMPX   #player_lives_2030
 BCBC: 26 F9       BNE    $BCB7
 BCBE: 96 31       LDA    <$31
 BCC0: 81 1F       CMPA   #$1F
@@ -4914,7 +4923,7 @@ CF8F: CE 07 EB    LDU    #$07EB
 CF92: 20 03       BRA    $CF97
 ; copy score to screen (player 1)
 CF94: CE 07 FE    LDU    #$07FE
-CF97: 8E 20 36    LDX    #player_1_score_2036
+CF97: 8E 20 36    LDX    #player_score_2036
 CF9A: C6 03       LDB    #$03
 CF9C: A6 84       LDA    ,X
 CF9E: 44          LSRA
@@ -7189,14 +7198,14 @@ F2B8: 44          LSRA
 F2B9: 44          LSRA
 F2BA: 26 1E       BNE    $F2DA
 F2BC: 86 20       LDA    #$20
-F2BE: A7 C2       STA    ,-U
+F2BE: A7 C2       STA    ,-U		; [video_address]
 F2C0: A6 80       LDA    ,X+
 F2C2: C1 01       CMPB   #$01
 F2C4: 27 18       BEQ    $F2DE
 F2C6: 84 0F       ANDA   #$0F
 F2C8: 26 16       BNE    $F2E0
 F2CA: 86 20       LDA    #$20
-F2CC: A7 C2       STA    ,-U
+F2CC: A7 C2       STA    ,-U		; [video_address]
 F2CE: 5A          DECB
 F2CF: 26 01       BNE    $F2D2
 F2D1: 39          RTS
@@ -7206,10 +7215,10 @@ F2D6: 44          LSRA
 F2D7: 44          LSRA
 F2D8: 44          LSRA
 F2D9: 44          LSRA
-F2DA: A7 C2       STA    ,-U
+F2DA: A7 C2       STA    ,-U		; [video_address]
 F2DC: A6 80       LDA    ,X+
 F2DE: 84 0F       ANDA   #$0F
-F2E0: A7 C2       STA    ,-U
+F2E0: A7 C2       STA    ,-U		; [video_address]
 F2E2: 5A          DECB
 F2E3: 27 02       BEQ    $F2E7
 F2E5: 20 ED       BRA    $F2D4
