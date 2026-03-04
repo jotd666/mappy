@@ -948,6 +948,14 @@ do_irq:
 	* down to 0:
 	clr.b	(0x4041,a6)		| as long as we don't have the intro tune we have to do that	
 0:
+	move.w	hurry_timeout,d0
+	jeq		0f
+	subq	#1,d0
+	move.w	d0,hurry_timeout
+	jne		0f
+	* down to 0:
+	clr.b	(0x4049,a6)
+0:
 	move.w	killed_tune_timeout,d0
 	jeq		0f
 	subq	#1,d0
@@ -1232,10 +1240,10 @@ is_game_playing:
 	jra		0b
 	
 skip_level:
-*	movem.l	a6/a5,-(a7)
-*	GET_MEMORY_START_AND_DP
-*	move.b	#1,level_completed_flag_10d1(a6)
-*	movem.l	(a7)+,a6/a5
+	movem.l	a6/a5,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	#1,0x32(a5)		| level completed flag
+	movem.l	(a7)+,a6/a5
 	rts
 
 
@@ -3734,6 +3742,10 @@ osd_sound_start:
 	jne		0f
 	move.w	#50,sfx_01_timeout
 0:
+	cmp.b	#HURRY_09_SND,d0
+	jne		0f
+	move.w	#50,hurry_timeout
+0:
 	cmp.b	#6,d0
 	jne		0f
 	move.w	#300,killed_tune_timeout
@@ -4135,6 +4147,8 @@ sprite_x_offset:
 
 	.align 2
 
+hurry_timeout:
+	.word	0
 sfx_01_timeout:
 	.word	0
 killed_tune_timeout:

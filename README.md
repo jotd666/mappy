@@ -1,7 +1,7 @@
-# digdug2
-Amiga port of Dig Dug 2 arcade
+# Mappy
+Amiga port of Mappy arcade
 
-Requires a 2-button joystick, or the keyboard
+Requires a 1-button joystick, or the keyboard
 
 Features:
 
@@ -30,11 +30,10 @@ Instructions:
 5: insert coin
 1/2: start game
 arrows/joystick: move
-red/ctrl: pump
-blue/alt: drill
+red/ctrl: open doors
 
-Bugs:
+Cheat:
 
-- sometimes game can kind of lock up (ex: level 11). Very rare.
-  If that occurs, just wait a few seconds, monsters commit suicide,
-  and game gets to next level.
+F1: skip level
+F2: invincible
+F3: add 10000 points
