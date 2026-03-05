@@ -128,8 +128,8 @@ with open(source_dir / "conv.s") as f:
         if address in [0xe32c,0xe342,0xe356,0x0f33b]:
             # save C
             line = "\tscs\td6\n"+line
-        elif address in [0xC276,0xC4E6]:
-            # grunts & boss have 2 separate tests
+        elif address in [0xC276,0xC4E6,0xC1DE]:
+            # grunts & boss & timeout boss have separate tests
             line = "\ttst.b\tinvincible_flag\n\tjeq\t0f\n\trts\n0:\n"+line
         elif address == 0xbc5b:
             line = "\tGET_DP_ADDRESS\tlevel_number_31\n\tmove.b\tstart_level,(a0)\n"+line

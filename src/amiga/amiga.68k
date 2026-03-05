@@ -67,14 +67,16 @@ BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette st
 BASE_BPLCON2_VALUE = 0x0024		| sprites above all playfields
 UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
 
-HW_SPRITE_X_CORRECTION = 9
+PLAYFIELD_Y_UP_CORRECTION = 8
+
+HW_SPRITE_X_CORRECTION = 9-PLAYFIELD_Y_UP_CORRECTION
 	.ifdef	OCS_VERSION
 HW_SPRITE_Y_CORRECTION = -1
 	.else
 HW_SPRITE_Y_CORRECTION = 47
 	.endif
 	
-SPRITE_X_CORRECTION = 0
+SPRITE_X_CORRECTION = 0-PLAYFIELD_Y_UP_CORRECTION
 	.ifdef	OCS_VERSION
 SPRITE_Y_CORRECTION = -16		| X (portrait)
 	.else
@@ -2873,17 +2875,23 @@ update_bg_tile:
 	* layout is a bloody nightmare, directly fetch
 	* the decoded X,Y values from a pre-generated table
 
-
-
+	.ifdef	NO68020
 	add.w	d7,d7
 	add.w	d7,d7
 	add.w	d7,a0
+	.else
+	lea		(a0,d7.w*4),a0
+	.endif
 	move.w	(a0)+,d0
 	jmi		2f
 	move.w	(a0),d1
 	
-
-	
+	.ifne	PLAYFIELD_Y_UP_CORRECTION
+	cmp.w	#24,d1
+	jcs		1f
+	subq.w	#PLAYFIELD_Y_UP_CORRECTION,d1
+1:
+	.endif
 	
 	* updating bitplanes
 	move.l	#BG_SCREEN_PLANE_SIZE,d5

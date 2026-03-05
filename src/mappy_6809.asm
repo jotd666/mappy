@@ -3363,7 +3363,7 @@ C1D4: C3 00 04    ADDD   #$0004
 C1D7: 10 83 00 08 CMPD   #$0008
 C1DB: 23 01       BLS    $C1DE
 C1DD: 39          RTS
-C1DE: 0C 33       INC    <player_hit_33
+C1DE: 0C 33       INC    <player_hit_33		; Gosenzo time out boss kill
 C1E0: 39          RTS
 l_c1e1:
 C1E1: B6 14 4F    LDA    $144F
