@@ -224,14 +224,17 @@ else:
 
 # now gather all cluts used by letter/digit tiles, logging probably
 # missed some
-##used_cluts = set()
-##for atc in alphanum_tile_codes:
-##    cluts = tile_cluts.get(atc)
-##    if cluts:
-##        used_cluts.update(cluts)
-### now set cluts for all alphanum tiles
-##for atc in alphanum_tile_codes:
-##    tile_cluts[atc] = sorted(used_cluts)
+used_cluts = set()
+
+alphanum_tile_codes = list(range(0,10))+list(range(ord('A'),ord('Z')+1))
+
+for atc in alphanum_tile_codes:
+    cluts = tile_cluts.get(atc)
+    if cluts:
+        used_cluts.update(cluts)
+# now set cluts for all alphanum tiles
+for atc in alphanum_tile_codes:
+    tile_cluts[atc] = sorted(used_cluts)
 
 
 
@@ -409,7 +412,7 @@ sprite_table,next_cache_id = read_tileset(sprite_set_list,sprite_palette,[True,F
 sprite_table_x_size,next_cache_id = read_tileset(sprite_set_list_x_size,sprite_palette,[True,False,True,False],cache=bob_plane_cache, is_bob=True,next_cache_id=next_cache_id)
 
 
-title_bitplane_data = bytes(200)  #bitplanelib.palette_image2raw(title_pic,None,sprite_palette,generate_mask=True,mask_color=magenta)
+title_bitplane_data = bitplanelib.palette_image2raw(title_pic,None,sprite_palette,generate_mask=True,mask_color=magenta)
 
 full_title,next_cache_id = split_bitplane_data(title_bitplane_data,nb_planes+1,bob_plane_cache,title_pic.size[0]//8 + 2,title_pic.size[1],0,next_cache_id)
 
