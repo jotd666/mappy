@@ -2,7 +2,13 @@
 - sprite Y clipping! title
 - display title from big title pic: remove tiles from used sprites to save memory
 - microwave sound limit
-- find unused sprites: bonus stuff/hurry should be used!!!
+- find unused sprites: bonus stuff
+
+0x31: times 6
+0x38-0x3f  ??? cat coin
+0x46,0x47,0x48,0x49,0x4a: scores
+7B: do not filter (dead enemy)
+
 - find a way to make display higher (remove the gap between house and scores by 4 pixels that would be enough?)
 - try to use HW sprites maybe only for ECS: hw sprites in priority for roof
 
