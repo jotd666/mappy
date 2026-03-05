@@ -16,32 +16,7 @@ dst_sprite_dir = this_dir / "sheets" / "sprites"
 tile_width = 16
 tile_height = 16
 
-##class ImageForestFireFill:
-##    def __init__(self,image,fill_color):
-##        self.image = image
-##    def set_color(x,y)
-##    def fill(self, x, y, t):
-##        if self.cells[(x,y)] is None:  # cannot use not: there are 0 values
-##            to_fill = [(x,y)]
-##            while to_fill:
-##                # pick a point from the queue
-##                x,y = to_fill.pop()
-##                # change color if possible
-##                self.cells[(x,y)] = t
-##
-##                # now the neighbours x,y +- 1
-##                for delta_x in range(-1,2):
-##                    xdx = x+delta_x
-##                    if xdx > 0 and xdx < self.columns+1:
-##                        for delta_y in range(-1,2):
-##                            ydy = y+delta_y
-##                            # avoid diagonals
-##                            if (delta_x == 0) ^ (delta_y == 0):
-##                                if ydy > 0 and ydy < self.rows+1:
-##                                    # valid x+delta_x,y+delta_y
-##                                    # push in queue if no color
-##                                    if self.cells[(xdx,ydy)] == None:
-##                                        to_fill.append((xdx,ydy))
+
 
 magenta = (254,0,254)
 black = (0,0,0)
@@ -96,7 +71,8 @@ for i in range(16):
             if p==black:
                 black_pixels.add((x,y))
 
-    # pass 2 if magenta somewhere change to black, iterate
+    # pass 2 if magenta somewhere change to black, iterate, variation of forest fire
+    # but global to pic (no 16x16 processing, but doesn't matter)
 
     while True:
         new_blacks = black_pixels.copy()
