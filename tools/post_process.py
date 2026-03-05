@@ -284,7 +284,7 @@ with open(source_dir / "mappy.68k","w") as fw:
 .global    l_cd22
 .global    l_c7e5
 .global    l_cf81
-.global    l_cfd0
+.global    animate_hurry_up_cfd0
 .global mid_code_base
 
 play_sound:

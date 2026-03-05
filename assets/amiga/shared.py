@@ -71,7 +71,7 @@ def get_sprite_names():
 def get_double_size_y_sprites():
     return {0x32:False,0x7c:False}
 def get_double_size_x_sprites():
-    return set()
+    return {0x34:True,0x35:True}
 
     game_grouped = {0X59,0x5D,0x64,0x5c,0x61,0x65,0x60,0x75}  # fire spitting dragon, flame, hose
     extra_grouped = {0x3C,0xE0,0xE2,0xE6,0xE8,0xEA}  # will speed up display

@@ -1,6 +1,5 @@
 - highscore 20000 not shown: 7E0 7E1
-- level 11, 3: pb initiaizing!!! level 2,12 OK : check around BEB4
-- hurry up doesn't traverse screen! RE to find hurry timer
+- start level 11, 3: pb initiaizing!!! level 2,12 OK : check around BEB4
 
 - try to use HW sprites maybe only for ECS: hw sprites in priority for roof
 - The most number of points you can be awarded is 12,000, which is awarded for catching 10 cats, 

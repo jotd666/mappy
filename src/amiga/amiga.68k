@@ -925,7 +925,7 @@ rom_function_table:
     .long   l_cd22
     .long   l_c7e5
     .long   l_cf81
-    .long   l_cfd0
+    .long   animate_hurry_up_cfd0
     .long   0
 
 * dip switches & I/O memory at start
@@ -3402,6 +3402,13 @@ get_nb_credits:
 	move.l	(a7)+,d1
 	rts
 	
+hurry_up:
+	movem.l	d0/a5/a6,-(a7)
+	GET_MEMORY_START_AND_DP
+	move.b	#1,(hurry_countdown_13b8,a6)
+	movem.l	(a7)+,d0/a5/a6
+	rts
+	
 start_2p_game:
 	movem.l	d0/d1/a5/a6,-(a7)
 	moveq	#2,d1
@@ -3552,6 +3559,12 @@ handle_keyboard:
 *	bne.b	0f
 *	move.w	#0x0FF,_custom+color
 *0:
+
+	cmp.b	#0x57,d0	| F8 key: hurry!
+	bne.b	0f
+	move.w	#0x0FF,_custom+color
+	jbsr	hurry_up
+0:
 
 	cmp.b	#0x58,d0	| F9 key crashes game (restarts whdload)
 	bne.b	0f

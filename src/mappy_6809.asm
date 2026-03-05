@@ -1203,13 +1203,13 @@ ACA1: B7 14 08    STA    $1408
 ACA4: 8E 13 40    LDX    #hurry_up_sprite_structure_1340
 ACA7: FC 13 CE    LDD    $13CE
 ACAA: 83 00 04    SUBD   #$0004
-ACAD: ED 01       STD    $1,X
+ACAD: ED 01       STD    $1,X	; X coordinate
 ACAF: 96 04       LDA    <$04
 ACB1: 80 0A       SUBA   #$0A
-ACB3: A7 04       STA    $4,X
+ACB3: A7 04       STA    $4,X	; Y coordinate
 ; enable it! (not very optimized!)
 ACB5: 86 01       LDA    #$01
-ACB7: B7 13 40    STA    hurry_up_sprite_structure_1340
+ACB7: B7 13 40    STA    hurry_up_sprite_structure_1340	; enabled
 ; play "hurry" sound and wait
 ACBA: B7 40 49    STA    sound_hurry_4049
 ACBD: BD D0 8A    JSR    yield_context_d08a
@@ -4984,24 +4984,25 @@ CFCA: 5A          DECB
 CFCB: 26 01       BNE    $CFCE
 CFCD: 39          RTS
 CFCE: 20 EC       BRA    $CFBC
-l_cfd0:
+animate_hurry_up_cfd0:
 CFD0: 8E 13 40    LDX    #hurry_up_sprite_structure_1340
 CFD3: A6 84       LDA    ,X
 CFD5: 26 01       BNE    $CFD8
+; not active
 CFD7: 39          RTS
 CFD8: CE 11 4A    LDU    #$114A
 CFDB: EC 02       LDD    $2,X
-CFDD: 83 02 00    SUBD   #$0200
+CFDD: 83 02 00    SUBD   #$0200		; move hurry to the left
 CFE0: 24 02       BCC    $CFE4
 CFE2: 6A 01       DEC    $1,X
-CFE4: ED 02       STD    $2,X
+CFE4: ED 02       STD    $2,X		; update
 CFE6: EC 01       LDD    $1,X
 CFE8: C3 00 21    ADDD   #$0021
-CFEB: 2B 2C       BMI    $D019
+CFEB: 2B 2C       BMI    hurry_up_sprite_done_d019		; crossed the screen: disable
 CFED: 10 B3 13 CC CMPD   $13CC
-CFF1: 25 26       BCS    $D019
+CFF1: 25 26       BCS    hurry_up_sprite_done_d019
 CFF3: 86 34       LDA    #$34
-CFF5: A7 C4       STA    ,U				; [video_address]
+CFF5: A7 C4       STA    ,U
 CFF7: 6C 07       INC    $7,X
 CFF9: A6 07       LDA    $7,X
 CFFB: 44          LSRA
@@ -5011,15 +5012,17 @@ CFFF: 25 03       BCS    $D004
 D001: 4F          CLRA
 D002: 6F 07       CLR    $7,X
 D004: 84 03       ANDA   #$03
-D006: A7 41       STA    $1,U				; [video_address]
+D006: A7 41       STA    $1,U
 D008: 86 08       LDA    #$08
-D00A: A7 C9 01 00 STA    $0100,U				; [video_address]
+D00A: A7 C9 01 00 STA    $0100,U
 D00E: A6 04       LDA    $4,X
 D010: B7 13 E3    STA    $13E3
 D013: EC 01       LDD    $1,X
 D015: BD F2 34    JSR    $F234
 D018: 39          RTS
-D019: 6F C9 01 00 CLR    $0100,U		; [video_address]
+
+hurry_up_sprite_done_d019:
+D019: 6F C9 01 00 CLR    $0100,U
 D01D: 6F 84       CLR    ,X
 D01F: 39          RTS
 
@@ -7159,6 +7162,7 @@ F22D: A6 24       LDA    $4,Y
 F22F: 8A 02       ORA    #$02
 F231: A7 24       STA    $4,Y
 F233: 39          RTS
+
 F234: B3 13 CC    SUBD   $13CC
 F237: B6 13 93    LDA    $1393
 F23A: 27 05       BEQ    $F241
