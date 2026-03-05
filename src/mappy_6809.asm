@@ -843,7 +843,7 @@ A931: B6 13 B2    LDA    $13B2
 A934: 26 4F       BNE    $A985
 A936: BE 14 8C    LDX    $148C
 A939: CC 02 17    LDD    #$0217
-A93C: A7 84       STA    ,X
+A93C: A7 84       STA    ,X			; [video_address]
 A93E: 30 88 E0    LEAX   -$20,X
 A941: 5A          DECB
 A942: 26 F8       BNE    $A93C

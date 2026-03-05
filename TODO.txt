@@ -1,7 +1,10 @@
 - highscore 20000 not shown: 7E0 7E1
 - handle black color
-- find a way to make display higher (remove the gap between house and scores?)
-- invincible
+- sprite Y clipping!
+- microwave sound limit
+- find unused sprites
+- declare alphanum tiles for all cluts that already exist
+- find a way to make display higher (remove the gap between house and scores by 4 pixels that would be enough?)
 - try to use HW sprites maybe only for ECS
 
 problem with assembler: 00006dfc 1d81 0170 0000 4805      move.b d1,(a6,$00004805) == $00034805 [f0]
