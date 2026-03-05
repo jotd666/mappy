@@ -41,9 +41,9 @@ stack_top:
 	
 ram_buffer:
 	.ifeq	OPT_ALIGNED_MEMORY
-	.skip	0x8000
+	.skip	ROM_START
 rom_buffer:
-	.skip	0x10000-0x8000
+	.skip	0x10000-ROM_START
 	.else
 dev_ram_buffer:
 	.skip	0x20000

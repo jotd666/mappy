@@ -570,12 +570,7 @@ _user:
 	btst	#0,d1
 	sne		frameskip
 	move.l	misc_options,d1
-	btst	#1,d1
-	sne		static_waves_flag
-	.ifndef	RELEASE
-	btst	#31,d1
-	sne		break_at_startup_flag
-	.endif
+
 	
 	**move.b	d0,dip_switches_2
 
@@ -604,17 +599,8 @@ _user:
 	*bset	#5,dip_switches_2
 0:
 	
-	move	#0x80,d1	| demo sounds on always
-	move.l	start_lives(pc),d0
-	not.b	d0
-	and.b	#3,d0
-	or.b	d0,d1
-	move.l	difficulty_level(pc),d0
-	ror.b	#4,d0
-	or.b	d0,d1
-	bset	#5,d1		| 30k-70k for extra lives
+
 	
-	move.b	d1,dip_switches_2
 	
 	jsr	 _detect_controller_types 
 
@@ -895,6 +881,17 @@ demo_game:
 	move.l	(a0)+,(a1)+
 	dbf	d0,0b
 	
+	move.l	start_lives(pc),d0
+	and.b	#3,d0
+	lsl.b	#2,d0
+	or.b	#0xF0,d0
+	move.b	d0,(namco_io_4800+0x11,a6)
+
+	move.l	difficulty_level(pc),d0
+	or.b	#0xF0,d0
+	move.b	d0,(namco_io_4800+0x12,a6)
+	move.b	d0,(namco_io_4800+0x13,a6)
+	
 	moveq	#0,d5		| set D5.L to 0
 	jbsr	cpu_init
 	jmp			self_tests_over_f768					| pass control to the cpu core
@@ -941,6 +938,7 @@ do_irq:
 	GET_MEMORY_START_AND_DP
 	clr.b	(0x4040,a6)		| as long as we don't have the intro tune we have to do that
 	clr.b	(0x4043,a6)		| temp as long as we don't have the game over tune we have to do that
+	clr.b	(0x404e,a6)		| highscore entry
 	move.w	sfx_01_timeout,d0
 	jeq		0f
 	subq	#1,d0
@@ -2547,7 +2545,6 @@ store_system:
 	*
 	*
 	st.b	frameskip
-	st.b	static_waves_flag
 1:
 
 	lea	_custom,a6
@@ -2868,7 +2865,6 @@ compute_tile_xy:
 *	int const code = m_videoram[tile_index] + ((attr & 0xc0) << 2);
 *	int const color = attr & 0x0f;
 
-
 * < D7: 0-0x800 address
 * < D0: tile code
 * < D1: color code
@@ -2894,6 +2890,7 @@ update_bg_tile:
 	lea		tiles_layout,a0
 	* layout is a bloody nightmare, directly fetch
 	* the decoded X,Y values from a pre-generated table
+
 
 	.ifdef	NO68020
 	add.w	d7,d7
@@ -2994,18 +2991,6 @@ update_bg_tile:
 12:
 	move.l	d0,a2					| pointer on bitplanes
 
-
-*	* should we print the tile once or twice?
-*	tst.b	d6
-*	jeq		20f		| just once
-*	* do it twice. Preserve useful registers
-*	movem.l	a1/a2,-(a7)
-*	jbsr		standard_tile
-*	movem.l	(a7)+,a1/a2
-*	* draw the same thing more to the right
-*	add.w	#64,a1
-*	move.w	#NB_TILE_PLANES-1,d4
-*20:
 	
 	.macro	COPY_TILE_PLANE_ROW
 	move.b	d0,(offset,a1)  | buffer
@@ -3083,80 +3068,6 @@ standard_tile:
 	jra		41b
 
 
-flipped_tile:	
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,8*BG_NB_BYTES_PER_ROW
-	.rept	8
-	.set	offset,offset-BG_NB_BYTES_PER_ROW
-	move.b	(a0)+,d0
-	COPY_TILE_PLANE_ROW
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-	
-0:
-	rts
-
-	CLEAR_TILE_PLANE
-	jra		41b
-	
-mirror_tile:
-	lea		mirror_bits(pc),a4
-	moveq	#0,d1
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,d1
-	move.b	(a4,d1.w),d0	| mirror
-	COPY_TILE_PLANE_ROW
-
-	.set	offset,offset+BG_NB_BYTES_PER_ROW
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-	
-
-0:
-	rts
-1:
-
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
-	
-mirror_flipped_tile:
-	lea		mirror_bits(pc),a4
-	moveq	#0,d1
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,8*BG_NB_BYTES_PER_ROW
-	.rept	8
-	.set	offset,offset-BG_NB_BYTES_PER_ROW
-	move.b	(a0)+,d1
-	move.b	(a4,d1.w),d0	| mirror
-	COPY_TILE_PLANE_ROW
-
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-
-0:
-	rts
-
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
 
 	* clear tile
 
@@ -3168,11 +3079,6 @@ mirror_flipped_tile:
 2:
 	rts
 
-mirror_jump_table:
-	.long	standard_tile
-	.long	mirror_tile
-	.long	flipped_tile
-	.long	mirror_flipped_tile
 	
 mirror_bits:
 	.include "mirror_bits.68k"
@@ -3369,24 +3275,7 @@ read_inputs:
 	
 
 	
-	
-osd_read_dsw_1:
-	* actual dipswitches
-	move.b	dip_switches_1(pc),d0
-	not.b	d0		| active low
-	rts
-osd_read_dsw_2:
-	* actual dipswitches
-	move.b	dip_switches_2(pc),d0
-	not.b	d0		| active low
-	*BREAKPOINT	"read dsw2"
-	rts
-osd_read_dsw_3:
-	* actual dipswitches
-	moveq	#-1,d0
-*	move.b	dip_switches_0(pc),d0
-*	not.b	d0		| active low
-	rts
+
 
 * we have to emulate namco chip, it handles credits
 * and issues "game start" flag only if there were enough credits

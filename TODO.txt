@@ -1,6 +1,9 @@
-- highscore 20000 not shown: 7E0 7E1
+- revisit screen mapping as we could save 8 rows maybe avoid all bottom status hacks
+- sometimes same bug as dig dug pressing insert coin crashes in 3A000 (random!!)
+- how to enter next letters in highscore entry?
+- find hurry phase where music tempo is increased
+- when loading hiscores set main highscore at A0FD (video)
 - start level 11, 3: pb initiaizing!!! level 2,12 OK : check around BEB4
-
 - try to use HW sprites maybe only for ECS: hw sprites in priority for roof
 - The most number of points you can be awarded is 12,000, which is awarded for catching 10 cats, 
   including Nyamco. Be careful, a glitch occurs in the Arcade version that gives only 1,010 points

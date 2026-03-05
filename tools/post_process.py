@@ -95,6 +95,10 @@ with open(source_dir / "conv.s") as f:
             line = change_instruction("POP_ENCODED_CALLER_ADDRESS\td1",lines,i)
 ##        elif address in write_to_48xx:
 ##            line = remove_instruction(lines,i)
+        elif address in [0xf80d,0xf80f,0xF812]:
+            # remove write to read location of dip switches. We're not an emulator
+            # we don't handle read/writes on I/O
+            line = remove_instruction(lines,i)
         elif address == 0xa04a:
             # encode address before writing to 1400
             line = "\tmove.l\t#l_aa7e,d2\n\tENCODE_ADDRESS\td2,d2  | encode the address else it's wrongly decoded!\n"

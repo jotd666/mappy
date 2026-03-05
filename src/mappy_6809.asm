@@ -31,6 +31,10 @@ player_hit_flag_2033 = $2033
 level_variables_20a0 = $20a0
 hurry_countdown_13b8 = $13b8
 hurry_up_sprite_structure_1340 = $1340
+nb_lives_per_play_1364 = $1364
+nb_start_lives_setting_fcd1 = $fcd1
+dsw_copy_array_1378 = $1378
+copy_of_lives_dsw_1379 = $1379
 
 ; completely unused second clocks
 game_clock_100b = $100b
@@ -187,14 +191,15 @@ A0E0: 6F 80       CLR    ,X+		; [video_address]
 A0E2: 8C 07 F0    CMPX   #$07F0
 A0E5: 26 F9       BNE    $A0E0
 A0E7: 4F          CLRA
-A0E8: B7 07 E0    STA    $07E0
+; write "20000" for highscore
+A0E8: B7 07 E0    STA    $07E0		; '0' of thousands
 A0EB: 86 02       LDA    #$02
-A0ED: B7 07 E1    STA    $07E1
+A0ED: B7 07 E1    STA    $07E1		; '2' of ten thousands
 A0F0: 4F          CLRA
-A0F1: B7 07 ED    STA    $07ED
-A0F4: B7 07 EE    STA    $07EE
-A0F7: B7 07 F7    STA    $07F7
-A0FA: B7 07 F8    STA    $07F8
+A0F1: B7 07 ED    STA    $07ED		; '0' units..
+A0F4: B7 07 EE    STA    $07EE		; '0' ten..  useless as cleared by clr loop above at A0DD
+A0F7: B7 07 F7    STA    $07F7		; player 1 0
+A0FA: B7 07 F8    STA    $07F8		; player 1 0
 A0FD: 8E C8 12    LDX    #$C812
 A100: CE 07 DA    LDU    #$07DA
 A103: BD F3 C3    JSR    $F3C3
@@ -2793,7 +2798,7 @@ BC48: 39          RTS
 init_player_bc49:
 BC49: 7F 13 81    CLR    $1381
 BC4C: 8E 20 30    LDX    #player_lives_2030
-BC4F: B6 13 64    LDA    $1364
+BC4F: B6 13 64    LDA    nb_lives_per_play_1364
 BC52: A7 80       STA    ,X+
 BC54: 6F 80       CLR    ,X+
 BC56: 8C 20 40    CMPX   #$2040
@@ -7257,9 +7262,9 @@ F2E2: 5A          DECB
 F2E3: 27 02       BEQ    $F2E7
 F2E5: 20 ED       BRA    $F2D4
 F2E7: B6 07 F0    LDA    $07F0
-F2EA: B7 07 E0    STA    $07E0
+F2EA: B7 07 E0    STA    $07E0		; score high digits
 F2ED: B6 07 F1    LDA    $07F1
-F2F0: B7 07 E1    STA    $07E1
+F2F0: B7 07 E1    STA    $07E1		; score high digits
 F2F3: 35 50       PULS   X,U
 F2F5: 96 39       LDA    <$39
 F2F7: 81 FF       CMPA   #$FF
@@ -8118,7 +8123,7 @@ FB45: B1 13 60    CMPA   $1360
 FB48: 27 06       BEQ    $FB50
 FB4A: B7 13 60    STA    $1360
 FB4D: BD FD AE    JSR    $FDAE
-FB50: B6 13 78    LDA    $1378
+FB50: B6 13 78    LDA    dsw_copy_array_1378
 FB53: 84 07       ANDA   #$07
 FB55: B1 13 61    CMPA   $1361
 FB58: 27 06       BEQ    $FB60
@@ -8142,25 +8147,25 @@ FB7D: B1 13 63    CMPA   $1363
 FB80: 27 06       BEQ    $FB88
 FB82: B7 13 63    STA    $1363
 FB85: BD FE 17    JSR    $FE17
-FB88: B6 13 79    LDA    $1379
+FB88: B6 13 79    LDA    copy_of_lives_dsw_1379
 FB8B: 44          LSRA
 FB8C: 44          LSRA
 FB8D: 84 03       ANDA   #$03
-FB8F: 8E FC D1    LDX    #$FCD1
+FB8F: 8E FC D1    LDX    #nb_start_lives_setting_fcd1
 FB92: A6 86       LDA    A,X
-FB94: B1 13 64    CMPA   $1364
+FB94: B1 13 64    CMPA   nb_lives_per_play_1364
 FB97: 27 06       BEQ    $FB9F
-FB99: B7 13 64    STA    $1364
+FB99: B7 13 64    STA    nb_lives_per_play_1364
 FB9C: BD FE 20    JSR    $FE20
-FB9F: B6 13 79    LDA    $1379
-FBA2: F6 13 78    LDB    $1378
+FB9F: B6 13 79    LDA    copy_of_lives_dsw_1379
+FBA2: F6 13 78    LDB    dsw_copy_array_1378
 FBA5: 54          LSRB
 FBA6: 54          LSRB
 FBA7: 54          LSRB
 FBA8: 54          LSRB
 FBA9: 49          ROLA
 FBAA: 84 07       ANDA   #$07
-FBAC: F6 13 64    LDB    $1364
+FBAC: F6 13 64    LDB    nb_lives_per_play_1364
 FBAF: C1 05       CMPB   #$05
 FBB1: 26 02       BNE    $FBB5
 FBB3: 8B 08       ADDA   #$08
@@ -8366,7 +8371,7 @@ FE17: B6 13 63    LDA    $1363
 FE1A: 8B 41       ADDA   #$41
 FE1C: B7 06 2D    STA    $062D
 FE1F: 39          RTS
-FE20: B6 13 64    LDA    $1364
+FE20: B6 13 64    LDA    nb_lives_per_play_1364
 FE23: B7 06 2F    STA    $062F
 FE26: 39          RTS
 FE27: 8E F4 5F    LDX    #$F45F
@@ -8496,7 +8501,7 @@ FF82: A7 C0       STA    ,U+
 FF84: 5A          DECB
 FF85: 26 F7       BNE    $FF7E
 FF87: 8E 48 10    LDX    #$4810
-FF8A: CE 13 78    LDU    #$1378
+FF8A: CE 13 78    LDU    #dsw_copy_array_1378
 FF8D: C6 08       LDB    #$08
 FF8F: A6 80       LDA    ,X+
 FF91: 84 0F       ANDA   #$0F

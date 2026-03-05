@@ -29,7 +29,7 @@ INVALID_XY = (-1,-1)
 address_table = [INVALID_XY] * 0x800
 
 def set_value(offset,value):
-    if value != INVALID_XY and address_table[offset] != INVALID_XY and offset not in [0x780,0x781,0x791,0x7B1]:
+    if value != INVALID_XY and address_table[offset] != INVALID_XY and offset not in [0x780,0x781,0x791,0x7B1,0x7E0,0x7E1]:
         print(f"Already defined: {offset:04x} old={address_table[offset]} new={value}")
         return
     address_table[offset] = value
@@ -80,8 +80,10 @@ for y,line_offset in enumerate([0,0x20],2):
 
 # not shown H/20 in top status bar (too far to the left to show)
 set_value(0x7C1,(INVALID_XY))  # seems not visible
-set_value(0x7E0,(INVALID_XY))
-set_value(0x7E1,(INVALID_XY))
+set_value(0x7E0,(45,1))   # same locations as 7F0/7F1
+set_value(0x7E1,(44,1))
+set_value(0x7F0,(INVALID_XY))   # same locations as 7E0/7E1
+set_value(0x7F1,(INVALID_XY))   # invalidate else problems with hiscore
 
 # check for overlapping entries
 d = collections.defaultdict(set)
