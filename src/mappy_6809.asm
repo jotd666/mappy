@@ -28,6 +28,16 @@ copy_of_button_state_1375 = $1375
 player_score_2036 = $2036
 player_lives_2030 = $2030
 player_hit_flag_2033 = $2033
+level_variables_20a0 = $20a0
+hurry_countdown_13b8 = $13b8
+hurry_up_sprite_structure_1340 = $1340
+
+; completely unused second clocks
+game_clock_100b = $100b
+game_clock_100e = $100e
+fast_60th_seconds_timer_1015 = $1015
+
+levels_settings_d805 = $d805
 
 sound_4040 = $4040
 sound_4041 = $4041
@@ -38,7 +48,7 @@ sound_level_completed_4045 = $4045
 sound_4046 = $4046
 sound_4047 = $4047
 sound_4048 = $4048
-sound_4049 = $4049
+sound_hurry_4049 = $4049
 sound_404a = $404a
 sound_404b = $404b
 sound_404c = $404c
@@ -91,8 +101,10 @@ A018: 20 F6       BRA    $A010
 A01A: 7F 48 09    CLR    namco_io_4809
 A01D: 4F          CLRA
 A01E: B7 13 82    STA    sync_1382
+
+mainloop_a021:
 A021: B6 13 82    LDA    sync_1382
-A024: 27 FB       BEQ    $A021
+A024: 27 FB       BEQ    mainloop_a021
 A026: B6 13 7E    LDA    $137E
 A029: 85 08       BITA   #$08
 A02B: 10 26 55 47 LBNE   $F576
@@ -114,7 +126,7 @@ A053: 7F 40 4E    CLR    sound_404E
 A056: 8E D0 20    LDX    #function_and_args_table_d020
 ; call function chain in a loop
 A059: EC 81       LDD    ,X++
-A05B: 27 0A       BEQ    $A067		; zero: stop calling functions
+A05B: 27 0A       BEQ    $A067		; zero: stop calling functions, increment clocks
 A05D: EE 81       LDU    ,X++
 A05F: 34 10       PSHS   X
 ; indirect_jump to the value contained in argument (14xx)
@@ -122,25 +134,26 @@ A05F: 34 10       PSHS   X
 A061: AD D4       JSR    [,U]		
 A063: 35 10       PULS   X
 A065: 20 F2       BRA    $A059
-A067: 7C 10 15    INC    $1015
-A06A: B6 10 15    LDA    $1015
+A067: 7C 10 15    INC    fast_60th_seconds_timer_1015
+A06A: B6 10 15    LDA    fast_60th_seconds_timer_1015
 A06D: 81 3C       CMPA   #$3C
 A06F: 25 0B       BCS    $A07C
-A071: 7F 10 15    CLR    $1015
-A074: 8E 10 0E    LDX    #$100E
+A071: 7F 10 15    CLR    fast_60th_seconds_timer_1015
+; update 2 second clocks for what??
+A074: 8E 10 0E    LDX    #game_clock_100e
 A077: C6 03       LDB    #$03
-A079: BD E3 27    JSR    $E327
+A079: BD E3 27    JSR    decrement_decimal_e327
 A07C: B6 10 14    LDA    $1014
-A07F: 27 A0       BEQ    $A021
+A07F: 27 A0       BEQ    mainloop_a021
 A081: 7C 10 16    INC    $1016
 A084: B6 10 16    LDA    $1016
 A087: 81 3C       CMPA   #$3C
-A089: 25 96       BCS    $A021
+A089: 25 96       BCS    mainloop_a021
 A08B: 7F 10 16    CLR    $1016
-A08E: 8E 10 0B    LDX    #$100B
+A08E: 8E 10 0B    LDX    #game_clock_100b
 A091: C6 03       LDB    #$03
-A093: BD E3 27    JSR    $E327
-A096: 20 89       BRA    $A021
+A093: BD E3 27    JSR    decrement_decimal_e327
+A096: 20 89       BRA    mainloop_a021
 l_a098:
 A098: 86 20       LDA    #$20
 A09A: 1F 8B       TFR    A,DP
@@ -1154,7 +1167,6 @@ AC45: 7F 14 44    CLR    $1444
 AC48: 7F 14 45    CLR    $1445
 AC4B: 86 3C       LDA    #$3C
 AC4D: BD D0 93    JSR    $D093
-l_ac50:
 AC50: 0F 33       CLR    <player_hit_33
 AC52: 86 00       LDA    #$00
 AC54: B7 14 40    STA    $1440
@@ -1165,19 +1177,18 @@ AC5E: B7 14 41    STA    $1441
 AC61: 86 00       LDA    #$00
 AC63: B7 14 08    STA    $1408
 AC66: BD D0 8A    JSR    yield_context_d08a
-l_ac69:
 AC69: BD BC 34    JSR    $BC34
 AC6C: 7F 14 40    CLR    $1440
 AC6F: 7F 13 B0    CLR    $13B0
 AC72: BE 13 AC    LDX    $13AC
 AC75: A6 03       LDA    $3,X
-AC77: B7 13 B8    STA    $13B8
+AC77: B7 13 B8    STA    hurry_countdown_13b8
 AC7A: BD D0 8A    JSR    yield_context_d08a
-l_ac7d:
-AC7D: B6 13 B8    LDA    $13B8
+AC7D: B6 13 B8    LDA    hurry_countdown_13b8
 AC80: 10 26 01 07 LBNE   $AD8B
+; hurry up!!
 AC84: BD BC 3A    JSR    $BC3A
-AC87: 7F 40 42    CLR    sound_4042
+AC87: 7F 40 42    CLR    sound_4042		; stop music
 AC8A: 7C 14 4C    INC    $144C
 AC8D: 7C 13 DE    INC    $13DE
 AC90: 86 01       LDA    #$01
@@ -1188,22 +1199,25 @@ AC9A: 86 01       LDA    #$01
 AC9C: B7 14 41    STA    $1441
 AC9F: 86 00       LDA    #$00
 ACA1: B7 14 08    STA    $1408
-ACA4: 8E 13 40    LDX    #$1340
+; initialize "hurry up" sprite
+ACA4: 8E 13 40    LDX    #hurry_up_sprite_structure_1340
 ACA7: FC 13 CE    LDD    $13CE
 ACAA: 83 00 04    SUBD   #$0004
 ACAD: ED 01       STD    $1,X
 ACAF: 96 04       LDA    <$04
 ACB1: 80 0A       SUBA   #$0A
 ACB3: A7 04       STA    $4,X
+; enable it! (not very optimized!)
 ACB5: 86 01       LDA    #$01
-ACB7: B7 13 40    STA    $1340
-ACBA: B7 40 49    STA    sound_4049
+ACB7: B7 13 40    STA    hurry_up_sprite_structure_1340
+; play "hurry" sound and wait
+ACBA: B7 40 49    STA    sound_hurry_4049
 ACBD: BD D0 8A    JSR    yield_context_d08a
-ACC0: B6 13 40    LDA    $1340
+ACC0: B6 13 40    LDA    hurry_up_sprite_structure_1340
 ACC3: 27 01       BEQ    $ACC6
 ACC5: 39          RTS
 ACC6: BD D0 8A    JSR    yield_context_d08a
-ACC9: B6 40 49    LDA    sound_4049
+ACC9: B6 40 49    LDA    sound_hurry_4049
 ACCC: 27 01       BEQ    $ACCF
 ACCE: 39          RTS
 ACCF: 8E 22 30    LDX    #$2230
@@ -1246,7 +1260,7 @@ AD24: 86 03       LDA    #$03
 AD26: B7 40 E2    STA    $40E2
 AD29: BE 13 AC    LDX    $13AC
 AD2C: A6 04       LDA    $4,X
-AD2E: B7 13 B8    STA    $13B8
+AD2E: B7 13 B8    STA    hurry_countdown_13b8
 AD31: 86 00       LDA    #$00
 AD33: B7 14 40    STA    $1440
 AD36: 86 00       LDA    #$00
@@ -1256,7 +1270,7 @@ AD3D: B7 14 41    STA    $1441
 AD40: 86 00       LDA    #$00
 AD42: B7 14 08    STA    $1408
 AD45: BD D0 8A    JSR    yield_context_d08a
-AD48: B6 13 B8    LDA    $13B8
+AD48: B6 13 B8    LDA    hurry_countdown_13b8
 AD4B: 10 26 00 3C LBNE   $AD8B
 AD4F: 8E 14 C0    LDX    #$14C0
 AD52: CC 00 00    LDD    #$0000
@@ -1346,7 +1360,7 @@ AE1E: 96 31       LDA    <level_number_31
 AE20: 4C          INCA
 AE21: 84 03       ANDA   #$03
 AE23: 81 03       CMPA   #$03
-AE25: 10 27 02 0F LBEQ   $B038
+AE25: 10 27 02 0F LBEQ   bonus_round_b038
 AE29: BD BE 0D    JSR    $BE0D
 AE2C: 7E AB 3C    JMP    $AB3C
 AE2F: 86 72       LDA    #$72
@@ -1559,6 +1573,7 @@ B01E: B7 50 04    STA    video_stuff_5004
 B021: 7F 10 14    CLR    $1014
 B024: 7E A1 2C    JMP    $A12C
 
+bonus_round_b038:
 B038: 86 60       LDA    #$60                                       
 B03A: B7 14 02    STA    $1402                                      
 B03D: 86 01       LDA    #$01                                       
@@ -2527,7 +2542,7 @@ B9DE: A7 47       STA    $7,U
 B9E0: 33 45       LEAU   $5,U
 B9E2: FF 14 88    STU    $1488
 B9E5: BD D0 8A    JSR    yield_context_d08a
-B9E8: 8E 20 A0    LDX    #$20A0
+B9E8: 8E 20 A0    LDX    #level_variables_20a0
 B9EB: 6F 80       CLR    ,X+
 B9ED: 8C 20 A7    CMPX   #$20A7
 B9F0: 26 F9       BNE    $B9EB
@@ -2806,7 +2821,7 @@ BC88: 31 3F       LEAY   -$1,Y
 BC8A: 26 F8       BNE    $BC84
 BC8C: 8E 10 04    LDX    #$1004
 BC8F: C6 02       LDB    #$02
-BC91: BD E3 27    JSR    $E327
+BC91: BD E3 27    JSR    decrement_decimal_e327
 BC94: 8D 05       BSR    $BC9B
 BC96: 20 03       BRA    $BC9B
 BC98: 7F 1A 30    CLR    $1A30
@@ -2814,7 +2829,7 @@ BC9B: B6 14 02    LDA    $1402
 BC9E: 27 0B       BEQ    $BCAB
 BCA0: 8E 10 02    LDX    #$1002
 BCA3: C6 02       LDB    #$02
-BCA5: BD E3 27    JSR    $E327
+BCA5: BD E3 27    JSR    decrement_decimal_e327
 BCA8: 7C 10 14    INC    $1014
 BCAB: 39          RTS
 BCAC: 8D 03       BSR    $BCB1
@@ -2859,7 +2874,7 @@ BD01: CE 12 80    LDU    #$1280
 BD04: DF 1C       STU    <$1C
 BD06: CC 00 00    LDD    #$0000
 BD09: ED C1       STD    ,U++
-BD0B: 11 83 13 40 CMPU   #$1340
+BD0B: 11 83 13 40 CMPU   #hurry_up_sprite_structure_1340
 BD0F: 26 F8       BNE    $BD09
 BD11: CE 12 80    LDU    #$1280
 BD14: 10 8E C8 72 LDY    #$C872 ; [function_address]
@@ -2876,7 +2891,7 @@ BD2F: CC 03 00    LDD    #$0300
 BD32: ED C8 15    STD    $15,U
 BD35: ED C8 25    STD    $25,U
 BD38: 33 C8 30    LEAU   $30,U
-BD3B: 11 83 13 40 CMPU   #$1340
+BD3B: 11 83 13 40 CMPU   #hurry_up_sprite_structure_1340
 BD3F: 26 D7       BNE    $BD18
 BD41: 39          RTS
 BD42: CE 22 00    LDU    #$2200
@@ -2960,6 +2975,7 @@ BE04: A6 02       LDA    $2,X
 BE06: B7 13 DD    STA    $13DD
 BE09: 7F 14 54    CLR    $1454
 BE0C: 39          RTS
+
 BE0D: 8D 05       BSR    $BE14
 BE0F: 8D 53       BSR    $BE64
 BE11: 7E BE A4    JMP    $BEA4
@@ -2997,7 +3013,7 @@ BE5A: 8E 20 9A    LDX    #$209A
 BE5D: BF 20 9A    STX    $209A
 BE60: 7F 13 50    CLR    $1350
 BE63: 39          RTS
-BE64: 8E 20 A0    LDX    #$20A0
+BE64: 8E 20 A0    LDX    #level_variables_20a0
 BE67: CC 00 00    LDD    #$0000
 BE6A: ED 81       STD    ,X++
 BE6C: 8C 21 00    CMPX   #$2100
@@ -3006,15 +3022,15 @@ BE71: B6 14 02    LDA    $1402
 BE74: 26 05       BNE    $BE7B
 BE76: 8E D8 BC    LDX    #$D8BC
 BE79: 20 0A       BRA    $BE85
-BE7B: 8E D8 05    LDX    #$D805
+BE7B: 8E D8 05    LDX    #levels_settings_d805
 BE7E: 96 31       LDA    <level_number_31
-BE80: 84 0F       ANDA   #$0F
+BE80: 84 0F       ANDA   #$0F		; level repeat every 16 levels
 BE82: 48          ASLA
-BE83: AE 86       LDX    A,X
-BE85: CE 20 A0    LDU    #$20A0
+BE83: AE 86       LDX    A,X		; get pointer on settings params for this level
+BE85: CE 20 A0    LDU    #level_variables_20a0		; copy it in level params
 BE88: A6 80       LDA    ,X+
 BE8A: 81 FF       CMPA   #$FF
-BE8C: 27 13       BEQ    $BEA1
+BE8C: 27 13       BEQ    $BEA1		; no more params: out
 BE8E: C6 03       LDB    #$03
 BE90: 6F C0       CLR    ,U+
 BE92: 5A          DECB
@@ -3881,7 +3897,7 @@ l_c638:
 C638: B6 14 48    LDA    $1448
 C63B: 26 01       BNE    $C63E
 C63D: 39          RTS
-C63E: 8E 20 A0    LDX    #$20A0
+C63E: 8E 20 A0    LDX    #level_variables_20a0
 C641: A6 84       LDA    ,X
 C643: 26 09       BNE    $C64E
 C645: A6 07       LDA    $7,X
@@ -4123,7 +4139,7 @@ C85F: A7 C9 01 01 STA    $0101,U
 C863: E7 C9 00 81 STB    $0081,U
 C867: 33 42       LEAU   $2,U
 C869: 30 88 30    LEAX   $30,X
-C86C: 8C 13 40    CMPX   #$1340
+C86C: 8C 13 40    CMPX   #hurry_up_sprite_structure_1340
 C86F: 26 B5       BNE    $C826
 C871: 39          RTS
 l_c872:
@@ -4330,7 +4346,7 @@ CA2B: 20 04       BRA    $CA31
 CA2D: 6F C9 00 80 CLR    $0080,U
 CA31: 33 42       LEAU   $2,U
 CA33: 30 88 30    LEAX   $30,X
-CA36: 8C 13 40    CMPX   #$1340
+CA36: 8C 13 40    CMPX   #hurry_up_sprite_structure_1340
 CA39: 26 D1       BNE    $CA0C
 CA3B: 39          RTS
 l_ca3c:
@@ -4420,7 +4436,7 @@ CB01: 20 04       BRA    $CB07
 CB03: 6F C9 00 80 CLR    $0080,U
 CB07: 33 42       LEAU   $2,U
 CB09: 30 88 30    LEAX   $30,X
-CB0C: 8C 13 40    CMPX   #$1340
+CB0C: 8C 13 40    CMPX   #hurry_up_sprite_structure_1340
 CB0F: 26 D1       BNE    $CAE2
 CB11: 39          RTS
 l_cb12:
@@ -4969,7 +4985,7 @@ CFCB: 26 01       BNE    $CFCE
 CFCD: 39          RTS
 CFCE: 20 EC       BRA    $CFBC
 l_cfd0:
-CFD0: 8E 13 40    LDX    #$1340
+CFD0: 8E 13 40    LDX    #hurry_up_sprite_structure_1340
 CFD3: A6 84       LDA    ,X
 CFD5: 26 01       BNE    $CFD8
 CFD7: 39          RTS
@@ -5323,7 +5339,7 @@ E26F: 30 88 10    LEAX   $10,X
 E272: 8C 21 E0    CMPX   #$21E0
 E275: 25 E8       BCS    $E25F
 E277: 39          RTS
-E278: 8E 20 A0    LDX    #$20A0
+E278: 8E 20 A0    LDX    #level_variables_20a0
 E27B: 6F 84       CLR    ,X
 E27D: EE 05       LDU    $5,X
 E27F: A6 02       LDA    $2,X
@@ -5401,6 +5417,8 @@ E31D: CE 07 C7    LDU    #$07C7
 E320: 7F 14 4C    CLR    $144C
 E323: BD F3 C3    JSR    $F3C3
 E326: 39          RTS
+
+decrement_decimal_e327:
 E327: 86 99       LDA    #$99
 E329: AB 82       ADDA   ,-X
 E32B: 19          DAA
@@ -5986,7 +6004,7 @@ E85E: A7 04       STA    $4,X
 E860: 6F 84       CLR    ,X
 E862: 7E E8 2D    JMP    $E82D
 E865: BD F0 9A    JSR    $F09A
-E868: CE 20 A0    LDU    #$20A0
+E868: CE 20 A0    LDU    #level_variables_20a0
 E86B: EC 45       LDD    $5,U
 E86D: C4 0F       ANDB   #$0F
 E86F: F7 13 DC    STB    $13DC
@@ -7286,7 +7304,7 @@ F34A: 8E 10 12    LDX    #$1012
 F34D: 20 03       BRA    $F352
 F34F: 8E 10 10    LDX    #$1010
 F352: C6 02       LDB    #$02
-F354: BD E3 27    JSR    $E327
+F354: BD E3 27    JSR    decrement_decimal_e327
 F357: BD D0 AB    JSR    $D0AB
 F35A: 39          RTS
 F35B: 8E 00 00    LDX    #$0000
@@ -8460,10 +8478,10 @@ FF60: 31 3F       LEAY   -$1,Y
 FF62: 26 F8       BNE    $FF5C
 FF64: 7C 13 B0    INC    $13B0
 FF67: 26 03       BNE    $FF6C
-FF69: 7A 13 B8    DEC    $13B8
+FF69: 7A 13 B8    DEC    hurry_countdown_13b8
 FF6C: 8E 13 B1    LDX    #$13B1
 FF6F: 6A 80       DEC    ,X+
-FF71: 8C 13 B8    CMPX   #$13B8
+FF71: 8C 13 B8    CMPX   #hurry_countdown_13b8
 FF74: 26 F9       BNE    $FF6F
 FF76: 8E 48 00    LDX    #namco_io_4800
 FF79: CE 13 70    LDU    #copy_of_namco_io_1370

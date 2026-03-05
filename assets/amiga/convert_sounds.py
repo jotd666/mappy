@@ -3,17 +3,13 @@ import shutil
 
 from shared import *
 
-gamename = "digdug2"
+gamename = "mappy"
 sox = "sox"
 
 sound_dir = this_dir / ".." / "sounds"
 
-sound_settings_dict = { 0x14 : {"channel":3,"priority":1},  # credit
-8 : {"priority":40},
-3 : {"priority":20},
-0x15 : {"channel":2,"priority":70},
-0xC : {"priority":70},
-0x13 : {"priority":80},
+sound_settings_dict = { 0x15 : {"channel":3,"priority":1},  # credit
+0x7 : {"priority":1},  # low pri
 
 }
 sound_settings_dict = {}
@@ -58,7 +54,7 @@ def convert(low_memory):
                     extra_info = sound_settings_dict.get(index) or dict()
 
                     sfx_sample_rate = extra_info.get("sample_rate",lq_sample_rate)
-                    sound_dict[entry] = {"channel":extra_info.get("channel",-1),
+                    sound_dict[entry] = {"channel":extra_info.get("channel",3),
                     "priority":extra_info.get("priority",40),"index":index,"sample_rate":sfx_sample_rate}
             except ValueError:
                 pass

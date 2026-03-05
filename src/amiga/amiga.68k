@@ -87,7 +87,7 @@ SPRITE_WIDTH = 16
 
 NB_LINES = 288
 
-Y_MAX = 280
+Y_MAX = 285
 
 _custom = 0xDFF000
 
@@ -121,9 +121,8 @@ NB_BOB_PLANES = 4
 TOTAL_NB_COLORS = 1<<NB_TILE_PLANES
 BG_NB_BYTES_PER_ROW = 40*2
 
-* add 16 so sprites can be drawn at the bottom
-* without corrupting the screen
-NB_LINES = Y_MAX+16
+* no need to add lines, sprite draw supports clipping add 8 for tiles
+NB_LINES = Y_MAX+8
 NB_PLAYFIELD_LINES = NB_LINES
 
 
@@ -2062,14 +2061,35 @@ update_one_bob:
 *	sub.w	#16,d0
 *101:
 
+	move.w	d5,d2			    | width in bytes
+	moveq	#0,d5			    | Y-offset
+
+	* we have to handle Y clipping
+	tst.w	d1
+	jpl	102f
+	* clipping top of sprite
+	add.w	d1,d4		| remove from height
+	neg.w	d1
+	move.w	d1,d5
+	move.w	d2,d3
+	subq	#2,d3		| data line length doesn't include the 16 bit shift
+	mulu.w	d3,d5		| shift data offset!
+	moveq	#0,d1		| display at Y=0
+	jra		103f
+102:
+	move.w	d1,d3
+	add.w	d4,d3
+	sub.w	#Y_MAX,d3
+	jcs		103f
+	* clipping bottom of sprite, don't change Y
+	sub.w	d3,d4
+103:	
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	d4,(a6)+			| store height
-	move.w	d5,(a6)+			| store width in bytes
+	move.w	d2,(a6)+			| store width in bytes
 	clr.b	(a6)+				| 
 	move.b	d6,(a6)+		    | active planes (helps for erase)
-	move.w	d5,d2			    | width in bytes
-	moveq	#0,d5			    | Y-offset
 
 *	btst	#FLIP_Y_BIT,d3  | X but portrait! not used in this game
 *	jeq		101f
@@ -2893,6 +2913,14 @@ update_bg_tile:
 1:
 	.endif
 	
+
+	cmp.w	#Y_MAX-24,d1
+	jcs		1f
+	cmp.w	#0x34,d0		| approx min X for level markers
+	jcs		1f
+	* right part of unscrolled area: level badges, lower display
+	add.w	#8,d1
+1:
 	* updating bitplanes
 	move.l	#BG_SCREEN_PLANE_SIZE,d5
 	move.w	#NB_TILE_PLANES-1,d4
@@ -3751,7 +3779,7 @@ osd_sound_start:
 	
 	lea		_custom,a6
 
-	cmp.b	#SFX_01_SND,d0
+	cmp.b	#ALARM_01_SND,d0
 	jne		0f
 	move.w	#50,sfx_01_timeout
 0:
@@ -3780,7 +3808,7 @@ osd_sound_start:
 	jeq		10f		| skipped (normal)
 2:
 	cmp.w	#1,d1
-	bne.b	4f		| music module
+	jne		4f		| music module
 	move.w	(2,a0,d0.w),d1
 	move.l	(4,a0,d0.w),a0
 	lea		_custom,a6
@@ -3791,8 +3819,16 @@ osd_sound_start:
 	* looped sound
 	st.b	looped_sound_enabled
 	jsr		_mt_loopfx
-	bra.b	10f
+	jra		10f
 3:
+	cmp.b	#MICROWAVE_0A_SND*8,d0
+	jne		0f
+	move.b	#0,0x110
+	cmp.b	previous_played_sound,d0
+	jeq		10f			| don't play twice in a row (game calls the sound to death!)
+0:
+	move.b	d0,previous_played_sound
+
 	jsr		_mt_playfx
 10:
 	* exiting osd_sound_start
@@ -3910,7 +3946,8 @@ handle_music_termination:
 	move.l	d1,a5
 0:
 	rts
-	
+previous_played_sound:
+	.byte	-1
 lock_hurry_tune:
 	.byte	0
 music_playing:

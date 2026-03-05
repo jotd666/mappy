@@ -523,7 +523,6 @@ known\@:
 	READ_BE_WORD	a0
 
 	DECODE_ADDRESS
-	move.b	#0,0x110
 	jsr		(a0)
 	.endm
 

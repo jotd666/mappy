@@ -1,17 +1,7 @@
 - highscore 20000 not shown: 7E0 7E1
-- sprite Y clipping! title
-- level 11: pb initiaizing!!! level 12 OK
-- display title from big title pic: remove tiles from used sprites to save memory
-- microwave sound limit
-- find unused sprites: bonus stuff
-- hurry up doesn't traverse
+- level 11, 3: pb initiaizing!!! level 2,12 OK : check around BEB4
+- hurry up doesn't traverse screen! RE to find hurry timer
 
-0x31: times 6
-0x38-0x3f  ??? cat coin
-0x46,0x47,0x48,0x49,0x4a: scores
-7B: do not filter (dead enemy)
-
-- find a way to make display higher (remove the gap between house and scores by 4 pixels that would be enough?)
 - try to use HW sprites maybe only for ECS: hw sprites in priority for roof
 - The most number of points you can be awarded is 12,000, which is awarded for catching 10 cats, 
   including Nyamco. Be careful, a glitch occurs in the Arcade version that gives only 1,010 points
