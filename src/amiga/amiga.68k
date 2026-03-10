@@ -3187,19 +3187,29 @@ osd_debug_hook:
 * doesn't move at all
 
 read_inputs:
-	movem.l	a0/d0/d1,-(a7)
+	movem.l	a0/d0-d1,-(a7)
 	lea		keyboard_table(pc),a0
 	GET_MEMORY_START_AND_DP
 	move.b	#0xF0,d1
 	move.l	_joypad_1_state,d0
 	btst	#JPB_BTN_RED,d0
 	jeq		0f
-	bset	#0,d1
 	bset	#1,d1
+	* also set bit 0 if just pressed (not previously pressed)
+	move.l	d2,-(a7)
+	move.l	_joypad_1_old_state,d2
+	btst	#JPB_BTN_RED,d2
+	movem.l	(a7)+,d2
+	jne		0f
+	* pressed for the first time
+	bset	#0,d1
 0:
 	tst.b	(0x63,a0)		| "ctrl" key
 	jeq		0f
-	bset	#1,d1	
+	bset	#1,d1
+	tst.b	ctrl_pressed
+	jeq		0f
+	clr.b	ctrl_pressed
 	bset	#0,d1
 0:
 	move.b	d1,(joystick_button_1_4805,a6)
@@ -3270,7 +3280,7 @@ read_inputs:
 0:
 
 10:
-	movem.l	(a7)+,a0/d0/d1
+	movem.l	(a7)+,a0/d0-d1
 	rts
 	
 
@@ -3370,6 +3380,10 @@ handle_keyboard:
     seq (a0,d0.w)       | updates keyboard table
     jne   2f     | we don't care about key release
 	
+	cmp.b	#0x63,d0	| ctrl key
+	jne		0f
+	st.b	ctrl_pressed	
+0:
 	cmp.b	#1,d0		| "1" key
 	jne		0f
 	jbsr	start_1p_game
@@ -4072,8 +4086,9 @@ playfield_displayed_screen_ptr:
 update_tile_function:
 	.long	0
 _keyexit:
-	.byte	0x45	| ESC by default unless whdload overwrites it
-
+	.byte	0x5F	| HELP by default unless whdload overwrites it
+ctrl_pressed:
+	.byte	0
 no_io_flag:
 	.byte	0
 cheat_used:
