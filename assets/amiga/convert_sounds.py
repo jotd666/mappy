@@ -33,9 +33,9 @@ def convert(low_memory):
 
     EMPTY_SND = "EMPTY_SND"
 
-    dummy_sounds = {0x0B,0x03,0x0D,0x0E,0x00,0x4,0x5,0x6}
+    dummy_sounds = {0x0B,0x03}
     if low_memory:
-        dummy_sounds.update({1,2,0x15,0x14,0x13,0x1F})  # remove tunes & some non-essential samples
+        dummy_sounds.update({1,0x15,0x14,0x13,0x1F})  # remove tunes & some non-essential samples
 
     sound_dict = {}
     sfx_list = set()
@@ -69,12 +69,14 @@ def convert(low_memory):
     sound_dict.update({
     "MAIN_TUNE_SND"      :{"index":2,"pattern":3,"volume":32},
     "BONUS_END_TUNE_SND"      :{"index":0x11,"pattern":0,"volume":32},
-##    "GAME_OVER_TUNE_SND"      :{"index":0x4,"pattern":1,"volume":32},
-##    "HIGHSCORE_TUNE_SND"      :{"index":0xA,"pattern":2,"volume":32},
-##    "LEVEL_COMPLETE_TUNE_SND"      :{"index":0x12,"pattern":5,"volume":32},
-##    "LEVEL_START_TUNE_SND"      :{"index":0x0,"pattern":0,"volume":32},
-##    "CAUGHT_SND"      :{"index":0xD,"pattern":6,"volume":32},
-##    "KILLED_SND"      :{"index":0x11,"pattern":7,"volume":32},
+    "COMPLETED_SND"           :{"index":0x5,"pattern":0x14,"volume":32},
+    "KILLED_SND"           :{"index":0x6,"pattern":0x15,"volume":32},
+    "HIGH_END_SND"           :{"index":0xe,"pattern":0x16,"volume":32},
+    "HIGH_SCORE_SND"           :{"index":0xd,"pattern":0x19,"volume":32},
+    "BONUS_TUNE_SND"           :{"index":0x22,"pattern":0x11,"volume":32},
+    "MISC_TUNE_SND"           :{"index":0x4,"pattern":0x13,"volume":32},
+    "INTRO_TUNE_SND"           :{"index":0x0,"pattern":0x12,"volume":32},
+
 ##    }
 ##    )
 })
