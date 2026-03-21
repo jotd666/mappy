@@ -247,6 +247,15 @@ with open(source_dir / "conv.s") as f:
             elif "sta" in toks or "stb" in toks:
                 # STA sound_44xx: enabling or disabling sfx
                 lines[i+1] += "\tjbsr\tsound_control\n"
+            elif "clr" in toks:
+                # STA sound_44xx: enabling or disabling sfx
+                lines[i+1] += "\tjbsr\tosd_music_stop\n"
+
+        if address == 0xc90d:
+            # remove stop music when it's actually stop microwave
+            # which maybe should be looped, anyway it usually stops itself
+            # because any other sound stops it
+            lines[i-1] = ""
         if "ERROR" in line:
             print(line,end="")
         lines[i] = line
@@ -300,11 +309,14 @@ play_sound:
     move.l  (a7)+,d0
     rts
 
+
 sound_control:
     tst.b   d0
     jeq     0f
-    jbsr    play_sound
+    jbra    play_sound
 0:
+    * we should stop the sound, but it actually isn't
+    * needed, and doing so would stop the music
     rts
 
 """)

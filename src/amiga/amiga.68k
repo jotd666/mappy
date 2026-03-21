@@ -3677,8 +3677,8 @@ osd_music_stop:
 	move.w	last_started_music_sound,d0
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	*lea		(sound_level_start_tune_4040,a6),a0	
-	*clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+	lea		(sound_4040,a6),a0	
+	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
 
 
 	move.l	d1,a5

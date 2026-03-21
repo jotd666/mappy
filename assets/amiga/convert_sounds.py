@@ -73,12 +73,11 @@ def convert(low_memory):
     "KILLED_SND"           :{"index":0x6,"pattern":0x15,"volume":32},
     "HIGH_END_SND"           :{"index":0xe,"pattern":0x16,"volume":32},
     "HIGH_SCORE_SND"           :{"index":0xd,"pattern":0x19,"volume":32},
-    "BONUS_TUNE_SND"           :{"index":0x22,"pattern":0x11,"volume":32},
+    "BONUS_TUNE_SND"           :{"index":0xb,"pattern":0x22,"volume":32},
     "MISC_TUNE_SND"           :{"index":0x4,"pattern":0x13,"volume":32},
     "INTRO_TUNE_SND"           :{"index":0x0,"pattern":0x12,"volume":32},
 
-##    }
-##    )
+
 })
 
 

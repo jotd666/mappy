@@ -45,7 +45,7 @@ levels_settings_d805 = $d805
 
 sound_4040 = $4040
 sound_4041 = $4041
-sound_4042 = $4042
+sound_main_tune_4042 = $4042
 sound_game_over_4043 = $4043
 sound_4044 = $4044
 sound_level_completed_4045 = $4045
@@ -53,12 +53,12 @@ sound_4046 = $4046
 sound_4047 = $4047
 sound_4048 = $4048
 sound_hurry_4049 = $4049
-sound_404a = $404a
+sound_microwave_404a = $404a
 sound_404b = $404b
 sound_404c = $404c
 sound_highscore_404d = $404d
 sound_404e = $404e
-sound_404f = $404f
+sound_hurry_404f = $404f
 
 ; set by namco chip when enough credits, 0: none, 1: 1 player, 2: 2 players
 number_of_players_4801 = $4801
@@ -1193,7 +1193,7 @@ AC7D: B6 13 B8    LDA    hurry_countdown_13b8
 AC80: 10 26 01 07 LBNE   $AD8B
 ; hurry up!!
 AC84: BD BC 3A    JSR    $BC3A
-AC87: 7F 40 42    CLR    sound_4042		; stop music
+AC87: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 AC8A: 7C 14 4C    INC    $144C
 AC8D: 7C 13 DE    INC    $13DE
 AC90: 86 01       LDA    #$01
@@ -1221,10 +1221,12 @@ ACBD: BD D0 8A    JSR    yield_context_d08a
 ACC0: B6 13 40    LDA    hurry_up_sprite_structure_1340
 ACC3: 27 01       BEQ    $ACC6
 ACC5: 39          RTS
+; wait for "hurry" sound to be played fully
 ACC6: BD D0 8A    JSR    yield_context_d08a
 ACC9: B6 40 49    LDA    sound_hurry_4049
 ACCC: 27 01       BEQ    $ACCF
 ACCE: 39          RTS
+
 ACCF: 8E 22 30    LDX    #$2230
 ACD2: A6 84       LDA    ,X
 ACD4: 81 FE       CMPA   #$FE
@@ -1298,10 +1300,10 @@ AD7A: A7 88 18    STA    $18,X
 AD7D: CE E8 2D    LDU    #$E82D		 ; [function_address]
 AD80: EF 0E       STU    $E,X
 AD82: 7C 14 53    INC    $1453
-AD85: 7C 40 4F    INC    sound_404F
+AD85: 7C 40 4F    INC    sound_hurry_404f
 AD88: BD D0 8A    JSR    yield_context_d08a
 AD8B: 86 01       LDA    #$01
-AD8D: B7 40 42    STA    sound_4042
+AD8D: B7 40 42    STA    sound_main_tune_4042	; start main music
 AD90: 96 32       LDA    <level_complete_32		; level completed flag (2032)
 AD92: 10 26 00 07 LBNE   $AD9D
 AD96: 96 33       LDA    <player_hit_33
@@ -1309,7 +1311,7 @@ AD98: 10 26 00 93 LBNE   $AE2F
 AD9C: 39          RTS
 ; level completed
 AD9D: 7C 14 02    INC    $1402
-ADA0: 7F 40 42    CLR    sound_4042
+ADA0: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 ADA3: 86 04       LDA    #$04
 ADA5: B7 40 E2    STA    $40E2
 ADA8: 7F 14 42    CLR    $1442
@@ -1347,7 +1349,7 @@ ADF2: 7C 14 4C    INC    $144C
 ADF5: 86 5A       LDA    #$5A
 ADF7: BD D0 93    JSR    $D093
 ADFA: BD F3 83    JSR    $F383
-ADFD: 7F 40 4F    CLR    sound_404F
+ADFD: 7F 40 4F    CLR    sound_hurry_404f
 AE00: 86 0A       LDA    #$0A
 AE02: BD D0 93    JSR    $D093
 AE05: 7C 40 45    INC    sound_level_completed_4045
@@ -1368,9 +1370,10 @@ AE23: 81 03       CMPA   #$03
 AE25: 10 27 02 0F LBEQ   bonus_round_b038
 AE29: BD BE 0D    JSR    $BE0D
 AE2C: 7E AB 3C    JMP    $AB3C
+; player killed
 AE2F: 86 72       LDA    #$72
 AE31: B7 14 02    STA    $1402
-AE34: 7F 40 42    CLR    sound_4042
+AE34: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 AE37: 86 04       LDA    #$04
 AE39: B7 40 E2    STA    $40E2
 AE3C: 7F 14 42    CLR    $1442
@@ -4167,7 +4170,7 @@ C890: A6 0A       LDA    $A,X
 C892: 8A 02       ORA    #$02
 C894: A7 0A       STA    $A,X
 C896: 86 01       LDA    #$01
-C898: B7 40 4A    STA    sound_404A
+C898: B7 40 4A    STA    sound_microwave_404a
 C89B: EC 01       LDD    $1,X
 C89D: 2B 55       BMI    $C8F4
 C89F: C3 00 11    ADDD   #$0011
@@ -4217,7 +4220,7 @@ C902: ED 05       STD    $5,X
 C904: A6 04       LDA    $4,X
 C906: 8B 06       ADDA   #$06
 C908: A7 04       STA    $4,X
-C90A: 7F 40 4A    CLR    sound_404A
+C90A: 7F 40 4A    CLR    sound_microwave_404a
 C90D: 6F 0A       CLR    $A,X
 C90F: BD F0 42    JSR    $F042
 l_c912:
