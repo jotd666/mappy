@@ -33,7 +33,7 @@ def convert(low_memory):
 
     EMPTY_SND = "EMPTY_SND"
 
-    dummy_sounds = {0x0B,0x03}
+    dummy_sounds = {0x03}
     if low_memory:
         dummy_sounds.update({1,0x15,0x14,0x13,0x1F})  # remove tunes & some non-essential samples
 
@@ -72,6 +72,7 @@ def convert(low_memory):
     "COMPLETED_SND"           :{"index":0x5,"pattern":0x14,"volume":32},
     "KILLED_SND"           :{"index":0x6,"pattern":0x15,"volume":32},
     "HIGH_END_SND"           :{"index":0xe,"pattern":0x16,"volume":32},
+   # "GAME_OVER_SND"           :{"index":0x3,"pattern":0xxxx,"volume":32},
     "HIGH_SCORE_SND"           :{"index":0xd,"pattern":0x19,"volume":32},
     "BONUS_TUNE_SND"           :{"index":0xb,"pattern":0x22,"volume":32},
     "MISC_TUNE_SND"           :{"index":0x4,"pattern":0x13,"volume":32},

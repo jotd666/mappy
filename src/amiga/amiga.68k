@@ -936,16 +936,17 @@ namco_io_start_memory_4800:
 do_irq:
 	* set base for RAM
 	GET_MEMORY_START_AND_DP
-	clr.b	(0x4040,a6)		| as long as we don't have the intro tune we have to do that
-	clr.b	(0x4043,a6)		| temp as long as we don't have the game over tune we have to do that
-	clr.b	(0x404e,a6)		| highscore entry
+	* clear some sound flags immediately, else game locks up, or we have to handle that by E8 triggers
+	clr.b	(sound_4040,a6)		| we can clear the intro tune, it doesn't matter, game has another way to see it's done
+	clr.b	(sound_game_over_4043,a6)		| temp as long as we don't have the game over tune we have to do that
+	clr.b	(sound_404e,a6)		| highscore entry, no need
 	move.w	sfx_01_timeout,d0
 	jeq		0f
 	subq	#1,d0
 	move.w	d0,sfx_01_timeout
 	jne		0f
 	* down to 0:
-	clr.b	(0x4041,a6)		| as long as we don't have the intro tune we have to do that	
+	clr.b	(sound_4041,a6)		| notify the game that sfx is done	
 0:
 	move.w	hurry_timeout,d0
 	jeq		0f
@@ -3668,7 +3669,6 @@ osd_music_stop:
 	OSD_ENTER
 	movem.l	d0-d1/a0/a6,-(a7)
 	lea		_custom,a6
-	clr.b	start_hurry_tune_timeout
 	move.b	#-1,music_track_start_number
 	clr.b	music_playing
 	clr.b	looped_sound_enabled
@@ -3691,7 +3691,7 @@ osd_music_stop:
 osd_sound_start:
 	OSD_ENTER
 	movem.l	d0/d1/a0/a6,-(a7)
-	
+	move.b	#0,0x110
 	lea		_custom,a6
 
 	cmp.b	#ALARM_01_SND,d0
@@ -3820,35 +3820,16 @@ handle_music_termination:
 	moveq	#0,d0
 	move.b	_mt_E8Trigger,d0
 	jeq		0f
-	clr.b	_mt_E8Trigger	| ack
-	cmp.b	#4,d0
-	jne		1f
-	* command E8=4 asks to play the rest of "hurry" tune,
-	* which is on a different module so we cannot even chain the tunes
-	* no9 wasn't aware of that, I workarounded that but it's annoying
-	*
-	* problem is: game starts the "warning" tune over and over
-	* so the "hurry" pattern cannot play, unless we tell the game
-	* that this is the same thing: so don't clear the memory flag
+	clr.b	_mt_E8Trigger
 
-	move.b	#10,start_hurry_tune_timeout
-	rts
-1:
-	cmp.b	#3,d0
-	jne		1f
-	* do the usual but also play sfx
-	move.b	#10,start_sfx_10_timeout
-1:
 	* E8 command just issued from module, handle it
 	* those commands are there to signal that some tune is
 	* completed, game is actively waiting on some
-	move.b	#0,0x110
-	lea		music_trigger_address_table(pc),a0
-	move.b	(a0,d0.w),d0
+	* we try to match index with trigger, no need for table ATM
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	*lea		(sound_level_start_tune_4040,a6),a0
-	*clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
+	lea		(sound_4040,a6),a0
+	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
 	move.l	d1,a5
 0:
 	rts
@@ -3864,10 +3845,7 @@ music_loops:
 	.byte	0
 music_volume:
 	.byte	0
-start_hurry_tune_timeout:
-	.byte	0
-start_sfx_10_timeout:
-	.byte	0
+
 	.align	2
 
 music_track_start_number:
@@ -3884,19 +3862,10 @@ highscore_needs_saving:
 highscore_loaded:
 	.byte	0
 
-music_trigger_address_table:
-	.byte	-1
-	.byte	-1 | trigger 81
-	.byte	-1 | trigger 82
-	.byte	-1 | trigger 83
-	.byte	-1 | trigger 84
-	.byte	-1 | trigger 85
-	.byte	-1 | trigger 86
-	.byte	-1 | trigger 87
-	.byte	-1               	 	| trigger 88
+
 	
 normal_hiscorename:
-	.asciz	"digdug2.high"
+	.asciz	"mappy.high"
 	.align	2
 	
 

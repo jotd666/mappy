@@ -54,11 +54,16 @@ sound_4047 = $4047
 sound_4048 = $4048
 sound_hurry_4049 = $4049
 sound_microwave_404a = $404a
-sound_404b = $404b
+sound_bonus_tune_404b = $404b
 sound_404c = $404c
 sound_highscore_404d = $404d
 sound_404e = $404e
 sound_hurry_404f = $404f
+sound_4050 = $4050
+sound_bonus_earnings_tune_4051 = $4051
+sound_4052 = $4052
+
+sound_credit_405e = $405E
 
 ; set by namco chip when enough credits, 0: none, 1: 1 player, 2: 2 players
 number_of_players_4801 = $4801
@@ -1877,7 +1882,7 @@ B2F0: 86 3C       LDA    #$3C
 B2F2: BD D0 93    JSR    $D093
 B2F5: 7C 14 42    INC    $1442
 B2F8: 86 01       LDA    #$01
-B2FA: B7 40 4B    STA    sound_404B
+B2FA: B7 40 4B    STA    sound_bonus_tune_404b
 B2FD: 7F 15 15    CLR    $1515
 B300: BD D0 8A    JSR    yield_context_d08a
 B303: B6 15 15    LDA    $1515
@@ -1905,16 +1910,17 @@ B334: 84 05       ANDA   #$05
 B336: 27 03       BEQ    $B33B
 B338: 7F 15 15    CLR    $1515
 B33B: 96 32       LDA    <level_complete_32
-B33D: 26 0A       BNE    $B349
+B33D: 26 0A       BNE    end_of_bonus_level_b349
 B33F: 96 33       LDA    <player_hit_33
-B341: 26 06       BNE    $B349
-B343: B6 40 4B    LDA    sound_404B
-B346: 27 01       BEQ    $B349
+B341: 26 06       BNE    end_of_bonus_level_b349
+B343: B6 40 4B    LDA    sound_bonus_tune_404b
+B346: 27 01       BEQ    end_of_bonus_level_b349
 B348: 39          RTS
+end_of_bonus_level_b349:
 B349: 7F 14 42    CLR    $1442
 B34C: 7F 14 48    CLR    $1448
 B34F: 7F 14 52    CLR    $1452
-B352: 7F 40 4B    CLR    sound_404B
+B352: 7F 40 4B    CLR    sound_bonus_tune_404b
 B355: 96 32       LDA    <level_complete_32
 B357: 10 27 00 A1 LBEQ   $B3FC
 B35B: B6 13 9F    LDA    $139F
@@ -1932,31 +1938,31 @@ B375: 27 18       BEQ    $B38F
 B377: 86 02       LDA    #$02
 B379: B7 22 0D    STA    $220D
 B37C: 86 01       LDA    #$01
-B37E: B7 40 50    STA    $4050
+B37E: B7 40 50    STA    sound_4050
 B381: BD D0 8A    JSR    yield_context_d08a
-B384: B6 40 50    LDA    $4050
+B384: B6 40 50    LDA    sound_4050
 B387: 27 01       BEQ    $B38A
 B389: 39          RTS
 B38A: 86 0A       LDA    #$0A
 B38C: BD D0 93    JSR    $D093
 B38F: 86 01       LDA    #$01
-B391: B7 40 50    STA    $4050
+B391: B7 40 50    STA    sound_4050
 B394: BD D0 8A    JSR    yield_context_d08a
-B397: B6 40 50    LDA    $4050
+B397: B6 40 50    LDA    sound_4050
 B39A: 27 01       BEQ    $B39D
 B39C: 39          RTS
 B39D: 86 0A       LDA    #$0A
 B39F: BD D0 93    JSR    $D093
 B3A2: 86 01       LDA    #$01
-B3A4: B7 40 50    STA    $4050
+B3A4: B7 40 50    STA    sound_4050
 B3A7: BD D0 8A    JSR    yield_context_d08a
-B3AA: B6 40 50    LDA    $4050
+B3AA: B6 40 50    LDA    sound_4050
 B3AD: 27 01       BEQ    $B3B0
 B3AF: 39          RTS
 B3B0: 86 0A       LDA    #$0A
 B3B2: BD D0 93    JSR    $D093
 B3B5: 86 01       LDA    #$01
-B3B7: B7 40 50    STA    $4050
+B3B7: B7 40 50    STA    sound_4050
 B3BA: BD D0 8A    JSR    yield_context_d08a
 B3BD: B6 22 04    LDA    $2204
 B3C0: 81 18       CMPA   #$18
@@ -1983,7 +1989,7 @@ B3EC: 6C 84       INC    ,X
 B3EE: 7C 13 9E    INC    $139E
 B3F1: 7C 40 48    INC    sound_4048
 B3F4: 20 06       BRA    $B3FC
-B3F6: B6 40 50    LDA    $4050
+B3F6: B6 40 50    LDA    sound_4050
 B3F9: 27 01       BEQ    $B3FC
 B3FB: 39          RTS
 B3FC: 7F 14 45    CLR    $1445
@@ -2002,7 +2008,7 @@ B41C: CE 06 24    LDU    #$0624
 B41F: C6 0C       LDB    #$0C
 B421: BD F3 D0    JSR    $F3D0
 B424: 86 78       LDA    #$78
-B426: B7 40 51    STA    $4051
+B426: B7 40 51    STA    sound_bonus_earnings_tune_4051		; start bonus earnings tune
 B429: BD D0 93    JSR    $D093
 B42C: 8E 24 00    LDX    #$2400
 B42F: CC 00 00    LDD    #$0000
@@ -4925,7 +4931,7 @@ CF46: A7 C9 01 01 STA    $0101,U
 CF4A: E7 C9 00 81 STB    $0081,U
 CF4E: 20 04       BRA    $CF54
 CF50: 6F C9 00 80 CLR    $0080,U
-CF54: B6 40 4B    LDA    sound_404B
+CF54: B6 40 4B    LDA    sound_bonus_tune_404b
 CF57: 27 1A       BEQ    $CF73
 CF59: 6C 02       INC    $2,X
 CF5B: A6 02       LDA    $2,X
@@ -6695,7 +6701,7 @@ EE1E: 20 03       BRA    $EE23
 EE20: 83 00 10    SUBD   #$0010
 EE23: ED C4       STD    ,U
 EE25: 7C 14 54    INC    $1454
-EE28: 7C 40 52    INC    $4052
+EE28: 7C 40 52    INC    sound_4052
 EE2B: BD F0 42    JSR    $F042
 EE2E: 6A 88 17    DEC    $17,X
 EE31: 27 01       BEQ    $EE34
@@ -6763,7 +6769,7 @@ EEC6: 20 03       BRA    $EECB
 EEC8: 83 00 10    SUBD   #$0010
 EECB: ED C4       STD    ,U
 EECD: 7C 14 54    INC    $1454
-EED0: 7C 40 52    INC    $4052
+EED0: 7C 40 52    INC    sound_4052
 EED3: 86 1E       LDA    #$1E
 EED5: A7 88 17    STA    $17,X
 EED8: BD F0 42    JSR    $F042
@@ -8518,7 +8524,7 @@ FF9F: 26 0B       BNE    $FFAC
 FFA1: B6 48 00    LDA    namco_io_4800
 FFA4: 7F 48 00    CLR    namco_io_4800
 FFA7: 84 0F       ANDA   #$0F
-FFA9: B7 40 5E    STA    $405E
+FFA9: B7 40 5E    STA    sound_credit_405e
 FFAC: B6 13 E4    LDA    $13E4
 FFAF: 49          ROLA
 FFB0: 49          ROLA
