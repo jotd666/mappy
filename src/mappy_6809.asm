@@ -59,7 +59,7 @@ sound_404c = $404c
 sound_highscore_404d = $404d
 sound_404e = $404e
 sound_hurry_404f = $404f
-sound_4050 = $4050
+sound_cat_baloon_4050 = $4050
 sound_bonus_earnings_tune_4051 = $4051
 sound_4052 = $4052
 
@@ -1944,31 +1944,31 @@ B375: 27 18       BEQ    $B38F
 B377: 86 02       LDA    #$02
 B379: B7 22 0D    STA    $220D
 B37C: 86 01       LDA    #$01
-B37E: B7 40 50    STA    sound_4050
+B37E: B7 40 50    STA    sound_cat_baloon_4050
 B381: BD D0 8A    JSR    yield_context_d08a
-B384: B6 40 50    LDA    sound_4050
+B384: B6 40 50    LDA    sound_cat_baloon_4050
 B387: 27 01       BEQ    $B38A
 B389: 39          RTS
 B38A: 86 0A       LDA    #$0A
 B38C: BD D0 93    JSR    $D093
 B38F: 86 01       LDA    #$01
-B391: B7 40 50    STA    sound_4050
+B391: B7 40 50    STA    sound_cat_baloon_4050
 B394: BD D0 8A    JSR    yield_context_d08a
-B397: B6 40 50    LDA    sound_4050
+B397: B6 40 50    LDA    sound_cat_baloon_4050
 B39A: 27 01       BEQ    $B39D
 B39C: 39          RTS
 B39D: 86 0A       LDA    #$0A
 B39F: BD D0 93    JSR    $D093
 B3A2: 86 01       LDA    #$01
-B3A4: B7 40 50    STA    sound_4050
+B3A4: B7 40 50    STA    sound_cat_baloon_4050
 B3A7: BD D0 8A    JSR    yield_context_d08a
-B3AA: B6 40 50    LDA    sound_4050
+B3AA: B6 40 50    LDA    sound_cat_baloon_4050
 B3AD: 27 01       BEQ    $B3B0
 B3AF: 39          RTS
 B3B0: 86 0A       LDA    #$0A
 B3B2: BD D0 93    JSR    $D093
 B3B5: 86 01       LDA    #$01
-B3B7: B7 40 50    STA    sound_4050
+B3B7: B7 40 50    STA    sound_cat_baloon_4050
 B3BA: BD D0 8A    JSR    yield_context_d08a
 B3BD: B6 22 04    LDA    $2204
 B3C0: 81 18       CMPA   #$18
@@ -1995,7 +1995,7 @@ B3EC: 6C 84       INC    ,X
 B3EE: 7C 13 9E    INC    $139E
 B3F1: 7C 40 48    INC    sound_4048
 B3F4: 20 06       BRA    $B3FC
-B3F6: B6 40 50    LDA    sound_4050
+B3F6: B6 40 50    LDA    sound_cat_baloon_4050
 B3F9: 27 01       BEQ    $B3FC
 B3FB: 39          RTS
 B3FC: 7F 14 45    CLR    $1445

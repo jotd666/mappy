@@ -968,6 +968,14 @@ do_irq:
 	* down to 0:
 	clr.b	(sound_4041,a6)		| notify the game that sfx is done	
 0:
+	move.w	baloon_timeout,d0
+	jeq		0f
+	subq	#1,d0
+	move.w	d0,baloon_timeout
+	jne		0f
+	* down to 0:
+	clr.b	(sound_cat_baloon_4050,a6)		| notify the game that sfx is done	
+0:
 	move.w	hurry_timeout,d0
 	jeq		0f
 	subq	#1,d0
@@ -3713,6 +3721,10 @@ osd_sound_start:
 	jne		0f
 	move.w	#50,hurry_timeout
 0:
+	cmp.b	#CAT_BALOON_10_SND,d0
+	jne		0f
+	move.w	#50,baloon_timeout
+0:
 
 	cmp.b	#0xc,d0
 	jne		0f
@@ -4105,6 +4117,8 @@ sprite_x_offset:
 
 	.align 2
 
+baloon_timeout:
+	.word	0
 hurry_timeout:
 	.word	0
 sfx_01_timeout:
