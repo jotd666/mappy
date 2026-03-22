@@ -47,9 +47,9 @@ sound_4040 = $4040
 sound_4041 = $4041
 sound_main_tune_4042 = $4042
 sound_game_over_4043 = $4043
-sound_4044 = $4044
+sound_extra_life_4044 = $4044
 sound_level_completed_4045 = $4045
-sound_4046 = $4046
+sound_killed_4046 = $4046
 sound_4047 = $4047
 sound_4048 = $4048
 sound_hurry_4049 = $4049
@@ -64,6 +64,7 @@ sound_bonus_earnings_tune_4051 = $4051
 sound_4052 = $4052
 
 sound_credit_405e = $405E
+main_tune_tempo_40e2 = $40e2
 
 ; set by namco chip when enough credits, 0: none, 1: 1 player, 2: 2 players
 number_of_players_4801 = $4801
@@ -88,6 +89,8 @@ sync_1382 = $1382
 saved_address_1399 = $1399
 saved_address_13a0 = $13a0
 copy_of_joy_directions_1374 = $1374
+directions_override_1440 = $1440
+button_override_1441 = $1441
 
 ; DP=$2000
 nb_lives_30 = $30
@@ -486,11 +489,11 @@ A4B3: DD 06       STD    <$06
 A4B5: CC 02 00    LDD    #$0200
 A4B8: DD 08       STD    <$08
 A4BA: 86 01       LDA    #$01
-A4BC: B7 14 40    STA    $1440
+A4BC: B7 14 40    STA    directions_override_1440
 A4BF: 86 00       LDA    #$00
 A4C1: B7 14 05    STA    $1405
 A4C4: 86 01       LDA    #$01
-A4C6: B7 14 41    STA    $1441
+A4C6: B7 14 41    STA    button_override_1441
 A4C9: 86 00       LDA    #$00
 A4CB: B7 14 08    STA    $1408
 A4CE: 86 01       LDA    #$01
@@ -506,7 +509,7 @@ A4E7: BD A9 6B    JSR    $A96B
 A4EA: 7C 14 42    INC    $1442
 A4ED: 7C 14 48    INC    $1448
 A4F0: 86 01       LDA    #$01
-A4F2: B7 14 40    STA    $1440
+A4F2: B7 14 40    STA    directions_override_1440
 A4F5: 86 08       LDA    #$08
 A4F7: B7 14 05    STA    $1405
 A4FA: BD D0 8A    JSR    yield_context_d08a
@@ -521,7 +524,7 @@ A510: 7F 14 42    CLR    $1442
 A513: 86 2D       LDA    #$2D
 A515: BD A9 6B    JSR    $A96B
 A518: 86 01       LDA    #$01
-A51A: B7 14 40    STA    $1440
+A51A: B7 14 40    STA    directions_override_1440
 A51D: 86 02       LDA    #$02
 A51F: B7 14 05    STA    $1405
 A522: 7C 14 42    INC    $1442
@@ -530,7 +533,7 @@ A528: 96 00       LDA    <$00
 A52A: 81 02       CMPA   #$02
 A52C: 10 22 04 55 LBHI   $A985
 A530: 86 01       LDA    #$01
-A532: B7 14 40    STA    $1440
+A532: B7 14 40    STA    directions_override_1440
 A535: 86 00       LDA    #$00
 A537: B7 14 05    STA    $1405
 A53A: 8E A7 5B    LDX    #$A75B
@@ -617,7 +620,7 @@ A60C: 8E A7 60    LDX    #$A760
 A60F: CE 06 33    LDU    #$0633
 A612: BD FE AA    JSR    $FEAA
 A615: 86 01       LDA    #$01
-A617: B7 14 40    STA    $1440
+A617: B7 14 40    STA    directions_override_1440
 A61A: 86 02       LDA    #$02
 A61C: B7 14 05    STA    $1405
 A61F: BD D0 8A    JSR    yield_context_d08a
@@ -625,13 +628,13 @@ A622: DC 01       LDD    <$01
 A624: 10 83 00 8D CMPD   #$008D
 A628: 10 23 03 59 LBLS   $A985
 A62C: 86 01       LDA    #$01
-A62E: B7 14 40    STA    $1440
+A62E: B7 14 40    STA    directions_override_1440
 A631: 86 00       LDA    #$00
 A633: B7 14 05    STA    $1405
 A636: 7C 14 4A    INC    $144A
 A639: BD D0 8A    JSR    yield_context_d08a
 A63C: 86 01       LDA    #$01
-A63E: B7 14 41    STA    $1441
+A63E: B7 14 41    STA    button_override_1441
 A641: 86 01       LDA    #$01
 A643: B7 14 08    STA    $1408
 A646: BD D0 8A    JSR    yield_context_d08a
@@ -643,12 +646,12 @@ A654: CE 05 B1    LDU    #$05B1
 A657: C6 07       LDB    #$07
 A659: BD F3 D0    JSR    $F3D0
 A65C: 86 01       LDA    #$01
-A65E: B7 14 40    STA    $1440
+A65E: B7 14 40    STA    directions_override_1440
 A661: 86 08       LDA    #$08
 A663: B7 14 05    STA    $1405
 A666: BD D0 8A    JSR    yield_context_d08a
 A669: 86 01       LDA    #$01
-A66B: B7 14 40    STA    $1440
+A66B: B7 14 40    STA    directions_override_1440
 A66E: 86 00       LDA    #$00
 A670: B7 14 05    STA    $1405
 A673: BD D0 8A    JSR    yield_context_d08a
@@ -680,7 +683,7 @@ A6BA: BD A9 6B    JSR    $A96B
 A6BD: 8E 20 40    LDX    #$2040
 A6C0: 9F 27       STX    <$27
 A6C2: 86 01       LDA    #$01
-A6C4: B7 14 40    STA    $1440
+A6C4: B7 14 40    STA    directions_override_1440
 A6C7: 86 02       LDA    #$02
 A6C9: B7 14 05    STA    $1405
 A6CC: BD D0 8A    JSR    yield_context_d08a
@@ -688,7 +691,7 @@ A6CF: 96 00       LDA    <$00
 A6D1: 81 06       CMPA   #$06
 A6D3: 10 26 02 AE LBNE   $A985
 A6D7: 86 01       LDA    #$01
-A6D9: B7 14 40    STA    $1440
+A6D9: B7 14 40    STA    directions_override_1440
 A6DC: 86 00       LDA    #$00
 A6DE: B7 14 05    STA    $1405
 A6E1: BD D0 8A    JSR    yield_context_d08a
@@ -696,7 +699,7 @@ A6E4: 96 04       LDA    <$04
 A6E6: 81 C0       CMPA   #$C0
 A6E8: 10 22 02 99 LBHI   $A985
 A6EC: 86 01       LDA    #$01
-A6EE: B7 14 40    STA    $1440
+A6EE: B7 14 40    STA    directions_override_1440
 A6F1: 86 08       LDA    #$08
 A6F3: B7 14 05    STA    $1405
 A6F6: BD D0 8A    JSR    yield_context_d08a
@@ -734,11 +737,11 @@ A77B: BD F3 AA    JSR    $F3AA
 A77E: 4F          CLRA
 A77F: BD F3 69    JSR    $F369
 A782: 86 01       LDA    #$01
-A784: B7 14 40    STA    $1440
+A784: B7 14 40    STA    directions_override_1440
 A787: 86 00       LDA    #$00
 A789: B7 14 05    STA    $1405
 A78C: 86 01       LDA    #$01
-A78E: B7 14 41    STA    $1441
+A78E: B7 14 41    STA    button_override_1441
 A791: 86 00       LDA    #$00
 A793: B7 14 08    STA    $1408
 A796: 86 05       LDA    #$05
@@ -1076,7 +1079,7 @@ AB44: 9F 0E       STX    <$0E
 AB46: 0F 29       CLR    <$29
 AB48: BD E0 68    JSR    $E068
 AB4B: 86 01       LDA    #$01
-AB4D: B7 14 40    STA    $1440
+AB4D: B7 14 40    STA    directions_override_1440
 AB50: 86 00       LDA    #$00
 AB52: B7 14 05    STA    $1405
 AB55: BD D0 8A    JSR    yield_context_d08a
@@ -1173,22 +1176,23 @@ AC3D: 86 70       LDA    #$70
 AC3F: B7 14 02    STA    $1402
 AC42: BD D0 8A    JSR    yield_context_d08a
 l_ac45:
+; start gameplay
 AC45: 7F 14 44    CLR    $1444
 AC48: 7F 14 45    CLR    $1445
 AC4B: 86 3C       LDA    #$3C
 AC4D: BD D0 93    JSR    $D093
 AC50: 0F 33       CLR    <player_hit_33
 AC52: 86 00       LDA    #$00
-AC54: B7 14 40    STA    $1440
+AC54: B7 14 40    STA    directions_override_1440
 AC57: 86 00       LDA    #$00
 AC59: B7 14 05    STA    $1405
 AC5C: 86 00       LDA    #$00
-AC5E: B7 14 41    STA    $1441
+AC5E: B7 14 41    STA    button_override_1441
 AC61: 86 00       LDA    #$00
 AC63: B7 14 08    STA    $1408
 AC66: BD D0 8A    JSR    yield_context_d08a
 AC69: BD BC 34    JSR    $BC34
-AC6C: 7F 14 40    CLR    $1440
+AC6C: 7F 14 40    CLR    directions_override_1440
 AC6F: 7F 13 B0    CLR    $13B0
 AC72: BE 13 AC    LDX    $13AC
 AC75: A6 03       LDA    $3,X
@@ -1202,11 +1206,11 @@ AC87: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 AC8A: 7C 14 4C    INC    $144C
 AC8D: 7C 13 DE    INC    $13DE
 AC90: 86 01       LDA    #$01
-AC92: B7 14 40    STA    $1440
+AC92: B7 14 40    STA    directions_override_1440
 AC95: 86 00       LDA    #$00
 AC97: B7 14 05    STA    $1405
 AC9A: 86 01       LDA    #$01
-AC9C: B7 14 41    STA    $1441
+AC9C: B7 14 41    STA    button_override_1441
 AC9F: 86 00       LDA    #$00
 ACA1: B7 14 08    STA    $1408
 ; initialize "hurry up" sprite
@@ -1269,16 +1273,18 @@ AD1C: 86 3C       LDA    #$3C
 AD1E: BD D0 93    JSR    $D093
 AD21: BD BC 34    JSR    $BC34
 AD24: 86 03       LDA    #$03
-AD26: B7 40 E2    STA    $40E2
+AD26: B7 40 E2    STA    main_tune_tempo_40e2
 AD29: BE 13 AC    LDX    $13AC
+; reload counter this time for deadly boss
 AD2C: A6 04       LDA    $4,X
 AD2E: B7 13 B8    STA    hurry_countdown_13b8
+; controls are available again
 AD31: 86 00       LDA    #$00
-AD33: B7 14 40    STA    $1440
+AD33: B7 14 40    STA    directions_override_1440
 AD36: 86 00       LDA    #$00
 AD38: B7 14 05    STA    $1405
 AD3B: 86 00       LDA    #$00
-AD3D: B7 14 41    STA    $1441
+AD3D: B7 14 41    STA    button_override_1441
 AD40: 86 00       LDA    #$00
 AD42: B7 14 08    STA    $1408
 AD45: BD D0 8A    JSR    yield_context_d08a
@@ -1318,7 +1324,7 @@ AD9C: 39          RTS
 AD9D: 7C 14 02    INC    $1402
 ADA0: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 ADA3: 86 04       LDA    #$04
-ADA5: B7 40 E2    STA    $40E2
+ADA5: B7 40 E2    STA    main_tune_tempo_40e2
 ADA8: 7F 14 42    CLR    $1442
 ADAB: 7F 14 49    CLR    $1449
 ADAE: A6 9F 20 1C LDA    [$201C]
@@ -1380,7 +1386,7 @@ AE2F: 86 72       LDA    #$72
 AE31: B7 14 02    STA    $1402
 AE34: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 AE37: 86 04       LDA    #$04
-AE39: B7 40 E2    STA    $40E2
+AE39: B7 40 E2    STA    main_tune_tempo_40e2
 AE3C: 7F 14 42    CLR    $1442
 AE3F: 7F 14 49    CLR    $1449
 AE42: 86 19       LDA    #$19
@@ -1416,7 +1422,7 @@ AE88: BD D0 93    JSR    $D093
 l_ae8b:
 AE8B: BD F3 83    JSR    $F383
 AE8E: 0F 17       CLR    <$17
-AE90: 7C 40 46    INC    sound_4046
+AE90: 7C 40 46    INC    sound_killed_4046
 AE93: BD D0 8A    JSR    yield_context_d08a
 l_ae96:
 AE96: 0C 17       INC    <$17
@@ -1442,7 +1448,7 @@ AEB9: F7 11 1A    STB    $111A
 AEBC: 39          RTS
 AEBD: BD D0 8A    JSR    yield_context_d08a
 l_aec0:
-AEC0: B6 40 46    LDA    sound_4046
+AEC0: B6 40 46    LDA    sound_killed_4046
 AEC3: 27 01       BEQ    $AEC6
 AEC5: 39          RTS
 AEC6: 86 3C       LDA    #$3C
@@ -1590,7 +1596,7 @@ bonus_round_b038:
 B038: 86 60       LDA    #$60                                       
 B03A: B7 14 02    STA    $1402                                      
 B03D: 86 01       LDA    #$01                                       
-B03F: B7 14 40    STA    $1440                                      
+B03F: B7 14 40    STA    directions_override_1440                                      
 B042: 86 00       LDA    #$00
 B044: B7 14 05    STA    $1405
 B047: BD D0 8A    JSR    yield_context_d08a
@@ -1873,7 +1879,7 @@ B2D7: B7 14 02    STA    $1402
 B2DA: 7C 14 42    INC    $1442
 B2DD: 7C 14 48    INC    $1448
 B2E0: 86 00       LDA    #$00
-B2E2: B7 14 40    STA    $1440
+B2E2: B7 14 40    STA    directions_override_1440
 B2E5: 86 00       LDA    #$00
 B2E7: B7 14 05    STA    $1405
 B2EA: BD D0 8A    JSR    yield_context_d08a
@@ -2320,7 +2326,7 @@ B7D3: A7 88 3D    STA    $3D,X
 B7D6: A7 88 6D    STA    $6D,X
 B7D9: A7 89 00 9D STA    $009D,X
 B7DD: 86 01       LDA    #$01
-B7DF: B7 14 40    STA    $1440
+B7DF: B7 14 40    STA    directions_override_1440
 B7E2: 86 08       LDA    #$08
 B7E4: B7 14 05    STA    $1405
 B7E7: BD D0 8A    JSR    yield_context_d08a
@@ -2409,7 +2415,7 @@ B88A: B7 14 42    STA    $1442
 B88D: 86 01       LDA    #$01
 B88F: B7 40 41    STA    sound_4041
 B892: 86 01       LDA    #$01
-B894: B7 14 40    STA    $1440
+B894: B7 14 40    STA    directions_override_1440
 B897: 86 08       LDA    #$08
 B899: B7 14 05    STA    $1405
 B89C: BD D0 8A    JSR    yield_context_d08a
@@ -2418,7 +2424,7 @@ B8A2: 27 01       BEQ    $B8A5
 B8A4: 39          RTS
 ; sound ended: main character entered the house: enable player controls
 B8A5: 86 01       LDA    #$01
-B8A7: B7 14 40    STA    $1440
+B8A7: B7 14 40    STA    directions_override_1440
 B8AA: 86 00       LDA    #$00
 B8AC: B7 14 05    STA    $1405
 B8AF: BD D0 8A    JSR    yield_context_d08a
@@ -2615,11 +2621,11 @@ BA6C: 86 0D       LDA    #$0D
 BA6E: A7 89 08 00 STA    $0800,X		; [video_address]
 BA72: 7F 13 98    CLR    $1398
 BA75: 86 00       LDA    #$00
-BA77: B7 14 40    STA    $1440
+BA77: B7 14 40    STA    directions_override_1440
 BA7A: 86 00       LDA    #$00
 BA7C: B7 14 05    STA    $1405
 BA7F: 86 00       LDA    #$00
-BA81: B7 14 41    STA    $1441
+BA81: B7 14 41    STA    button_override_1441
 BA84: 86 00       LDA    #$00
 BA86: B7 14 08    STA    $1408
 BA89: BD D0 8A    JSR    yield_context_d08a
@@ -3171,7 +3177,7 @@ BF90: EF 88 1E    STU    $1E,X
 BF93: 39          RTS
 
 l_c000:
-C000: B6 14 40    LDA    $1440
+C000: B6 14 40    LDA    directions_override_1440
 C003: 26 01       BNE    $C006
 C005: 39          RTS
 C006: 8E 13 74    LDX    #copy_of_joy_directions_1374
@@ -3181,7 +3187,7 @@ C00D: F6 14 05    LDB    $1405
 C010: E7 86       STB    A,X
 C012: 39          RTS
 l_c013:
-C013: B6 14 41    LDA    $1441
+C013: B6 14 41    LDA    button_override_1441
 C016: 26 01       BNE    $C019
 C018: 39          RTS
 C019: 8E 13 75    LDX    #copy_of_button_state_1375
@@ -7299,13 +7305,13 @@ F31C: 26 0B       BNE    $F329
 F31E: 0C 30       INC    <nb_lives_30
 F320: 86 FF       LDA    #$FF
 F322: 97 39       STA    <$39
-F324: B7 40 44    STA    sound_4044
+F324: B7 40 44    STA    sound_extra_life_4044
 F327: 20 1D       BRA    $F346
 F329: 81 FF       CMPA   #$FF
 F32B: 26 04       BNE    $F331
 F32D: 0A 39       DEC    <$39
 F32F: A6 03       LDA    $3,X
-F331: B7 40 44    STA    sound_4044
+F331: B7 40 44    STA    sound_extra_life_4044
 F334: 0C 39       INC    <$39
 F336: 0C 30       INC    <nb_lives_30
 F338: 9B 3B       ADDA   <$3B

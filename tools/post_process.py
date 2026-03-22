@@ -115,7 +115,6 @@ with open(source_dir / "conv.s") as f:
         elif address in [0xF7E5,0xF7F8]:
             # remove I/O tests that lead to fatal errors
             line = remove_instruction(lines,1)
-
         elif address == 0xf285:
             lines[i-1]=""  # remove subq
             # make up for subq, without changing carry/x flag

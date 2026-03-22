@@ -69,13 +69,14 @@ def convert(low_memory):
     sound_dict.update({
     "MAIN_TUNE_SND"      :{"index":2,"pattern":3,"volume":32},
     "BONUS_END_TUNE_SND"      :{"index":0x11,"pattern":0,"volume":32},
-    "COMPLETED_SND"           :{"index":0x5,"pattern":0x14,"volume":32},
-    "KILLED_SND"           :{"index":0x6,"pattern":0x15,"volume":32},
+    "COMPLETED_SND"           :{"index":0x5,"pattern":0x14,"volume":32},   # trigger
+    "KILLED_SND"           :{"index":0x6,"pattern":0x15,"volume":32},     # trigger
     "HIGH_END_SND"           :{"index":0xe,"pattern":0x16,"volume":32},
-   # "GAME_OVER_SND"           :{"index":0x3,"pattern":0xxxx,"volume":32},
+    "GAME_OVER_SND"           :{"index":0x3,"pattern":0x36,"volume":32},       # trigger
+    "MAIN_TUNE_FAST_SND"           :{"index":0x1F,"pattern":0x30,"volume":32},  # fake index
     "HIGH_SCORE_SND"           :{"index":0xd,"pattern":0x19,"volume":32},
-    "BONUS_TUNE_SND"           :{"index":0xb,"pattern":0x22,"volume":32},
-    "MISC_TUNE_SND"           :{"index":0x4,"pattern":0x13,"volume":32},
+    "BONUS_TUNE_SND"           :{"index":0xb,"pattern":0x22,"volume":32},  # trigger
+    "EXTRA_LIFE_TUNE_SND"           :{"index":0x4,"pattern":0x13,"volume":32},
     "INTRO_TUNE_SND"           :{"index":0x0,"pattern":0x12,"volume":32},
 
 
