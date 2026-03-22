@@ -958,7 +958,7 @@ do_irq:
 	* set base for RAM
 	GET_MEMORY_START_AND_DP
 	* clear some sound flags immediately, else game locks up, or we have to handle that by E8 triggers
-	clr.b	(sound_4040,a6)		| we can clear the intro tune, it doesn't matter, game has another way to see it's done
+	clr.b	(sound_intro_tune_4040,a6)		| we can clear the intro tune, it doesn't matter, game has another way to see it's done
 	clr.b	(sound_404e,a6)		| highscore entry, no need
 	move.w	sfx_01_timeout,d0
 	jeq		0f
@@ -1232,24 +1232,17 @@ osd_is_vblank_interrupt_enabled:
 	
 
 
-* Z: set if not playing
+* C: set if not playing
 is_game_playing:
 *	* check game in play flag plus
 *	* screen somewhere to avoid insert coin by fire on
 *	* "get ready" screen or "best scores"
 	movem.l	a5/a6,-(a7)
 	GET_MEMORY_START_AND_DP
-*	cmp.b	#0x52,(0X1AE,a6)	| "R" from ready screen: game considered in play
-*	jeq		1f
-*	cmp.b	#0x42,(0X228,a6)	| "B" from best scores: game considered in play
-*	jeq		1f
-*	tst.b	game_in_play_101b(a6)
-0:
+	cmp.b	#0x40,(game_global_state_1402,a6)
 	movem.l	(a7)+,a5/a6
 	rts
-1:
-	cmp.l	#0,a6		| unset Z
-	jra		0b
+
 	
 skip_level:
 	movem.l	a6/a5,-(a7)
@@ -3274,7 +3267,7 @@ read_inputs:
 	move.b	d1,(joystick_directions_4804,a6)
 
 	jbsr	is_game_playing
-	jne		10f
+	jcc		10f
 	* game not in play: can insert/start game using joystick
 	btst	#JPB_BTN_RED,d0
 	jeq		0f
@@ -3511,7 +3504,7 @@ handle_keyboard:
 toggle_pause:
 	* pause only within game
 	jbsr		is_game_playing
-	beq.b	0f
+	bcs		0f
 	eor.b   #1,pause_flag
 0:
 	rts
@@ -3689,7 +3682,7 @@ osd_music_stop:
 	move.w	last_started_music_sound,d0
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	lea		(sound_4040,a6),a0	
+	lea		(sound_intro_tune_4040,a6),a0	
 	clr.b	(a0,d0.w)		| memory address offset where to cancel the sound
 
 
@@ -3847,7 +3840,7 @@ handle_music_termination:
 	* we try to match index with trigger, no need for table ATM
 	move.l	a5,d1		| save a5
 	GET_MEMORY_START_AND_DP
-	lea		(sound_4040,a6),a0
+	lea		(sound_intro_tune_4040,a6),a0
 	lea		trigger_module_table,a5
 	move.b	(a5,d0.w),d0
 	

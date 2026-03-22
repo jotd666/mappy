@@ -43,7 +43,7 @@ fast_60th_seconds_timer_1015 = $1015
 
 levels_settings_d805 = $d805
 
-sound_4040 = $4040
+sound_intro_tune_4040 = $4040
 sound_4041 = $4041
 sound_main_tune_4042 = $4042
 sound_game_over_4043 = $4043
@@ -65,6 +65,11 @@ sound_4052 = $4052
 
 sound_credit_405e = $405E
 main_tune_tempo_40e2 = $40e2
+copy_of_credits_unit_1373 = $1373
+is_two_player_game_1380 = $1380
+; global state 1402 seems to have 2 part
+; higher nibble: 0,1,2,3 when game doesn't run, 4,5,6,7 when game runs
+game_global_state_1402 = $1402
 
 ; set by namco chip when enough credits, 0: none, 1: 1 player, 2: 2 players
 number_of_players_4801 = $4801
@@ -91,6 +96,7 @@ saved_address_13a0 = $13a0
 copy_of_joy_directions_1374 = $1374
 directions_override_1440 = $1440
 button_override_1441 = $1441
+start_number_of_players_1371 = $1371
 
 ; DP=$2000
 nb_lives_30 = $30
@@ -122,6 +128,7 @@ A029: 85 08       BITA   #$08
 A02B: 10 26 55 47 LBNE   $F576
 A02F: 4F          CLRA
 A030: B7 13 82    STA    sync_1382
+; cheat DSW / freeze?
 A033: B6 48 14    LDA    namco_io_4814
 A036: 85 04       BITA   #$04
 A038: 27 02       BEQ    $A03C
@@ -129,8 +136,9 @@ A03A: 0C 32       INC    <level_complete_32
 A03C: B6 13 60    LDA    $1360
 A03F: B4 13 81    ANDA   $1381
 A042: B7 13 93    STA    $1393
-A045: B6 13 71    LDA    $1371
+A045: B6 13 71    LDA    start_number_of_players_1371
 A048: 27 0C       BEQ    $A056
+; start 1P/2P detected
 A04A: 8E AA 7E    LDX    #$AA7E		; [function_address]
 A04D: BF 14 00    STX    $1400
 A050: 7F 40 4D    CLR    sound_highscore_404D
@@ -228,7 +236,7 @@ A127: AE 86       LDX    A,X
 A129: BF 13 AA    STX    $13AA
 A12C: BD BC 3A    JSR    $BC3A
 A12F: B6 13 72    LDA    $1372
-A132: BB 13 73    ADDA   $1373
+A132: BB 13 73    ADDA   copy_of_credits_unit_1373
 A135: 27 03       BEQ    $A13A
 A137: 7E A9 94    JMP    $A994
 A13A: 8E 07 80    LDX    #$0780
@@ -244,7 +252,7 @@ A14F: 7E A1 85    JMP    $A185
 A185: BD D0 8A    JSR    yield_context_d08a                                       
 l_a188:
 A188: 4F          CLRA
-A189: B7 14 02    STA    $1402
+A189: B7 14 02    STA    game_global_state_1402
 A18C: 86 0A       LDA    #$0A
 A18E: BD D0 93    JSR    $D093
 l_a191:
@@ -262,7 +270,7 @@ l_a1ab:
 A1AB: 8E A2 5C    LDX    #$A25C
 A1AE: CE 06 83    LDU    #$0683
 A1B1: C6 07       LDB    #$07
-A1B3: BD F3 D0    JSR    $F3D0
+A1B3: BD F3 D0    JSR    display_text_f3d0
 A1B6: 86 1E       LDA    #$1E
 A1B8: BD A9 6B    JSR    $A96B
 l_a1bb:
@@ -285,19 +293,19 @@ l_a1e1:
 A1E1: 8E A2 33    LDX    #$A233
 A1E4: CE 06 76    LDU    #$0676
 A1E7: C6 07       LDB    #$07
-A1E9: BD F3 D0    JSR    $F3D0
+A1E9: BD F3 D0    JSR    display_text_f3d0
 A1EC: 8E A2 40    LDX    #$A240
 A1EF: CE 06 D8    LDU    #$06D8
 A1F2: C6 07       LDB    #$07
-A1F4: BD F3 D0    JSR    $F3D0
+A1F4: BD F3 D0    JSR    display_text_f3d0
 A1F7: 8E A2 54    LDX    #$A254
 A1FA: CE 06 1C    LDU    #$061C
 A1FD: C6 03       LDB    #$03
-A1FF: BD F3 D0    JSR    $F3D0
+A1FF: BD F3 D0    JSR    display_text_f3d0
 A202: 8E A2 6C    LDX    #$A26C
 A205: CE 02 21    LDU    #$0221
 A208: C6 40       LDB    #$40
-A20A: BD F3 D0    JSR    $F3D0
+A20A: BD F3 D0    JSR    display_text_f3d0
 A20D: 86 78       LDA    #$78
 A20F: BD A9 6B    JSR    $A96B
 l_a212:
@@ -337,7 +345,7 @@ A2D8: 6F 89 01 01 CLR    $0101,X
 A2DC: 8E FE BA    LDX    #$FEBA
 A2DF: CE 02 0C    LDU    #$020C
 A2E2: C6 07       LDB    #$07
-A2E4: BD F3 D0    JSR    $F3D0
+A2E4: BD F3 D0    JSR    display_text_f3d0
 A2E7: BD D0 8A    JSR    yield_context_d08a
 l_a2ea:
 A2EA: BD A4 2D    JSR    $A42D
@@ -347,11 +355,11 @@ A2F2: 10 25 06 8F LBCS   $A985
 A2F6: 8E A4 49    LDX    #$A449
 A2F9: CE 02 AE    LDU    #$02AE
 A2FC: C6 09       LDB    #$09
-A2FE: BD F3 D0    JSR    $F3D0
+A2FE: BD F3 D0    JSR    display_text_f3d0
 A301: 8E A4 5D    LDX    #$A45D
 A304: 33 C8 E0    LEAU   -$20,U
 A307: C6 01       LDB    #$01
-A309: BD F3 D0    JSR    $F3D0
+A309: BD F3 D0    JSR    display_text_f3d0
 A30C: 86 3C       LDA    #$3C
 A30E: BD A9 6B    JSR    $A96B
 l_a311:
@@ -372,7 +380,7 @@ A336: 6F 89 01 01 CLR    $0101,X
 A33A: 8E A4 78    LDX    #$A478
 A33D: CE 01 F4    LDU    #$01F4
 A340: C6 02       LDB    #$02
-A342: BD F3 D0    JSR    $F3D0
+A342: BD F3 D0    JSR    display_text_f3d0
 A345: 86 3C       LDA    #$3C
 A347: BD A9 6B    JSR    $A96B
 l_a34a:
@@ -383,11 +391,11 @@ A352: 10 25 06 2F LBCS   $A985
 A356: 8E A4 49    LDX    #$A449
 A359: CE 02 F6    LDU    #$02F6
 A35C: C6 09       LDB    #$09
-A35E: BD F3 D0    JSR    $F3D0
+A35E: BD F3 D0    JSR    display_text_f3d0
 A361: 8E A4 4C    LDX    #$A44C
 A364: 33 C8 E0    LEAU   -$20,U
 A367: C6 03       LDB    #$03
-A369: BD F3 D0    JSR    $F3D0
+A369: BD F3 D0    JSR    display_text_f3d0
 A36C: 86 3C       LDA    #$3C
 A36E: BD A9 6B    JSR    $A96B
 l_a371:
@@ -409,7 +417,7 @@ A398: A7 89 01 01 STA    $0101,X
 A39C: 8E A4 7F    LDX    #$A47F
 A39F: CE 02 1C    LDU    #$021C
 A3A2: C6 0B       LDB    #$0B
-A3A4: BD F3 D0    JSR    $F3D0
+A3A4: BD F3 D0    JSR    display_text_f3d0
 A3A7: 86 3C       LDA    #$3C
 A3A9: BD A9 6B    JSR    $A96B
 l_a3ac:
@@ -420,11 +428,11 @@ A3B4: 10 26 05 CD LBNE   $A985
 A3B8: 8E A4 49    LDX    #$A449
 A3BB: CE 02 BE    LDU    #$02BE
 A3BE: C6 09       LDB    #$09
-A3C0: BD F3 D0    JSR    $F3D0
+A3C0: BD F3 D0    JSR    display_text_f3d0
 A3C3: 8E A4 6A    LDX    #$A46A
 A3C6: 33 C8 E0    LEAU   -$20,U
 A3C9: C6 0C       LDB    #$0C
-A3CB: BD F3 D0    JSR    $F3D0
+A3CB: BD F3 D0    JSR    display_text_f3d0
 A3CE: 86 3C       LDA    #$3C
 A3D0: BD A9 6B    JSR    $A96B
 A3D3: 8D 58       BSR    $A42D
@@ -461,6 +469,7 @@ A421: 10 26 05 60 LBNE   $A985
 A425: 86 1E       LDA    #$1E
 A427: BD A9 6B    JSR    $A96B
 A42A: 7E A4 96    JMP    $A496
+
 A42D: 8E 11 D3    LDX    #$11D3
 A430: C6 0B       LDB    #$0B
 A432: 34 04       PSHS   B
@@ -474,7 +483,7 @@ A445: 5A          DECB
 A446: 26 EA       BNE    $A432
 A448: 39          RTS
 
-A496: 7F 13 80    CLR    $1380                                      
+A496: 7F 13 80    CLR    is_two_player_game_1380                                      
 A499: B7 50 04    STA    video_stuff_5004                                  
 A49C: 86 FF       LDA    #$FF                                       
 A49E: B7 13 89    STA    scroll_value_1389                                      
@@ -519,7 +528,7 @@ A501: 10 26 04 80 LBNE   $A985
 A505: 8E A7 60    LDX    #$A760
 A508: CE 06 D1    LDU    #$06D1
 A50B: C6 07       LDB    #$07
-A50D: BD F3 D0    JSR    $F3D0
+A50D: BD F3 D0    JSR    display_text_f3d0
 A510: 7F 14 42    CLR    $1442
 A513: 86 2D       LDA    #$2D
 A515: BD A9 6B    JSR    $A96B
@@ -539,7 +548,7 @@ A537: B7 14 05    STA    $1405
 A53A: 8E A7 5B    LDX    #$A75B
 A53D: CE 05 D3    LDU    #$05D3
 A540: C6 00       LDB    #$00
-A542: BD F3 D0    JSR    $F3D0
+A542: BD F3 D0    JSR    display_text_f3d0
 A545: 7F 06 13    CLR    $0613
 A548: C6 02       LDB    #$02
 A54A: F7 0E 13    STB    $0E13
@@ -559,7 +568,7 @@ A56E: BD A9 6B    JSR    $A96B
 A571: 8E A7 32    LDX    #$A732
 A574: CE 06 D1    LDU    #$06D1
 A577: C6 07       LDB    #$07
-A579: BD F3 D0    JSR    $F3D0
+A579: BD F3 D0    JSR    display_text_f3d0
 A57C: 7C 14 49    INC    $1449
 A57F: 86 1E       LDA    #$1E
 A581: BD A9 6B    JSR    $A96B
@@ -610,7 +619,7 @@ A5F0: F7 0E 13    STB    $0E13
 A5F3: 8E A7 5B    LDX    #$A75B
 A5F6: CE 05 D3    LDU    #$05D3
 A5F9: C6 00       LDB    #$00
-A5FB: BD F3 D0    JSR    $F3D0
+A5FB: BD F3 D0    JSR    display_text_f3d0
 A5FE: 86 5A       LDA    #$5A
 A600: BD A9 6B    JSR    $A96B
 A603: 8E A7 32    LDX    #$A732
@@ -644,7 +653,7 @@ A64D: 10 26 03 34 LBNE   $A985
 A651: 8E A7 43    LDX    #$A743
 A654: CE 05 B1    LDU    #$05B1
 A657: C6 07       LDB    #$07
-A659: BD F3 D0    JSR    $F3D0
+A659: BD F3 D0    JSR    display_text_f3d0
 A65C: 86 01       LDA    #$01
 A65E: B7 14 40    STA    directions_override_1440
 A661: 86 08       LDA    #$08
@@ -662,7 +671,7 @@ A67F: 7F 14 4A    CLR    $144A
 A682: 8E A7 4D    LDX    #$A74D
 A685: CE 05 F3    LDU    #$05F3
 A688: C6 00       LDB    #$00
-A68A: BD F3 D0    JSR    $F3D0
+A68A: BD F3 D0    JSR    display_text_f3d0
 A68D: 7F 14 44    CLR    $1444
 A690: BD D0 8A    JSR    yield_context_d08a
 A693: 7F 11 9E    CLR    $119E
@@ -711,15 +720,15 @@ A704: BD A9 6B    JSR    $A96B
 A707: 8E A2 33    LDX    #$A233
 A70A: CE 04 F0    LDU    #$04F0
 A70D: C6 07       LDB    #$07
-A70F: BD F3 D0    JSR    $F3D0
+A70F: BD F3 D0    JSR    display_text_f3d0
 A712: 8E A2 40    LDX    #$A240
 A715: CE 05 52    LDU    #$0552
 A718: C6 07       LDB    #$07
-A71A: BD F3 D0    JSR    $F3D0
+A71A: BD F3 D0    JSR    display_text_f3d0
 A71D: 8E A2 54    LDX    #$A254
 A720: CE 04 94    LDU    #$0494
 A723: C6 03       LDB    #$03
-A725: BD F3 D0    JSR    $F3D0
+A725: BD F3 D0    JSR    display_text_f3d0
 A728: 86 B4       LDA    #$B4
 A72A: BD A9 6B    JSR    $A96B
 A72D: 0F 32       CLR    <level_complete_32
@@ -731,9 +740,9 @@ A72F: 7E A7 73    JMP    $A773
  ;  MP ON TRAMPOLINE
  ;
 A773: 86 10       LDA    #$10                                         
-A775: B7 14 02    STA    $1402                                        
+A775: B7 14 02    STA    game_global_state_1402                                        
 A778: BD F3 5B    JSR    $F35B
-A77B: BD F3 AA    JSR    $F3AA
+A77B: BD F3 AA    JSR    clear_ram_f3aa
 A77E: 4F          CLRA
 A77F: BD F3 69    JSR    $F369
 A782: 86 01       LDA    #$01
@@ -844,7 +853,7 @@ A88A: 0F 33       CLR    <player_hit_33
 A88C: 20 69       BRA    $A8F7
 
 A8F7: BD F3 5B    JSR    $F35B
-A8FA: BD F3 AA    JSR    $F3AA
+A8FA: BD F3 AA    JSR    clear_ram_f3aa
 A8FD: 86 FF       LDA    #$FF
 A8FF: B7 13 89    STA    scroll_value_1389
 A902: BD E3 83    JSR    draw_house_and_scores_e383
@@ -912,10 +921,10 @@ A994: BD BC 3A    JSR    $BC3A
 A997: BD D0 8A    JSR    yield_context_d08a
 l_a99a:
 A99A: 86 20       LDA    #$20
-A99C: B7 14 02    STA    $1402
+A99C: B7 14 02    STA    game_global_state_1402
 A99F: 7F 41 0C    CLR    $410C
 A9A2: B7 50 04    STA    video_stuff_5004
-A9A5: BD F3 AA    JSR    $F3AA
+A9A5: BD F3 AA    JSR    clear_ram_f3aa
 A9A8: BD F3 5B    JSR    $F35B
 A9AB: 86 00       LDA    #$00
 A9AD: BD F3 69    JSR    $F369
@@ -928,11 +937,11 @@ A9BA: BD E1 0D    JSR    draw_small_house_e10d
 A9BD: 8E AA 36    LDX    #$AA36
 A9C0: CE 03 09    LDU    #$0309
 A9C3: C6 00       LDB    #$00
-A9C5: BD F3 D0    JSR    $F3D0
+A9C5: BD F3 D0    JSR    display_text_f3d0
 A9C8: 8E AA 48    LDX    #$AA48
 A9CB: CE 02 CC    LDU    #$02CC
 A9CE: C6 02       LDB    #$02
-A9D0: BD F3 D0    JSR    $F3D0
+A9D0: BD F3 D0    JSR    display_text_f3d0
 A9D3: 8E D4 03    LDX    #$D403
 A9D6: F6 13 65    LDB    $1365
 A9D9: 58          ASLB
@@ -955,15 +964,15 @@ A9FF: BD F3 E2    JSR    $F3E2
 AA02: 8E A2 33    LDX    #$A233
 AA05: CE 02 D8    LDU    #$02D8
 AA08: C6 09       LDB    #$09
-AA0A: BD F3 D0    JSR    $F3D0
+AA0A: BD F3 D0    JSR    display_text_f3d0
 AA0D: 8E A2 40    LDX    #$A240
 AA10: CE 03 3A    LDU    #$033A
 AA13: C6 09       LDB    #$09
-AA15: BD F3 D0    JSR    $F3D0
+AA15: BD F3 D0    JSR    display_text_f3d0
 AA18: 8E A2 54    LDX    #$A254
 AA1B: CE 02 7C    LDU    #$027C
 AA1E: C6 03       LDB    #$03
-AA20: BD F3 D0    JSR    $F3D0
+AA20: BD F3 D0    JSR    display_text_f3d0
 AA23: BD D0 8A    JSR    yield_context_d08a
 l_aa26:
 AA26: BD E0 00    JSR    display_nb_credits_e000
@@ -975,36 +984,37 @@ AA33: 27 21       BEQ    $AA56
 AA35: 39          RTS
 
 AA56: 86 30       LDA    #$30                                        
-AA58: B7 14 02    STA    $1402                                       
+AA58: B7 14 02    STA    game_global_state_1402                                       
 AA5B: B6 13 72    LDA    $1372                                       
 AA5E: 26 0D       BNE    $AA6D                                       
 AA60: BD D0 8A    JSR    yield_context_d08a
 l_aa63:
 AA63: BD E0 00    JSR    display_nb_credits_e000
-AA66: B6 13 73    LDA    $1373
+AA66: B6 13 73    LDA    copy_of_credits_unit_1373
 AA69: 81 02       CMPA   #$02
 AA6B: 25 11       BCS    $AA7E
 AA6D: 8E AA 90    LDX    #$AA90
 AA70: CE 02 CC    LDU    #$02CC
 AA73: C6 02       LDB    #$02
-AA75: BD F3 D0    JSR    $F3D0
+AA75: BD F3 D0    JSR    display_text_f3d0
 AA78: BD D0 8A    JSR    yield_context_d08a
 l_aa7b:
 AA7B: BD E0 00    JSR    display_nb_credits_e000
 l_aa7e:
-AA7E: B6 13 71    LDA    $1371
+
+AA7E: B6 13 71    LDA    start_number_of_players_1371
 AA81: 26 01       BNE    $AA84
 AA83: 39          RTS
 AA84: 7C 48 09    INC    namco_io_4809
-AA87: 7F 48 01    CLR    number_of_players_4801
+AA87: 7F 48 01    CLR    number_of_players_4801		; ack
 AA8A: 81 01       CMPA   #$01
 AA8C: 27 37       BEQ    $AAC5
 AA8E: 20 0F       BRA    $AA9F
 
 AA9F: 86 01       LDA    #$01                                        
-AAA1: B7 13 80    STA    $1380                                       
+AAA1: B7 13 80    STA    is_two_player_game_1380                                       
 AAA4: 86 40       LDA    #$40                                        
-AAA6: B7 14 02    STA    $1402
+AAA6: B7 14 02    STA    game_global_state_1402
 AAA9: 8E C8 16    LDX    #$C816
 AAAC: CE 07 C7    LDU    #$07C7
 AAAF: BD F3 C3    JSR    $F3C3
@@ -1018,9 +1028,9 @@ AABE: A7 80       STA    ,X+
 AAC0: 5A          DECB
 AAC1: 26 FB       BNE    $AABE
 AAC3: 20 1D       BRA    $AAE2
-AAC5: 7F 13 80    CLR    $1380
+AAC5: 7F 13 80    CLR    is_two_player_game_1380
 AAC8: 86 40       LDA    #$40
-AACA: B7 14 02    STA    $1402
+AACA: B7 14 02    STA    game_global_state_1402
 ; clear screen
 AACD: 86 20       LDA    #$20
 AACF: 8E 07 C5    LDX    #$07C5
@@ -1042,7 +1052,7 @@ AAEF: BD BC 49    JSR    init_player_bc49
 AAF2: BD D0 8A    JSR    yield_context_d08a
 l_aaf5:
 AAF5: 86 50       LDA    #$50
-AAF7: B7 14 02    STA    $1402
+AAF7: B7 14 02    STA    game_global_state_1402
 AAFA: 7F 13 92    CLR    $1392
 AAFD: 8E 20 40    LDX    #$2040
 AB00: 6F 03       CLR    $3,X
@@ -1071,9 +1081,9 @@ AB33: BD D0 AB    JSR    $D0AB
 AB36: 7C 13 96    INC    $1396
 AB39: BD D0 8A    JSR    yield_context_d08a
 l_ab3c:
-; reached when game is started
+; reached when game is started (not demo)
 AB3C: 86 60       LDA    #$60
-AB3E: B7 14 02    STA    $1402
+AB3E: B7 14 02    STA    game_global_state_1402
 AB41: 8E E4 D8    LDX    #$E4D8		; [function_address]
 AB44: 9F 0E       STX    <$0E
 AB46: 0F 29       CLR    <$29
@@ -1086,7 +1096,7 @@ AB55: BD D0 8A    JSR    yield_context_d08a
 l_ab58:
 AB58: 7E B7 34    JMP    $B734
 
-AB5B: BD F3 AA    JSR    $F3AA
+AB5B: BD F3 AA    JSR    clear_ram_f3aa
 AB5E: BD F3 5B    JSR    $F35B
 AB61: BD D0 8A    JSR    yield_context_d08a
 l_ab64:
@@ -1109,7 +1119,7 @@ AB85: 7F 13 96    CLR    $1396
 AB88: 8E AC 26    LDX    #$AC26
 AB8B: CE 06 8B    LDU    #$068B
 AB8E: C6 00       LDB    #$00
-AB90: BD F3 D0    JSR    $F3D0
+AB90: BD F3 D0    JSR    display_text_f3d0
 AB93: B6 13 81    LDA    $1381
 AB96: 4C          INCA
 AB97: A7 C9 01 20 STA    $0120,U		; [video_address]
@@ -1123,7 +1133,7 @@ ABA6: BD F4 C7    JSR    $F4C7
 ABA9: 8E AC 20    LDX    #$AC20
 ABAC: CE 06 0F    LDU    #$060F
 ABAF: C6 09       LDB    #$09
-ABB1: BD F3 D0    JSR    $F3D0
+ABB1: BD F3 D0    JSR    display_text_f3d0
 ABB4: 33 C8 E0    LEAU   -$20,U
 ABB7: B6 13 8D    LDA    $138D
 ABBA: 27 12       BEQ    $ABCE
@@ -1173,15 +1183,16 @@ AC1D: 7E AC 37    JMP    $AC37
 AC37: 7C 14 44    INC    $1444
 AC3A: 7C 14 45    INC    $1445
 AC3D: 86 70       LDA    #$70
-AC3F: B7 14 02    STA    $1402
+AC3F: B7 14 02    STA    game_global_state_1402
 AC42: BD D0 8A    JSR    yield_context_d08a
 l_ac45:
-; start gameplay
+; start gameplay (not demo!)
 AC45: 7F 14 44    CLR    $1444
 AC48: 7F 14 45    CLR    $1445
 AC4B: 86 3C       LDA    #$3C
 AC4D: BD D0 93    JSR    $D093
 AC50: 0F 33       CLR    <player_hit_33
+; allow controls
 AC52: 86 00       LDA    #$00
 AC54: B7 14 40    STA    directions_override_1440
 AC57: 86 00       LDA    #$00
@@ -1321,7 +1332,7 @@ AD96: 96 33       LDA    <player_hit_33
 AD98: 10 26 00 93 LBNE   $AE2F
 AD9C: 39          RTS
 ; level completed
-AD9D: 7C 14 02    INC    $1402
+AD9D: 7C 14 02    INC    game_global_state_1402
 ADA0: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 ADA3: 86 04       LDA    #$04
 ADA5: B7 40 E2    STA    main_tune_tempo_40e2
@@ -1383,7 +1394,7 @@ AE29: BD BE 0D    JSR    $BE0D
 AE2C: 7E AB 3C    JMP    $AB3C
 ; player killed
 AE2F: 86 72       LDA    #$72
-AE31: B7 14 02    STA    $1402
+AE31: B7 14 02    STA    game_global_state_1402
 AE34: 7F 40 42    CLR    sound_main_tune_4042		; stop main music
 AE37: 86 04       LDA    #$04
 AE39: B7 40 E2    STA    main_tune_tempo_40e2
@@ -1456,11 +1467,11 @@ AEC8: BD D0 93    JSR    $D093
 l_aecb:
 AECB: 0F 33       CLR    <player_hit_33
 AECD: 86 73       LDA    #$73
-AECF: B7 14 02    STA    $1402
+AECF: B7 14 02    STA    game_global_state_1402
 AED2: 96 30       LDA    <nb_lives_30
 AED4: 27 55       BEQ    $AF2B
 AED6: 86 80       LDA    #$80
-AED8: B7 14 02    STA    $1402
+AED8: B7 14 02    STA    game_global_state_1402
 AEDB: BD D0 8A    JSR    yield_context_d08a
 l_aede:
 AEDE: B6 13 81    LDA    $1381
@@ -1474,7 +1485,7 @@ AEF1: A6 88 30    LDA    $30,X
 AEF4: 26 03       BNE    $AEF9
 AEF6: 7E AA F5    JMP    $AAF5
 AEF9: 86 90       LDA    #$90
-AEFB: B7 14 02    STA    $1402
+AEFB: B7 14 02    STA    game_global_state_1402
 AEFE: 34 10       PSHS   X
 AF00: 8E 20 00    LDX    #$2000
 AF03: 10 8E 00 F0 LDY    #$00F0
@@ -1494,21 +1505,21 @@ AF23: 88 01       EORA   #$01
 AF25: B7 13 81    STA    $1381
 AF28: 7E AA F5    JMP    $AAF5
 AF2B: 86 A0       LDA    #$A0
-AF2D: B7 14 02    STA    $1402
+AF2D: B7 14 02    STA    game_global_state_1402
 AF30: BD E3 0D    JSR    $E30D
 AF33: BD D0 8A    JSR    yield_context_d08a
 AF36: BD F3 5B    JSR    $F35B
-AF39: BD F3 AA    JSR    $F3AA
+AF39: BD F3 AA    JSR    clear_ram_f3aa
 AF3C: 86 8C       LDA    #$8C
 AF3E: B7 13 89    STA    scroll_value_1389
 AF41: BD D0 8A    JSR    yield_context_d08a
 AF44: 8E B0 27    LDX    #$B027
 AF47: CE 04 50    LDU    #$0450
 AF4A: C6 00       LDB    #$00
-AF4C: BD F3 D0    JSR    $F3D0
+AF4C: BD F3 D0    JSR    display_text_f3d0
 AF4F: 8E B0 31    LDX    #$B031
 AF52: CE 04 4E    LDU    #$044E
-AF55: BD F3 D0    JSR    $F3D0
+AF55: BD F3 D0    JSR    display_text_f3d0
 AF58: B6 13 81    LDA    $1381
 AF5B: 8B 01       ADDA   #$01
 AF5D: 33 C8 E0    LEAU   -$20,U
@@ -1568,7 +1579,7 @@ AFE2: BD F3 5B    JSR    $F35B
 AFE5: 86 FF       LDA    #$FF
 AFE7: B7 13 89    STA    scroll_value_1389
 AFEA: 7F 14 44    CLR    $1444
-AFED: BD F3 AA    JSR    $F3AA
+AFED: BD F3 AA    JSR    clear_ram_f3aa
 AFF0: 86 1E       LDA    #$1E
 AFF2: BD D0 93    JSR    $D093
 AFF5: 7E B9 5D    JMP    should_we_display_highscores_b95d
@@ -1585,7 +1596,7 @@ B00B: A6 88 30    LDA    $30,X
 B00E: 27 03       BEQ    $B013
 B010: 7E AE F9    JMP    $AEF9
 B013: 86 B0       LDA    #$B0
-B015: B7 14 02    STA    $1402
+B015: B7 14 02    STA    game_global_state_1402
 B018: BD D0 8A    JSR    yield_context_d08a
 B01B: BD F3 5B    JSR    $F35B
 B01E: B7 50 04    STA    video_stuff_5004
@@ -1594,13 +1605,13 @@ B024: 7E A1 2C    JMP    $A12C
 
 bonus_round_b038:
 B038: 86 60       LDA    #$60                                       
-B03A: B7 14 02    STA    $1402                                      
+B03A: B7 14 02    STA    game_global_state_1402                                      
 B03D: 86 01       LDA    #$01                                       
 B03F: B7 14 40    STA    directions_override_1440                                      
 B042: 86 00       LDA    #$00
 B044: B7 14 05    STA    $1405
 B047: BD D0 8A    JSR    yield_context_d08a
-B04A: BD F3 AA    JSR    $F3AA
+B04A: BD F3 AA    JSR    clear_ram_f3aa
 B04D: BD F3 5B    JSR    $F35B
 B050: BD D0 8A    JSR    yield_context_d08a
 B053: 4F          CLRA
@@ -1619,7 +1630,7 @@ B072: BD D0 93    JSR    $D093
 B075: 8E B6 CB    LDX    #$B6CB
 B078: CE 06 2E    LDU    #$062E
 B07B: C6 07       LDB    #$07
-B07D: BD F3 D0    JSR    $F3D0
+B07D: BD F3 D0    JSR    display_text_f3d0
 B080: BD D0 8A    JSR    yield_context_d08a
 B083: 8E 24 00    LDX    #$2400
 B086: CC 00 00    LDD    #$0000
@@ -1646,7 +1657,7 @@ B0B6: BD D0 93    JSR    $D093
 B0B9: 8E B6 8C    LDX    #$B68C
 B0BC: CE 06 71    LDU    #$0671
 B0BF: C6 0C       LDB    #$0C
-B0C1: BD F3 D0    JSR    $F3D0
+B0C1: BD F3 D0    JSR    display_text_f3d0
 B0C4: BD D0 8A    JSR    yield_context_d08a
 B0C7: 8E 11 54    LDX    #$1154
 B0CA: 86 4E       LDA    #$4E
@@ -1665,7 +1676,7 @@ B0ED: BD D0 8A    JSR    yield_context_d08a
 B0F0: 8E B6 9F    LDX    #$B69F
 B0F3: CE 05 51    LDU    #$0551
 B0F6: C6 0C       LDB    #$0C
-B0F8: BD F3 D0    JSR    $F3D0
+B0F8: BD F3 D0    JSR    display_text_f3d0
 B0FB: BD D0 8A    JSR    yield_context_d08a
 B0FE: B6 40 4C    LDA    sound_404C
 B101: 27 1D       BEQ    $B120
@@ -1686,7 +1697,7 @@ B120: 86 3C       LDA    #$3C
 B122: BD D0 93    JSR    $D093
 B125: 7F 14 52    CLR    $1452
 B128: BD F3 5B    JSR    $F35B
-B12B: BD F3 AA    JSR    $F3AA
+B12B: BD F3 AA    JSR    clear_ram_f3aa
 B12E: 4F          CLRA
 B12F: BD F3 69    JSR    $F369
 B132: BD D0 8A    JSR    yield_context_d08a
@@ -1875,7 +1886,7 @@ B2CD: 7C 14 52    INC    $1452
 B2D0: 86 2D       LDA    #$2D
 B2D2: BD D0 93    JSR    $D093
 B2D5: 86 70       LDA    #$70
-B2D7: B7 14 02    STA    $1402
+B2D7: B7 14 02    STA    game_global_state_1402
 B2DA: 7C 14 42    INC    $1442
 B2DD: 7C 14 48    INC    $1448
 B2E0: 86 00       LDA    #$00
@@ -2002,7 +2013,7 @@ B3FC: 7F 14 45    CLR    $1445
 B3FF: 86 2D       LDA    #$2D
 B401: BD D0 93    JSR    $D093
 B404: BD F3 5B    JSR    $F35B
-B407: BD F3 AA    JSR    $F3AA
+B407: BD F3 AA    JSR    clear_ram_f3aa
 B40A: 4F          CLRA
 B40B: BD F3 69    JSR    $F369
 B40E: BD D0 8A    JSR    yield_context_d08a
@@ -2012,7 +2023,7 @@ B416: BD D0 8A    JSR    yield_context_d08a
 B419: 8E B6 A4    LDX    #$B6A4
 B41C: CE 06 24    LDU    #$0624
 B41F: C6 0C       LDB    #$0C
-B421: BD F3 D0    JSR    $F3D0
+B421: BD F3 D0    JSR    display_text_f3d0
 B424: 86 78       LDA    #$78
 B426: B7 40 51    STA    sound_bonus_earnings_tune_4051		; start bonus earnings tune
 B429: BD D0 93    JSR    $D093
@@ -2036,7 +2047,7 @@ B452: BD D0 8A    JSR    yield_context_d08a
 B455: 8E B6 DA    LDX    #$B6DA
 B458: CE 06 89    LDU    #$0689
 B45B: C6 07       LDB    #$07
-B45D: BD F3 D0    JSR    $F3D0
+B45D: BD F3 D0    JSR    display_text_f3d0
 B460: 86 14       LDA    #$14
 B462: BD D0 93    JSR    $D093
 B465: B6 13 9E    LDA    $139E
@@ -2112,7 +2123,7 @@ B50F: BD D0 93    JSR    $D093
 B512: 8E B6 E1    LDX    #$B6E1
 B515: CE 06 8E    LDU    #$068E
 B518: C6 07       LDB    #$07
-B51A: BD F3 D0    JSR    $F3D0
+B51A: BD F3 D0    JSR    display_text_f3d0
 B51D: 86 14       LDA    #$14
 B51F: BD D0 93    JSR    $D093
 B522: B6 13 9F    LDA    $139F
@@ -2149,7 +2160,7 @@ B573: BD D0 93    JSR    $D093
 B576: 8E B6 BD    LDX    #$B6BD
 B579: CE 06 F3    LDU    #$06F3
 B57C: C6 07       LDB    #$07
-B57E: BD F3 D0    JSR    $F3D0
+B57E: BD F3 D0    JSR    display_text_f3d0
 B581: 86 AB       LDA    #$AB
 B583: A7 C4       STA    ,U			; [unchecked_address]
 B585: C6 07       LDB    #$07
@@ -2184,7 +2195,7 @@ B5CE: BD D0 93    JSR    $D093
 B5D1: 8E B6 D1    LDX    #$B6D1
 B5D4: CE 06 19    LDU    #$0619
 B5D7: C6 0B       LDB    #$0B
-B5D9: BD F3 D0    JSR    $F3D0
+B5D9: BD F3 D0    JSR    display_text_f3d0
 B5DC: 86 AB       LDA    #$AB
 B5DE: A7 C4       STA    ,U			; [unchecked_address]
 B5E0: C6 07       LDB    #$07
@@ -2271,7 +2282,7 @@ B748: 96 31       LDA    <level_number_31
 B74A: 10 26 F4 0D LBNE   $AB5B
 B74E: 86 FF       LDA    #$FF
 B750: B7 13 89    STA    scroll_value_1389
-B753: B7 40 40    STA    sound_4040
+B753: B7 40 40    STA    sound_intro_tune_4040
 B756: BD B9 38    JSR    $B938
 B759: BD D0 8A    JSR    yield_context_d08a
 l_b75c:
@@ -2286,11 +2297,11 @@ B76A: 25 F6       BCS    $B762
 B76C: 8E B9 49    LDX    #$B949
 B76F: CE 06 EB    LDU    #$06EB
 B772: C6 02       LDB    #$02
-B774: BD F3 D0    JSR    $F3D0
+B774: BD F3 D0    JSR    display_text_f3d0
 B777: 8E AC 26    LDX    #$AC26
 B77A: CE 06 AF    LDU    #$06AF
 B77D: C6 00       LDB    #$00
-B77F: BD F3 D0    JSR    $F3D0
+B77F: BD F3 D0    JSR    display_text_f3d0
 B782: B6 13 81    LDA    $1381
 B785: 4C          INCA
 ; screen tiles are installed
@@ -2382,7 +2393,7 @@ B843: 7F 11 9A    CLR    $119A
 B846: BD D0 8A    JSR    yield_context_d08a
 ; wait for music to stop?
 l_b849:
-B849: B6 40 40    LDA    sound_4040
+B849: B6 40 40    LDA    sound_intro_tune_4040
 B84C: 27 01       BEQ    $B84F
 B84E: 39          RTS
 B84F: BD F3 5B    JSR    $F35B
@@ -2485,16 +2496,17 @@ B91E: DC 01       LDD    <$01
 B920: 83 00 17    SUBD   #$0017
 B923: DD 01       STD    <$01
 B925: 86 70       LDA    #$70
-B927: B7 14 02    STA    $1402
+B927: B7 14 02    STA    game_global_state_1402
 B92A: 9E 15       LDX    <$15
 B92C: 6F 02       CLR    $2,X	; [video_address]
 B92E: 0C 3E       INC    <$3E
 B930: 0C 3F       INC    <$3F
 B932: 7F 13 96    CLR    $1396
 B935: 7E AC 37    JMP    $AC37
+
 B938: 86 FF       LDA    #$FF
 B93A: B7 13 89    STA    scroll_value_1389
-B93D: BD F3 AA    JSR    $F3AA
+B93D: BD F3 AA    JSR    clear_ram_f3aa
 B940: BD F3 5B    JSR    $F35B
 B943: 86 00       LDA    #$00
 B945: BD F3 69    JSR    $F369
@@ -2607,7 +2619,7 @@ BA47: BD D0 93    JSR    $D093
 BA4A: 8E BC 1F    LDX    #$BC1F
 BA4D: CE 03 48    LDU    #$0348
 BA50: C6 00       LDB    #$00
-BA52: BD F3 D0    JSR    $F3D0
+BA52: BD F3 D0    JSR    display_text_f3d0
 BA55: 86 08       LDA    #$08
 BA57: B7 22 0D    STA    $220D
 BA5A: BD BC 06    JSR    $BC06
@@ -2830,7 +2842,7 @@ BC6C: C6 01       LDB    #$01
 BC6E: D7 39       STB    <$39
 BC70: 97 3B       STA    <$3B
 BC72: BD BE 0D    JSR    $BE0D
-BC75: B6 13 80    LDA    $1380
+BC75: B6 13 80    LDA    is_two_player_game_1380
 BC78: 27 1E       BEQ    $BC98
 BC7A: 8E 20 30    LDX    #player_lives_2030
 BC7D: CE 1A 30    LDU    #$1A30
@@ -2845,7 +2857,7 @@ BC91: BD E3 27    JSR    decrement_decimal_e327
 BC94: 8D 05       BSR    $BC9B
 BC96: 20 03       BRA    $BC9B
 BC98: 7F 1A 30    CLR    $1A30
-BC9B: B6 14 02    LDA    $1402
+BC9B: B6 14 02    LDA    game_global_state_1402
 BC9E: 27 0B       BEQ    $BCAB
 BCA0: 8E 10 02    LDX    #$1002
 BCA3: C6 02       LDB    #$02
@@ -3006,7 +3018,7 @@ BE1C: 8C 20 9A    CMPX   #$209A
 BE1F: 26 F9       BNE    $BE1A
 BE21: CE 20 40    LDU    #$2040
 BE24: 7F 13 92    CLR    $1392
-BE27: B6 14 02    LDA    $1402
+BE27: B6 14 02    LDA    game_global_state_1402
 BE2A: 26 05       BNE    $BE31
 BE2C: 8E D4 FD    LDX    #$D4FD
 BE2F: 20 03       BRA    $BE34
@@ -3038,7 +3050,7 @@ BE67: CC 00 00    LDD    #$0000
 BE6A: ED 81       STD    ,X++
 BE6C: 8C 21 00    CMPX   #$2100
 BE6F: 26 F9       BNE    $BE6A
-BE71: B6 14 02    LDA    $1402
+BE71: B6 14 02    LDA    game_global_state_1402
 BE74: 26 05       BNE    $BE7B
 BE76: 8E D8 BC    LDX    #$D8BC
 BE79: 20 0A       BRA    $BE85
@@ -3068,7 +3080,7 @@ BEA7: CC 00 00    LDD    #$0000
 BEAA: ED 81       STD    ,X++
 BEAC: 8C 21 A0    CMPX   #$21A0
 BEAF: 26 F9       BNE    $BEAA
-BEB1: B6 14 02    LDA    $1402
+BEB1: B6 14 02    LDA    game_global_state_1402
 BEB4: 26 05       BNE    $BEBB
 BEB6: 8E D9 5B    LDX    #$D95B
 BEB9: 20 0A       BRA    $BEC5
@@ -3232,7 +3244,7 @@ C06B: 96 00       LDA    <$00
 C06D: 81 02       CMPA   #$02
 C06F: 22 03       BHI    $C074
 C071: BD F0 0D    JSR    $F00D
-C074: B6 14 02    LDA    $1402
+C074: B6 14 02    LDA    game_global_state_1402
 C077: 44          LSRA
 C078: 44          LSRA
 C079: 44          LSRA
@@ -5111,6 +5123,7 @@ E023: 8E E0 5E    LDX    #$E05E		; free play text
 E026: CE 07 BB    LDU    #$07BB
 E029: BD F3 C3    JSR    $F3C3
 E02C: 39          RTS
+
 E02D: 8E E0 56    LDX    #$E056		; credit text
 E030: CE 07 BB    LDU    #$07BB
 E033: BD F3 C3    JSR    $F3C3
@@ -5123,6 +5136,7 @@ E042: B6 48 03    LDA    credits_unit_4803
 E045: 84 0F       ANDA   #$0F
 E047: A7 C2       STA    ,-U		; [video_address]
 E049: 39          RTS
+
 E04A: B6 48 03    LDA    credits_unit_4803
 E04D: 84 0F       ANDA   #$0F
 E04F: A7 C2       STA    ,-U		; [video_address]
@@ -5500,11 +5514,11 @@ E385: BD E1 0D    JSR    draw_small_house_e10d
 E388: 8E E4 BB    LDX    #$E4BB
 E38B: CE 02 AA    LDU    #$02AA
 E38E: C6 03       LDB    #$03
-E390: BD F3 D0    JSR    $F3D0
+E390: BD F3 D0    JSR    display_text_f3d0
 E393: 8E E4 C7    LDX    #$E4C7
 E396: CE 02 CD    LDU    #$02CD
 E399: C6 09       LDB    #$09
-E39B: BD F3 D0    JSR    $F3D0
+E39B: BD F3 D0    JSR    display_text_f3d0
 E39E: CE 03 4F    LDU    #$034F
 E3A1: CC 01 07    LDD    #$0107
 E3A4: A7 C4       STA    ,U				; [unchecked_address]
@@ -5686,7 +5700,7 @@ E54B: 27 D9       BEQ    $E526
 E54D: 7E EC 5D    JMP    $EC5D
 E550: 86 01       LDA    #$01
 E552: A7 84       STA    ,X
-E554: B6 14 02    LDA    $1402
+E554: B6 14 02    LDA    game_global_state_1402
 E557: 81 60       CMPA   #$60
 E559: 10 27 00 93 LBEQ   $E5F0
 E55D: 81 A0       CMPA   #$A0
@@ -5843,7 +5857,7 @@ E6B6: 7C 13 E8    INC    $13E8
 E6B9: 39          RTS
 E6BA: 86 02       LDA    #$02
 E6BC: A7 84       STA    ,X
-E6BE: B6 14 02    LDA    $1402
+E6BE: B6 14 02    LDA    game_global_state_1402
 E6C1: 81 A0       CMPA   #$A0
 E6C3: 10 27 00 96 LBEQ   $E75D
 E6C7: A6 04       LDA    $4,X
@@ -7204,7 +7218,7 @@ F25A: E7 C9 00 81 STB    $0081,U
 F25E: A7 C9 01 01 STA    $0101,U
 F262: 39          RTS
 add_to_score_f263:
-F263: B6 14 02    LDA    $1402
+F263: B6 14 02    LDA    game_global_state_1402
 F266: 81 70       CMPA   #$70
 F268: 24 01       BCC    $F26B
 F26A: 39          RTS
@@ -7358,7 +7372,7 @@ F389: FC 11 9A    LDD    $119A
 F38C: FD 13 D3    STD    $13D3
 F38F: FC 12 1A    LDD    $121A
 F392: FD 13 D5    STD    $13D5
-F395: 8D 13       BSR    $F3AA
+F395: 8D 13       BSR    clear_ram_f3aa
 F397: FC 13 D1    LDD    $13D1
 F39A: FD 11 1A    STD    $111A
 F39D: FC 13 D3    LDD    $13D3
@@ -7366,11 +7380,14 @@ F3A0: FD 11 9A    STD    $119A
 F3A3: FC 13 D5    LDD    $13D5
 F3A6: FD 12 1A    STD    $121A
 F3A9: 39          RTS
+
+clear_ram_f3aa:
 F3AA: 8E 11 00    LDX    #$1100
 F3AD: 6F 80       CLR    ,X+
 F3AF: 8C 12 80    CMPX   #$1280
 F3B2: 26 F9       BNE    $F3AD
 F3B4: 39          RTS
+
 F3B5: A6 80       LDA    ,X+				; [video_address]
 F3B7: 81 2F       CMPA   #$2F
 F3B9: 26 01       BNE    $F3BC
@@ -7385,6 +7402,8 @@ F3C9: 39          RTS
 F3CA: A7 C4       STA    ,U				; [video_address]
 F3CC: 33 5F       LEAU   -$1,U
 F3CE: 20 F3       BRA    $F3C3
+
+display_text_f3d0:
 F3D0: A6 80       LDA    ,X+        ; [video_address]
 F3D2: 81 2F       CMPA   #$2F
 F3D4: 26 01       BNE    $F3D7
@@ -7392,15 +7411,15 @@ F3D6: 39          RTS
 F3D7: A7 C4       STA    ,U				; [unchecked_address]
 F3D9: E7 C9 08 00 STB    $0800,U		; [video_address]
 F3DD: 33 C8 E0    LEAU   -$20,U
-F3E0: 20 EE       BRA    $F3D0
+F3E0: 20 EE       BRA    display_text_f3d0
 F3E2: 8E F4 5F    LDX    #$F45F
 F3E5: C6 09       LDB    #$09
-F3E7: BD F3 D0    JSR    $F3D0
+F3E7: BD F3 D0    JSR    display_text_f3d0
 F3EA: 39          RTS
 F3EB: 34 10       PSHS   X
 F3ED: 8E F4 79    LDX    #$F479
 F3F0: C6 09       LDB    #$09
-F3F2: BD F3 D0    JSR    $F3D0
+F3F2: BD F3 D0    JSR    display_text_f3d0
 F3F5: 35 10       PULS   X
 F3F7: 20 43       BRA    $F43C
 F3F9: AB 81       ADDA   ,X++
@@ -7408,7 +7427,7 @@ F3FB: B7 13 88    STA    $1388
 F3FE: 34 10       PSHS   X
 F400: 8E F4 93    LDX    #$F493
 F403: C6 09       LDB    #$09
-F405: BD F3 D0    JSR    $F3D0
+F405: BD F3 D0    JSR    display_text_f3d0
 F408: 35 10       PULS   X
 F40A: B6 13 88    LDA    $1388
 F40D: 80 A0       SUBA   #$A0
@@ -7430,7 +7449,7 @@ F42F: 39          RTS
 F430: 34 10       PSHS   X
 F432: 8E F4 AD    LDX    #$F4AD
 F435: C6 09       LDB    #$09
-F437: BD F3 D0    JSR    $F3D0
+F437: BD F3 D0    JSR    display_text_f3d0
 F43A: 35 10       PULS   X
 F43C: A6 84       LDA    ,X
 F43E: 80 A0       SUBA   #$A0
@@ -7623,7 +7642,7 @@ F650: BD FD 45    JSR    $FD45
 F653: 27 07       BEQ    $F65C
 F655: 10 8E 00 05 LDY    #$0005
 F659: 7E F6 A0    JMP    $F6A0
-F65C: 8E 40 40    LDX    #sound_4040
+F65C: 8E 40 40    LDX    #sound_intro_tune_4040
 F65F: CC 03 C0    LDD    #$03C0
 F662: BD FD 45    JSR    $FD45
 F665: 27 07       BEQ    $F66E
@@ -7723,10 +7742,10 @@ F743: 26 F6       BNE    $F73B
 F745: 81 33       CMPA   #$33
 F747: 26 17       BNE    $F760
 F749: 86 77       LDA    #$77
-F74B: B7 40 40    STA    sound_4040
+F74B: B7 40 40    STA    sound_intro_tune_4040
 F74E: B7 50 0B    STA    $500B
 F751: B7 80 00    STA    watchdog_8000
-F754: B6 40 40    LDA    sound_4040
+F754: B6 40 40    LDA    sound_intro_tune_4040
 F757: 81 77       CMPA   #$77
 F759: 27 F6       BEQ    $F751
 F75B: 84 FF       ANDA   #$FF
@@ -7744,7 +7763,7 @@ F76F: B7 06 82    STA    $0682
 F772: 10 CE 17 80 LDS    #stack_top_1780
 F776: 86 01       LDA    #$01
 F778: B7 13 6D    STA    $136D
-F77B: BD F3 AA    JSR    $F3AA
+F77B: BD F3 AA    JSR    clear_ram_f3aa
 F77E: 7F 10 14    CLR    $1014
 F781: 1C EF       ANDCC  #$EF
 F783: B7 50 03    STA    video_stuff_5003
@@ -8213,7 +8232,7 @@ FBEF: B6 13 B4    LDA    $13B4
 FBF2: 85 20       BITA   #$20
 FBF4: 26 1E       BNE    $FC14
 FBF6: 7F 13 B4    CLR    $13B4
-FBF9: 8E 40 40    LDX    #sound_4040
+FBF9: 8E 40 40    LDX    #sound_intro_tune_4040
 FBFC: F6 13 66    LDB    $1366
 FBFF: 6F 85       CLR    B,X
 FC01: 7C 13 66    INC    $1366
@@ -8507,6 +8526,7 @@ FF6C: 8E 13 B1    LDX    #$13B1
 FF6F: 6A 80       DEC    ,X+
 FF71: 8C 13 B8    CMPX   #hurry_countdown_13b8
 FF74: 26 F9       BNE    $FF6F
+; copy IO chip memory into 1370 ram copy
 FF76: 8E 48 00    LDX    #namco_io_4800
 FF79: CE 13 70    LDU    #copy_of_namco_io_1370
 FF7C: C6 08       LDB    #$08
