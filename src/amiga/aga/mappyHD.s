@@ -45,7 +45,7 @@ _config
 	dc.b	"C1:X:cheat keys:4;"
 	dc.b	"C2:X:force 25 Hz update:0;"
 
-	dc.b	"C3:L:start level:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16;"
+	dc.b	"C3:L:start level:1,2,-,4,5,6,-,8,9,10,-,12,13,14,-,16;"
 	dc.b	"C4:L:number of lives:3,5,2,1;"
 	dc.b	"C5:L:difficulty level:easiest,very easy,easy,medium,hard,very hard,hardest,nuclear;"
 	dc.b	0

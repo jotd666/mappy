@@ -564,9 +564,12 @@ _user:
 	
 	moveq	#0,d0
 	move.b	start_level_option+3,d0
-
+	and.b	#0xF,d0
+	lea		valid_start_level,a0
+	tst.b	(a0,d0.w)
+	jeq		0f
 	move.b	d0,start_level
-	
+0:	
 	move.l	misc_options,d1
 	btst	#0,d1
 	sne		frameskip
@@ -932,7 +935,24 @@ namco_io_start_memory_4800:
 	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF3,0xF1,0xF1,0xF1,0xF1,0xF1,0xF0,0xF0
 	.byte	0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF4,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0
 
-
+* levels 3, 7, 11 and 15 are bonus levels, starting with those crash the game
+valid_start_level:
+	.byte	1
+	.byte	1
+	.byte	0
+	.byte	1
+	.byte	1
+	.byte	1
+	.byte	0
+	.byte	1
+	.byte	1
+	.byte	1
+	.byte	0
+	.byte	1
+	.byte	1
+	.byte	1
+	.byte	0
+	.byte	1
 
 do_irq:
 	* set base for RAM
