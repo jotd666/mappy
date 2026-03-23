@@ -29,11 +29,11 @@ shutil.copy(assets/"Mappy.info",outdir)
 
 
 
-for ext in ["aga","ocs","ecs"]:
+for ext in ["aga"]:  #,"ocs","ecs"
     exename = f"{gamename}_{ext}"
     if ext != "ocs":
         shutil.copy(progdir/exename,outdir)
-    if ext != "aga":
+    if ext == "aga":
         subprocess.run(["cranker_windows.exe","-f",progdir/exename,"-o",progdir/f"{exename}.rnc"],check=True)
 
 subprocess.run(cmd_prefix+["clean"],cwd=progdir/"src",check=True)

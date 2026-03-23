@@ -57,11 +57,13 @@ sound_microwave_404a = $404a
 sound_bonus_tune_404b = $404b
 sound_404c = $404c
 sound_highscore_404d = $404d
-sound_404e = $404e
+sound_hiscore_entered_404e = $404e
 sound_hurry_404f = $404f
 sound_cat_baloon_4050 = $4050
 sound_bonus_earnings_tune_4051 = $4051
 sound_4052 = $4052
+
+high_score_table_1460 = $1460
 
 sound_credit_405e = $405E
 main_tune_tempo_40e2 = $40e2
@@ -142,7 +144,7 @@ A048: 27 0C       BEQ    $A056
 A04A: 8E AA 7E    LDX    #$AA7E		; [function_address]
 A04D: BF 14 00    STX    $1400
 A050: 7F 40 4D    CLR    sound_highscore_404D
-A053: 7F 40 4E    CLR    sound_404E
+A053: 7F 40 4E    CLR    sound_hiscore_entered_404e
 A056: 8E D0 20    LDX    #function_and_args_table_d020
 ; call function chain in a loop
 A059: EC 81       LDD    ,X++
@@ -219,8 +221,9 @@ A0FA: B7 07 F8    STA    $07F8		; player 1 0
 A0FD: 8E C8 12    LDX    #$C812
 A100: CE 07 DA    LDU    #$07DA
 A103: BD F3 C3    JSR    $F3C3
+; set default highscore table
 A106: 8E A1 52    LDX    #$A152
-A109: CE 14 60    LDU    #$1460
+A109: CE 14 60    LDU    #high_score_table_1460
 A10C: 10 8E 00 14 LDY    #$0014
 A110: EC 81       LDD    ,X++
 A112: ED C1       STD    ,U++
@@ -2556,7 +2559,7 @@ B9B4: ED C1       STD    ,U++
 B9B6: 31 3F       LEAY   -$1,Y
 B9B8: 26 F8       BNE    $B9B2
 B9BA: 35 40       PULS   U		; restore U
-B9BC: 11 83 14 60 CMPU   #$1460
+B9BC: 11 83 14 60 CMPU   #high_score_table_1460
 B9C0: 26 05       BNE    $B9C7
 B9C2: 7F 13 97    CLR    $1397
 B9C5: 20 0D       BRA    $B9D4
@@ -2729,8 +2732,9 @@ BB50: B7 13 98    STA    $1398
 BB53: BD D0 8A    JSR    yield_context_d08a
 BB56: BD BC 06    JSR    $BC06
 BB59: BD BB E8    JSR    $BBE8
+; high score has been entered
 BB5C: 86 01       LDA    #$01
-BB5E: B7 40 4E    STA    sound_404E
+BB5E: B7 40 4E    STA    sound_hiscore_entered_404e
 BB61: 86 E0       LDA    #$E0
 BB63: B7 13 B2    STA    $13B2
 BB66: BD D0 8A    JSR    yield_context_d08a
@@ -2782,7 +2786,7 @@ BBD7: 81 FF       CMPA   #$FF
 BBD9: 27 01       BEQ    $BBDC
 BBDB: 39          RTS
 BBDC: BD D0 8A    JSR    yield_context_d08a
-BBDF: B6 40 4E    LDA    sound_404E
+BBDF: B6 40 4E    LDA    sound_hiscore_entered_404e
 BBE2: 27 01       BEQ    $BBE5
 BBE4: 39          RTS
 BBE5: 7E AF F8    JMP    display_title_aff8
@@ -5524,7 +5528,7 @@ E3A1: CC 01 07    LDD    #$0107
 E3A4: A7 C4       STA    ,U				; [unchecked_address]
 E3A6: E7 C9 08 00 STB    $0800,U		; [video_address]
 E3AA: 33 C8 C0    LEAU   -$40,U
-E3AD: 8E 14 60    LDX    #$1460
+E3AD: 8E 14 60    LDX    #high_score_table_1460
 E3B0: 8D 51       BSR    draw_high_score_row_e403
 E3B2: CE 03 52    LDU    #$0352
 E3B5: CC 02 07    LDD    #$0207

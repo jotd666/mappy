@@ -959,7 +959,7 @@ do_irq:
 	GET_MEMORY_START_AND_DP
 	* clear some sound flags immediately, else game locks up, or we have to handle that by E8 triggers
 	clr.b	(sound_intro_tune_4040,a6)		| we can clear the intro tune, it doesn't matter, game has another way to see it's done
-	clr.b	(sound_404e,a6)		| highscore entry, no need
+	clr.b	(sound_hiscore_entered_404e,a6)		| highscore entry, no need
 	move.w	sfx_01_timeout,d0
 	jeq		0f
 	subq	#1,d0
@@ -2529,7 +2529,7 @@ store_system:
 1:
 	move.w	AttnFlags(a6),d0
 	btst	#AFB_68020,d0
-	bne.b	1f				| 68020: ok 50 fps
+	jne	4f				| 68020: ok 50 fps
 	
 	* check fastmem
 	pea		2f(pc)	
@@ -2543,7 +2543,7 @@ store_system:
 	jcs		3f
 1:	
 	cmp.l	#0x200000,d0
-	bcc.b	1f				
+	jcc	4f				
 3:
 	* no whdload, no fastmem/68020: assume slow switch to 25 FPS
 	* plus don't animate the waves
@@ -2551,7 +2551,7 @@ store_system:
 	*
 	*
 	st.b	frameskip
-1:
+4:
 
 	lea	_custom,a6
 	move.w	intenar(a6),old_intena
@@ -3524,8 +3524,17 @@ beamdelay:
 	rts
 
 
-SCORE_FILE_SIZE = 0x200-0x1b0  | wrong
+SCORE_FILE_SIZE = 0x28
 
+	.macro	WRITE_DIGITS	addr1,addr2
+	move.b	(a1)+,d0
+	move.b	d0,d1
+	rol.b	#4,d1
+	and.b	#0xF,d1
+	move.b	d1,(\addr1,a6)
+	and.b	#0xF,d0
+	move.b	d0,(\addr2,a6)
+	.endm
 		
 osd_read_high_scores:
 	tst.b	no_disk_io_flag
@@ -3539,40 +3548,52 @@ osd_read_high_scores:
 	bsr		get_hiscore_name
  	jsr		resload_GetFileSize(a2)		
 	tst.l	d0
-	beq.b	1f
+	jeq	1f
 	bsr		get_hiscore_name
 	lea		high_score_buffer(pc),a1
 	jsr		resload_LoadFile(a2)	
 	bra.b	2f
 0:
 	tst.b	highscore_loaded
-	beq.b	1f
+	jeq	1f
 2:
 	* from DOS: just copy buffer
 	GET_MEMORY_START_AND_DP
 	* first just copy buffer as contiguous 
 
-*	lea		high_score_buffer(pc),a0
-*	lea	high_score_table_11b0(a6),a1
+	lea		high_score_buffer(pc),a0
+	lea	high_score_table_1460(a6),a1
 	move.w	#SCORE_FILE_SIZE-1,d0
 0:
 	move.b	(a0)+,(a1)+
 	dbf		d0,0b
 
 	* update high score (duplicated)
-*	lea		high_score_table_11b0(a6),a0
-*	lea		high_score_100b(a6),a1
-	moveq	#2,d1
-	* encoding is different
+	lea	high_score_table_1460(a6),a1
+
+	WRITE_DIGITS	0x7F3,0x7F2		| millions + hundreds of thousands
+	WRITE_DIGITS	0x7E1,0x7E0		| tens of thousands + thousands
+	WRITE_DIGITS 	0x7EF,0x7EE		| hundreds + tens
+	* 2 first digits zero: don't write zeroes
+	tst.b	(0x7F3,a6)
+	jne		2f
+	move.b	#0x20,(0x7F3,a6)
 2:
-	move.b	(a0)+,d0
-	lsl.b	#4,d0
-	or.b	(a0)+,d0
-	move.b	d0,(a1)+
-	dbf		d1,2b
+	tst.b	(0x7F2,a6)
+	jne		2f
+	move.b	#0x20,(0x7F2,a6)
+2:
+	move.w	#0x7E0,a0
+	moveq	#0x13,d0
+10:
+	jbsr	osd_video_byte_dirty
+	addq	#1,a0
+	dbf	d0,10b
 1:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
+	
+	
 	
 osd_write_high_scores:
 	tst.b	no_disk_io_flag
@@ -3587,8 +3608,8 @@ osd_write_high_scores:
 	GET_MEMORY_START_AND_DP
 	* just copy buffer as contiguous 
 
-*	lea		high_score_buffer(pc),a1
-*	lea	high_score_table_11b0(a6),a0
+	lea		high_score_buffer(pc),a1
+	lea	high_score_table_1460(a6),a0
 	move.w	#SCORE_FILE_SIZE-1,d0
 0:
 	move.b	(a0)+,(a1)+

@@ -1,26 +1,27 @@
 .key nope
-set gamename digdug2
-;set game ${gamename}_aga
-;copy $game.RNC DF0:$game
-set game ${gamename}_ecs
-copy $game.RNC DF0:$game
-protect DF0:$game RWED
-set game ${gamename}_ocs
-copy $game.RNC DF0:$game
-protect DF0:$game RWED
+set gamename mappy
+set game ${gamename}_aga
+copy $game.RNC mappy:$game
+;set game ${gamename}_ecs
+;copy $game.RNC mappy:$game
+;protect mappy:$game RWED
+;set game ${gamename}_ocs
+;copy $game.RNC mappy:$game
+;protect mappy:$game RWED
 
 ; shell
-set game $gamename
-echo $game
-copy $game DF0:$game
-protect DF0:$game RWED
-copy readme.md df0:
+;set game $gamename
+;echo $game
+;copy $game mappy:$game
+;protect mappy:$game RWED
+copy readme.md mappy:
 
 
-if exists df0:$game.high
-   delete df0:$game.high
+if exists mappy:$game.high
+   delete mappy:$game.high
 endif
 
+set game $gamename
 set arc ${game}_HD.lha
 if exists ${arc}
     echo deleting ${arc}...

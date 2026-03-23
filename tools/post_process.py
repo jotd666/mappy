@@ -153,6 +153,10 @@ with open(source_dir / "conv.s") as f:
             line = "\ttst.b\td6\n"+change_instruction("jeq\tl_f346",lines,i)
             lines[i+1] = remove_error(lines[i+1])
         ###################################################
+        if address == 0xBB59:
+            line += "\tjbsr\tosd_write_high_scores\n"
+        elif address == 0xA116:
+            line += "\tjbsr\tosd_read_high_scores\n"
         if address == 0xA05F:
             # replace stack push by target stack push, game needs that and changes that
             line = change_instruction("GET_REG_ADDRESS\t0,d5",lines,i) + "\tmove.w\td2,-(a0)  | pushing on target stack\n"

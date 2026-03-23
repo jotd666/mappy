@@ -8,15 +8,13 @@ Features:
 - arcade perfect gameplay
 - 50 fps vanilla A1200
 - 25 fps on A500
-- whdload mode available for AGA/ECS
-- floppy mode available for ECS/OCS (AGA+ECS+OCS versions don't fit on a 880kb disk)
+- whdload mode available for AGA/ECS: TODO
 
 Note:
 
 AGA version runs on vanilla A1200: arcade exact colors
-ECS version runs on any ECS amiga: slightly less colors (not
+TODO: ECS version runs on any ECS amiga: slightly less colors (not
 really noticeable) and not very fast either
-OCS version is the same as ECS but without the in-game music to save chipmem
 
 Credits:
 
@@ -27,8 +25,8 @@ Credits:
 
 Instructions:
 
-5: insert coin
-1/2: start game
+5/fire: insert coin
+1/2/up/down: start game
 arrows/joystick: move
 red/ctrl: open doors
 
