@@ -1,4 +1,4 @@
-; JailBreak AGA slave
+; Mappy ECS slave
 	INCDIR	Include:
 	INCLUDE	whdload.i
 	INCLUDE	whdmacros.i
@@ -41,12 +41,13 @@ _expmem
 _config
 	dc.b	"C1:X:invincible:0;"
 	dc.b	"C1:X:infinite lives:1;"
+	dc.b	"C1:X:no highscore load or save:2;"   ; to fix cd32load crash at start
 	dc.b	"C1:X:cheat keys:4;"
 	dc.b	"C2:X:force 25 Hz update:0;"
-	dc.b	"C2:X:no wave animation:1;"
 
-	dc.b	"C4:L:number of lives:5,3,2;"
-	dc.b	"C5:L:difficulty level:easy,normal,difficult,very difficult;"
+	dc.b	"C3:L:start level:1,2,-,4,5,6,-,8,9,10,-,12,13,14,-,16;"
+	dc.b	"C4:L:number of lives:3,5,2,1;"
+	dc.b	"C5:L:difficulty level:easiest,very easy,easy,medium,hard,very hard,hardest,nuclear;"
 	dc.b	0
 
 	IFD BARFLY
@@ -65,7 +66,11 @@ DECL_VERSION:MACRO
 	ENDC
 	ENDM
 _data   dc.b    0
-_name	dc.b	"Dig Dug 2",0
+_name	dc.b	"Mappy"
+	IFD	CHIP_ONLY
+	dc.b	" (chip)"
+	ENDC
+	dc.b	0
 _copy	dc.b	'2026 JOTD',0
 _info
     ;dc.b    "Music by no9",0
@@ -130,5 +135,5 @@ _resload:
 progstart
     dc.l    0
 exe
-	dc.b	"digdug2_ecs",0
+	dc.b	"mappy_ecs",0
 	

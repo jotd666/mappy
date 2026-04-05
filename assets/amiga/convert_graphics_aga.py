@@ -302,9 +302,7 @@ for clut_index,tsd in sprite_sheet_dict.items():
     sprite_set_list_x_size[clut_index] = sprite_set_x_size
     sprite_palette.update(sp)
 
-# destroy title tiles we don't need them (clut=1)
-##for i in range(0xE0,0xF5):
-##    sprite_set_list[1][i] = None
+
 
 sprite_palette = sorted(sprite_palette)
 magi = sprite_palette.index(magenta)

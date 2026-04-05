@@ -198,19 +198,19 @@ try:
 except OSError:
     print("Cannot find used_sprites")
 
-# force points
-for i in range(0xF5,0x100):
-    add_tile(sprite_cluts,i,[0xC,0xD])
-# remove some 0 clut
-for i in range(0,0x100):
-    if i in sprite_cluts:
-        name = sprite_names.get(i,"")
-        if "player" in name or "dragon" in name or "flame" in name:
-            for j in [0,6,7]:
-                try:
-                    sprite_cluts[i].remove(j)
-                except ValueError:
-                    pass
+known_unused = {0x3E,0x36,0X51,0x52,0x53,0x55,0x56,0x57,0x33,0x37,0x1c,0x1d,0x1e,0x1f,
+            0x60,0x61,0x62,0x63,0x66,0x67,0x6a,0x6b,0x6d,0x6e,
+            0x6f,0x71,0x72,0x73,0x75,0x76,0x77,0x79,0x7a,0x7d}
+unused_sprite_codes = {i for i in range(0,0x80) if not sprite_cluts.get(i) and i not in known_unused}
+if unused_sprite_codes:
+    print("unused sprite codes:")
+    print(",".join(f"0x{x:02x}" for x in sorted(unused_sprite_codes)))
+
+# remove title tiles cluts
+for i in range(0x64,0x7D):
+    if i!=0x7B and sprite_cluts.get(i):
+        sprite_cluts[i] = []
+
 
 if all_tile_cluts:
     tile_cluts = None
@@ -226,9 +226,16 @@ else:
         pass
 
 # add full letters & digits for 3 cluts
-for i in list(range(0x41,0x5C))+list(range(0x30,0x3A)):
-    add_tile(tile_cluts,i,[0,0xA,0xB,0xD,0xE])
+# missed some
+used_cluts = set()
 
+alphanum_tile_codes = list(range(0,10))+list(range(ord('A'),ord('Z')+1))
+for atc in alphanum_tile_codes:
+    cluts = tile_cluts.get(atc)
+    if cluts:
+        used_cluts.update(cluts)
+for atc in alphanum_tile_codes:
+    tile_cluts[atc] = sorted(used_cluts)
 
 
 
@@ -261,7 +268,7 @@ def add_hw_sprite(index,name,cluts=[0]):
 title_pic = Image.open(sheets_path / "title.png")
 
 sprite_sheet_dict = {i:Image.open(sheets_path / "sprites" / f"pal_{i:02x}.png") for i in range(NB_SPRITE_CLUTS)}
-tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(NB_TILE_CLUTS)}
+tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1A)}
 
 tile_palette = set()
 tile_set_list = []
@@ -273,12 +280,15 @@ for i,tsd in tile_sheet_dict.items():
     tile_set_list.append(tile_set)
     tile_palette.update(tp)
 
-# 4 tile colors aren't found in sprite colors, but there are very close
+# 5 tile colors aren't found in sprite colors, but there are very close
 # colors, so we can replace them without anyone noticing and it means that the
 # game can be 16 colors not 32!
-tile_color_rep_dict = {(0,0,255):(33,71,255),
-(16,32,48):(0,0,0),
-(222,0,0):(255,0,0)}
+tile_color_rep_dict = {(255,151,255):(222,104,255),
+(16,32,48):(0,0,0),  # same as Dig Dug 2!
+(255,222,174):(255,151,174),
+(0,255,0):(0,184,81),
+(0,222,255):(33,104,255),
+}
 
 replace_colors(tile_set_list,tile_color_rep_dict)
 # pad
@@ -305,19 +315,12 @@ for clut_index,tsd in sprite_sheet_dict.items():
     sprite_set_list_x_size[clut_index] = sprite_set_x_size
     sprite_palette.update(sp)
 
-# replace dark purple by darker purple. This color is only used by the grape bonus & few
-# pixels of the turnip.
-# whereas the darker purple is used by the drill holes, and changing to match sprite colors
-# makes it funny (not in a good way). So it's better to change the sprite purple, the grape
-# doesn't appear very often anyway, and the turnip not often either (plus it's barely noticeable)
-sprite_color_rep_dict = {
-(151,33,174):(104,0,81)}
+# no need to change anything in sprite colors
+sprite_color_rep_dict = {}
 replace_colors(sprite_set_list,sprite_color_rep_dict)
 replace_colors(sprite_set_list_x_size,sprite_color_rep_dict)
 
-# destroy title tiles we don't need them (clut=1)
-for i in range(0xE0,0xF5):
-    sprite_set_list[1][i] = None
+
 
 sprite_palette = sorted([sprite_color_rep_dict.get(c,c) for c in sprite_palette])
 magi = sprite_palette.index(magenta)
@@ -440,13 +443,13 @@ bitplanelib.palette_dump(sprite_palette,dump_dir / "mixed_palette.png",pformat=b
 specific_tile_colors = sorted(set(tile_palette) - set(sprite_palette))
 bitplanelib.palette_dump(specific_tile_colors,dump_dir / "tiles_only_palette.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
 
-with open(os.path.join(ocs_src_dir,"palette.68k"),"w") as f:
+with open(os.path.join(ecs_src_dir,"palette.68k"),"w") as f:
     full_palette_black = [(0,0,0)]+full_palette[1:]
     bitplanelib.palette_dump(full_palette_black,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
 
 
 
-with open(os.path.join(ocs_src_dir,"graphics.68k"),"w") as f:
+with open(os.path.join(ecs_src_dir,"graphics.68k"),"w") as f:
     f.write("\t.global\tcharacter_table\n")
     f.write("\t.global\ttitle_pic\n")
     f.write("\t.global\thws_table\n")
@@ -572,18 +575,18 @@ with open(os.path.join(ocs_src_dir,"graphics.68k"),"w") as f:
                             elif orientation == "mirror":
                                 f.write(f"\t.word\t-1  | no mirror declared\n")
 
-    if possible_hw_sprites:
-        f.write("hws_table:\n")
-        for i,tile_entry in enumerate(sprite_table_no_size):
-            for orientation in ['standard','mirror']:
-                f.write("\t.long\t")
-                if any(t and "sprdat" in t[orientation] for t in tile_entry):
-                    prefix = sprite_names.get(i,"bob")
-                    prefix = f"hws_{prefix}_{i:02x}_{orientation}"
-                    f.write(prefix)
-                else:
-                    f.write("0")
-                f.write("\n")
+
+    f.write("hws_table:\n")
+    for i,tile_entry in enumerate(sprite_table_no_size):
+        for orientation in ['standard','mirror']:
+            f.write("\t.long\t")
+            if possible_hw_sprites and any(t and "sprdat" in t[orientation] for t in tile_entry):
+                prefix = sprite_names.get(i,"bob")
+                prefix = f"hws_{prefix}_{i:02x}_{orientation}"
+                f.write(prefix)
+            else:
+                f.write("0")
+            f.write("\n")
 
         # HW sprites clut declaration
         for i,tile_entry in enumerate(sprite_table_no_size):
