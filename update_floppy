@@ -2,18 +2,18 @@
 set gamename mappy
 set game ${gamename}_aga
 copy $game.RNC mappy:$game
-;set game ${gamename}_ecs
-;copy $game.RNC mappy:$game
-;protect mappy:$game RWED
+set game ${gamename}_ecs
+copy $game.RNC mappy:$game
+protect mappy:$game RWED
 ;set game ${gamename}_ocs
 ;copy $game.RNC mappy:$game
 ;protect mappy:$game RWED
 
 ; shell
-;set game $gamename
-;echo $game
-;copy $game mappy:$game
-;protect mappy:$game RWED
+set game $gamename
+echo $game
+copy $game mappy:$game
+protect mappy:$game RWED
 copy readme.md mappy:
 
 

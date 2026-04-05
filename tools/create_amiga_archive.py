@@ -20,7 +20,7 @@ if os.path.exists(outdir):
         x.unlink()
 else:
     outdir.mkdir()
-for file in ["readme.md",f"{gamename}_aga.slave"]:  #f"{gamename}.slave",
+for file in ["readme.md",f"{gamename}_aga.slave",f"{gamename}.slave"]:
     shutil.copy(progdir / file,outdir)
 
 assets = progdir /"assets"/"amiga"
@@ -29,11 +29,10 @@ shutil.copy(assets/"Mappy.info",outdir)
 
 
 
-for ext in ["aga"]:  #,"ocs","ecs"
+for ext in ["aga","ecs"]:  #,"ocs","ecs"
     exename = f"{gamename}_{ext}"
     if ext != "ocs":
         shutil.copy(progdir/exename,outdir)
-    if ext == "aga":
-        subprocess.run(["cranker_windows.exe","-f",progdir/exename,"-o",progdir/f"{exename}.rnc"],check=True)
+    subprocess.run(["cranker_windows.exe","-f",progdir/exename,"-o",progdir/f"{exename}.rnc"],check=True)
 
 subprocess.run(cmd_prefix+["clean"],cwd=progdir/"src",check=True)
