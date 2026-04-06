@@ -20,7 +20,7 @@ if os.path.exists(outdir):
         x.unlink()
 else:
     outdir.mkdir()
-for file in ["readme.md",f"{gamename}_aga.slave",f"{gamename}.slave"]:
+for file in ["readme.md",f"{gamename}_aga.slave",f"{gamename}_ecs.slave"]:
     shutil.copy(progdir / file,outdir)
 
 assets = progdir /"assets"/"amiga"

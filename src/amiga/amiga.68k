@@ -40,6 +40,7 @@ SPRITE_FMODE = 0			| required!!
 FMODE_OFFSET = 0
 SCROLL_WIDTH = 0x10
 BASE_BPLCON0_VALUE = 0x4200+BORDERBLANK
+LIGHT_BROWN_COLOR_INDEX = 14  | hardcoded but who cares? colors are sorted by rgb so this is stable
 
 	.if	OCS_VERSION==0
 SUPER_DEGRADED_OCS_VERSION = 1
@@ -525,7 +526,7 @@ _user:
 	
 	lea		palette,a0
 	.ifdef	OCS_VERSION
-	* ECS: load 16 common colors for tiles/bobs & sprites
+	* ECS: load 16 common colors for tiles/bobs & same exact for HW sprites
 	move.w	#TOTAL_NB_COLORS,d0
 	lea		tiles_colors,a1	
 	bsr		load_palette
@@ -537,6 +538,7 @@ _user:
 	move.w	#TOTAL_NB_COLORS*2,d0
 	lea		tiles_colors,a1
 	.endif
+	
 	bsr		load_palette
 	
 
@@ -4245,25 +4247,6 @@ debug_color:
 	
 	* main copperlist
 game_copperlist:
-	* all sprites have the same palette no need to specify odd or even
-	* on color bank 1
-	
-	.word	bplcon2
-	.word	UPPER_BPLCON2_VALUE
-	
-	* black color background plane
-
-tiles_colors:			| AGA: tiles, OCS: HW sprites
-	DECL_COLORS	16,TOTAL_NB_COLORS
-bobs_colors:			| AGA: bobs, OCS: tiles+bobs
-	DECL_COLORS	0,TOTAL_NB_COLORS
-
-
-game_sprites:
-	DECL_SPRITES
-game_sprites_end:
-
-
 	* enable sprite colors now
 	.word	0x01+((COPPER_Y_START)*256),0xFFFE
 
@@ -4285,14 +4268,33 @@ tiles_bitplanes:
 bobs_bitplanes:
 	DECL_EVEN_BITPLANES	0,4
 	.endif
+	
+	.word	bplcon2
+	.word	UPPER_BPLCON2_VALUE
+	
+	* black color background plane
+
+tiles_colors:			| AGA: tiles, OCS: HW sprites
+	DECL_COLORS	16,TOTAL_NB_COLORS
+bobs_colors:			| AGA: bobs, OCS: tiles+bobs
+	DECL_COLORS	0,TOTAL_NB_COLORS
+
+
+game_sprites:
+	DECL_SPRITES
+game_sprites_end:
+
 
 	* let the 2 rows from status pass
 	.word	0x01+((COPPER_Y_START+16)*256),0xFFFE
+	* also restore light brown for center of screen, playing with white/brown
+	.ifdef	OCS_VERSION
+	.word	color+LIGHT_BROWN_COLOR_INDEX*2,0x0feb
+	.endif
 	
 	.word	bplcon1
 scrolling_bitplanes:
 	.word	0
-	
 	
 	.ifdef	OCS_VERSION
 	DECL_BITPLANES	0,4	
@@ -4312,7 +4314,8 @@ sprite_control_words:
 	.endr
 sprite_control_words_end:
 
-	.word	0x6801,0xFFFE
+	* top of house is above, rest of the playfield has changed priorities
+	.word	0x6001,0xFFFE
 	.word	bplcon2
 	.word	BASE_BPLCON2_VALUE
 
@@ -4346,6 +4349,11 @@ tiles_bitplanes_end:
 	DECL_BITPLANES	0,4	
 	.else
 	DECL_EVEN_BITPLANES	4,4
+	.endif
+	
+	* also restore white for bottom of screen, playing with white/brown
+	.ifdef	OCS_VERSION
+	.word	color+LIGHT_BROWN_COLOR_INDEX*2,0x0ddf
 	.endif
 
 	| no bobs from now on, get a LOT of drawing time
