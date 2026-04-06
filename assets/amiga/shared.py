@@ -60,10 +60,26 @@ def get_sprite_names():
 
     rval = dict()
 
-
-##    rval[0x69] = "dragon"
-##    set_names(rval,0x80,0xC8,"earth_crumbling")
-
+    set_names(rval,0x0,0x8,"mouse")
+    set_names(rval,0x18,0x1C,"mouse")
+    set_names(rval,0x58,0x60,"mouse")
+    set_names(rval,0x8,0x10,"nyamco")
+    set_names(rval,0x10,0x18,"cat")
+    set_names(rval,0x7E,0x80,"nyamco")
+    set_names(rval,0x38,0x40,"boss")
+    set_names(rval,0x28,0x32,"score")
+    set_names(rval,0x20,0x25,"loot")
+    set_names(rval,0x40,0x4C,"big_score")
+    set_names(rval,0x4C,0x4E,"baloon")
+    set_names(rval,0x50,0x55,"nyamco_baloon")
+    set_names(rval,0x25,0x27,"bell")
+    rval[0x4e] = "music_note"
+    rval[0x27] = "nyamco_hiding"
+    rval[0x4f] = "score_1000"
+    rval[0x7B] = "cat"
+    rval[0x32] = "microwave"
+    rval[0x34] = "hurry"
+    rval[0x35] = "game_over"
 
 
 
@@ -99,17 +115,17 @@ def add_tile(table,index,cluts=[0]):
         table[idx] = cluts
 
 def get_possible_hw_sprites():
-    return set()
 
     dsy_sprites = get_double_size_y_sprites()
     dsx_sprites = get_double_size_x_sprites()
     dsxy_sprites = get_double_size_xy_sprites()
     possible_hw_sprites = set()
     sprite_names = get_sprite_names()
-    for i in range(0,0x100):
+    for i in range(0,0x80):
         if i not in dsx_sprites and i not in dsxy_sprites:
             name = sprite_names.get(i,"unknown")
-            if any(x in name for x in ("points","ghost","dragon","red_enemy","player")):
+            # nyamco hiding must be behind loot BOBs, can't use a HW sprite
+            if name != "nyamco_hiding" and any(x in name for x in ("cat","mouse","nyamco")):
                 possible_hw_sprites.add(i)
     return possible_hw_sprites
 

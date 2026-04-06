@@ -70,11 +70,12 @@ UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
 
 PLAYFIELD_Y_UP_CORRECTION = 8
 
-HW_SPRITE_X_CORRECTION = 9-PLAYFIELD_Y_UP_CORRECTION
 	.ifdef	OCS_VERSION
+HW_SPRITE_X_CORRECTION = 8-PLAYFIELD_Y_UP_CORRECTION
 HW_SPRITE_Y_CORRECTION = 1
 	.else
 HW_SPRITE_Y_CORRECTION = 48+1
+HW_SPRITE_X_CORRECTION = 0
 	.endif
 	
 SPRITE_X_CORRECTION = 0-PLAYFIELD_Y_UP_CORRECTION
@@ -1498,7 +1499,7 @@ cgo_ok_\@:
 * */
 
 really_update_hw_sprites:
-	rts
+	.ifdef		OCS_VERSION
 	
 	************************************************
 	* draw current sprites from 6809 sprite memory *
@@ -1510,32 +1511,8 @@ really_update_hw_sprites:
 0:
 	clr.l	(a0)+
 	dbf		d7,0b
-	* clear "sprite already there" table
-	lea		sprite_location_table(pc),a0
-	move.w	#(GRID_SIDE*GRID_SIDE/4)-1,d7
-0:
-	clr.l	(a0)+
-	dbf		d7,0b
-	* make sure to respect original game priorities like with BOBs
-	*
-	* if not done, HW sprite can be drawn on top of a BOB that is supposed
-	* to be drawn on top. So only assign HW sprite if the object is alone
-	* in its slot (32x32 square)
-	*
-	* position the bobs&sprites in the grid. Don't put a hardware sprite
-	* if number of objects in grid is != 1 (ourselves)
 
-	lea		sprite_location_table(pc),a3
-	lea		(FIRST_SPRITE,a6),a0		| sprite start
-	move.w	#NB_TARGET_SPRITES-1,d7
-1:
-	COMPUTE_SPRITE_COORDS		| jumps in 2f if not active
-	COMPUTE_GRID_OFFSET
-	addq.b	#1,(a3,d1.w)	| count one more sprite in the area
-2:
-	addq.w	#TARGET_SPRITE_SIZEOF,a0
-	dbf		d7,1b
-	
+	* only active in ECS/OCS
 	* now update in the reverted order // the bobs
 	lea		(LAST_SPRITE,a6),a0		| sprite start
 	lea		hws_table,a4
@@ -1545,6 +1522,7 @@ really_update_hw_sprites:
 	moveq	#0,d7
 	move.l	#sprite_control_words,d5
 1:
+
 	jbsr	update_one_hw_sprite
 	subq.w	#TARGET_SPRITE_SIZEOF,a0
 	cmp.l	a2,a6
@@ -1565,6 +1543,7 @@ really_update_hw_sprites:
 	addq	#8,a3
 	jra		1b
 2:	
+	.endif
 	rts
 
 
@@ -1589,7 +1568,7 @@ update_one_hw_sprite:
 	jeq		0f
 	addq	#4,d3
 0:
-	
+
 	move.l	(a4,d3.w),d3
 	jeq		2f		| not defined or no HW sprite, pass to BOBs
 
@@ -1604,24 +1583,7 @@ update_one_hw_sprite:
 
 	move.l	d3,a5	| clut table
 
-	
-	* we're taking from here, mark the sprite as empty
-	* so BOB pass isn't going to consider it
-	lea		sprite_location_table(pc),a3
-	move.w	d0,-(a7)
-	move.w	d1,-(a7)
-	COMPUTE_GRID_OFFSET
-	lea		sprite_location_table(pc),a3
-	cmp.b	#2,(a3,d1.w)
-	jcs		0f
-	* 2 objects in the same slot: don't use HW sprite as it would
-	* screw priorities in many cases
-	addq	#4,a7
-	jra		2f
-0:
-	move.w	(a7)+,d1
-	move.w	(a7)+,d0
-	
+
 	lea		sprite_drawn_table(pc),a3
 	st.b	(a3,d7.w)
 	

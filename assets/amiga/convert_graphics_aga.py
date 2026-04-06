@@ -333,8 +333,10 @@ print(f"Number of unique total colors (tiles+sprites) {nb_total}")
 full_palette += (nb_colors-len(full_palette)) * [(0x10,0x20,0x30)]
 
 # most sprites are eligible to hw sprites except X-sized (>16)
+# but it's not worth using them in AGA, the priorities are a nightmare
+# let's do it only for ECS
 
-possible_hw_sprites = get_possible_hw_sprites()
+possible_hw_sprites = set()
 
 plane_orientations = [("standard",lambda x:x),
 ("flip",ImageOps.flip),
