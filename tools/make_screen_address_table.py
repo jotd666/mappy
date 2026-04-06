@@ -63,7 +63,8 @@ for y,line_offset in enumerate([0,0x20],2):
     # kludge on bottom right so ROUND and CREDIT are displayed higher so amiga
     # can display it (else it's cut at Y=285)
     # non-amiga version could retain the 0x78F+line_offset formula for this part
-    start = 0x78F+(0x20-line_offset)
+    #start = 0x78F+(0x20-line_offset)
+    start = 0x78F+line_offset
     x = 14+x_offset
     for i in range(start,start-14,-1):
         set_value(i,(x,y))
