@@ -1,8 +1,10 @@
+- start game should happen only if credits inserted
+- music hurry doesn't loop but stops after a while
+- check if can die when opening a microwave door in real game!
+- enable HW sprites for AGA too after all (convert_graphics_aga)
 - ECS: good with BOBs but a few corrupt background issues when score travels left/right
-- HW sprites only for ECS: hw sprites in priority for roof: first collect eligible HW sprites
-  then if more than 4, sort them Y(X) wise and allocate HW sprites from the top
-  maybe do with mockup!
 - highscore isn't the first score in the list! (to test again on real hw!)
+- when title displays use low priority for HW sprites
 - ECS: title is shaking! is it 25 fps from floppy? sprites blinking like hell
   => for "loot" sprites, don't erase them if scroll value at previous sprite draw was the same
 - 300 bonus missing some frames (grouping?) at times? (with 300x2?)

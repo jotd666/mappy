@@ -36,8 +36,7 @@ next\@:
 	.endm
 	.endif
 	
-	.macro	GET_MEMORY_START_AND_DP
-	move.l	m6809_direct_page_pointer,a5
+	.macro	GET_MEMORY_START
 	.ifeq	OPT_ALIGNED_MEMORY
 	lea		ram_buffer-RAM_START,a6
 	.else
@@ -48,6 +47,12 @@ next\@:
 	sub.w	#RAM_START,a6
 	.endif
 	.endif
+	.endm	
+	
+	.macro	GET_MEMORY_START_AND_DP
+	move.l	m6809_direct_page_pointer,a5
+	GET_MEMORY_START
 	.endm
+
 	
 	.endif

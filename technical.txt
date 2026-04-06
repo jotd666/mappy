@@ -1,0 +1,22 @@
+a small techincal description on this game, which was pretty quick to do thanks for the reuse of Dig Dug 2
+amiga source (hardware are identical, but of course their usage is different, like tile/sprites priorities)
+
+AGA version:
+
+uses dual playfield with allows to fit all colors in (there are slightly more than 16 colors tiles+sprites).
+
+A copper trick changes the priorities between playfields/sprites at the roof limit, which works well on AGA.
+
+ECS version:
+
+A nice challenge was to not being able to use dual playfield on ECS because the colors were already reduced from 20 to 16. So using a few remaps & copper tricks it could run on 16 colors without too much noticeable color change. Now dual playfield was used in AGA for when the characters pass on the roof on later levels (and the cat on highscore screen). The copper trick to change the priorities between playfields/sprites at the roof limit is doesn't work on BOBs because there's now a single playfield.
+
+On ECS, DPF it would kill the color map so I was facing wrong sprite priorities on the roof or using hardware sprites. With the same priority trick, HW sprites would display below the roof all right, but problem is there are only 4 attached hardware sprites at a time (too many colors for single sprites). So if I use the HW sprites anywhere without sorting, there's a big chance that some characters appear above the roof.
+
+So I did 2 hardware sprite lists, 1 if Y is above the roof limit, and one if Y is below, prioritizing the upper Y sprites for HW sprite selection. Now there's still a very little chance that there are more than 4 moving sprites on the roof but at this point you'll probably be dead => problem solved by skill & also luck as always! 
+
+Both versions:
+
+- I have added hardware sprites so in the end it should run even smoother on AGA and mostly 50 fps on ECS.
+- Sprite erase is optimized out for static objects (collectables) when scrolling doesn't change. That provides more
+blitter bandwith and avoids blinking on slow machines.

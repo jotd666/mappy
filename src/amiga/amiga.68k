@@ -62,6 +62,7 @@ BASE_BPLCON0_VALUE = 0x0610+BORDERBLANK
 * shared *
 **********
 
+ROOF_Y_LIMIT = 56   | enemy Y just below last house floor (for HW sprite priority sorting)
 	
 COPPER_Y_START = 0x1C
 BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 16!
@@ -71,7 +72,7 @@ UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
 PLAYFIELD_Y_UP_CORRECTION = 8
 
 	.ifdef	OCS_VERSION
-HW_SPRITE_X_CORRECTION = 8-PLAYFIELD_Y_UP_CORRECTION
+HW_SPRITE_X_CORRECTION = -PLAYFIELD_Y_UP_CORRECTION
 HW_SPRITE_Y_CORRECTION = 1
 	.else
 HW_SPRITE_Y_CORRECTION = 48+1
@@ -855,8 +856,6 @@ demo_game:
 	move.l	(a0)+,(a1)+
 	dbf		d0,0b
 	
-	move.l	#mid_code_base,0x124
-
 	GET_MEMORY_START_AND_DP
 	* special patch: change ROM addresses to match the encoded versions
 	* of 32-bit addresses of ported code
@@ -1432,24 +1431,7 @@ really_update_tiles:
 * }
 * 
 * 
-	.macro	COMPUTE_GRID_OFFSET
-	.ifndef	RELEASE
-	movem.l	d0/d1,-(a7)
-	nop
-	.endif
-	lsr.w	#GRID_POWER,d0	| reduce coord from 256 to 1<<(8-GRID_POWER) (0-7)
-	lsr.w	#GRID_POWER,d1
-	lsl.w	#8-GRID_POWER,d1		| multiply by 1<<(8-GRID_POWER) to get offset
-	add.w	d0,d1
-	.ifndef	RELEASE
-	cmp.w	#GRID_SIDE*GRID_SIDE,d1
-	jcs		cgo_ok_\@
-	movem.l	(a7)+,d0/d1
-	BREAKPOINT	"grid offset out of range, check coords in d0/d1"
-cgo_ok_\@:
-	addq	#8,a7
-	.endif
-	.endm
+
 	
 	* shared code between bobs & hw sprites
 	* jumps to 2f if not active
@@ -1458,8 +1440,6 @@ cgo_ok_\@:
 	moveq	#0,d1
 	move.b	(TARGET_SPRITE_X_1,a0),d1
 	jeq		2f			| if zero then it's disabled in this game
-	moveq	#0,d2
-	move.b	(TARGET_SPRITE_COLOR,a0),d2
 	moveq	#0,d0
 	move.b	(TARGET_SPRITE_X_2,a0),d0
 	bclr	#2,d0
@@ -1475,6 +1455,13 @@ cgo_ok_\@:
 	move.b	(TARGET_SPRITE_Y,a0),d1  | sprite Y
 	subq.w	#1,d1	| sy = spriteram_2[offs]-1  (MAME mirrors sy but we don't!)	
 	jmi		2f
+	.endm
+
+	.macro	COMPUTE_SPRITE_COORDS_AND_COLOR
+	COMPUTE_SPRITE_COORDS
+	moveq	#0,d2
+	move.b	(TARGET_SPRITE_COLOR,a0),d2
+	and.b	#0xF,d2		| CLUT
 	.endm
 	
 * /*
@@ -1512,24 +1499,86 @@ really_update_hw_sprites:
 	clr.l	(a0)+
 	dbf		d7,0b
 
+	* first pass to collect eligible HW sprite addresses but first considering
+	* the highest ones so there's more chance that HW sprites are used in the house
+	* (else never mind, it will display on top of the house, but it doesn't matter much)
+	* no need for a full sort, just put the sprite pointers in 2 buckets: high and low
+	
 	* only active in ECS/OCS
 	* now update in the reverted order // the bobs
+	lea		high_sprites_list,a1
+	lea		low_sprites_list,a2
+	clr.l	(a2)
+	clr.l	(a1)
 	lea		(LAST_SPRITE,a6),a0		| sprite start
+	lea		hws_table,a4
+	moveq	#0,d5
+	move.w	#NB_TARGET_SPRITES,d6
+	moveq	#0,d7
+1:
+	* get code immediately. we want to know if it's a
+	* possible hardware sprite right away
+	moveq	#0,d3
+	move.b	(TARGET_SPRITE_CODE,a0),d3
+	lsl.w	#3,d3
+	tst.l	(a4,d3.w)
+	jeq		2f
+	COMPUTE_SPRITE_COORDS
+	* here we have d0 as Y, we're not interested in X
+	cmp.w	#ROOF_Y_LIMIT,d0
+	jcc		10f
+	addq	#1,d5		| one more high sprite
+	move.l	a0,(a1)+
+	clr.l	(a1)
+	jra 	2f
+10:
+	* lower than roof
+	move.l	a0,(a2)+
+	clr.l	(a2)
+2:   | expected by macro above if not active
+	cmp.b	#4,d5
+	jeq		2f    | 4 high Y sprites (roof): we can stop searching
+	subq.w	#TARGET_SPRITE_SIZEOF,a0
+	addq	#1,d7
+	cmp.w	d6,d7		| we have to increase d7 (priority inverted vs bobs)
+	jne		1b	
+2:		
+
+	* only active in ECS/OCS
+	* now update in the reverted order // the bobs
+	GET_MEMORY_START
+	lea		(SPRITE_START,a6),a5
+	lea		high_sprites_list,a1
+	lea		low_sprites_list,a3
 	lea		hws_table,a4
 	lea		game_sprites+2,a2				| copperlist part
 	lea		game_sprites_end+2,a6			| end
-	move.w	#NB_TARGET_SPRITES,d6
-	moveq	#0,d7
 	move.l	#sprite_control_words,d5
 1:
-
+	* try to pick a high sprite first
+	move.l	(a1),d7
+	jne		10f		| not null: use this
+	move.l	(a3)+,d7
+	jeq		3f		| low list also empty: bail out
+	jra		11f
+10:
+	addq	#4,a1	| advance high pointer
+11:
+	move.l	a3,d6
+	move.l	d7,a0		| pointer on sprite memory
+	sub.l	a5,d7
+	lsr.w	#1,d7	| divide by 2 (sprite size of first half) to get index in sprite list
+	move.l	a5,-(a7)		| save list registers
+	move.l	a1,-(a7)		| save list registers
 	jbsr	update_one_hw_sprite
-	subq.w	#TARGET_SPRITE_SIZEOF,a0
+	move.l	d6,a3
+	move.l	(a7)+,a1
+	move.l	(a7)+,a5
+	
 	cmp.l	a2,a6
 	jeq		2f			| all sprites are used already: bail out
-	addq	#1,d7
-	cmp.w	d6,d7		| we have to increase d7 (priority inverted vs bobs)
-	jne		1b
+	jra		1b			| try to find other sprites in both lists
+3:
 	* blank the rest of the unused sprites
 	* a quick way is to cancel sprite position
 	* leaving the current sprite data
@@ -1551,9 +1600,9 @@ really_update_hw_sprites:
 	
 * < A0: target sprite memory
 * < A2: part copperlist where the sprites are
-* A3: scratch
+* A1,A3,A5: scratch
 * < A4: hardware sprite table (0 if not hw sprite)
-* < D5: pointer on sprite positions in the copperlist
+* < D5 (updated): pointer on sprite positions in the copperlist
 * < D7: loop counter (used for flag index)
 update_one_hw_sprite:
 
@@ -1570,7 +1619,7 @@ update_one_hw_sprite:
 0:
 
 	move.l	(a4,d3.w),d3
-	jeq		2f		| not defined or no HW sprite, pass to BOBs
+	jeq		2f		| not defined or no HW sprite, pass to BOBs (should not happen!!)
 
 	lea		HW_SpriteYTable_16,a1		| most sprites have same size 16 high
 	btst	#SIZE_Y_BIT,d2
@@ -1578,7 +1627,7 @@ update_one_hw_sprite:
 	lea		HW_SpriteYTable_32,a1		| most sprites have same size 16 high
 0:
 
-	COMPUTE_SPRITE_COORDS
+	COMPUTE_SPRITE_COORDS_AND_COLOR
 
 
 	move.l	d3,a5	| clut table
@@ -1596,8 +1645,6 @@ update_one_hw_sprite:
 	.endif
 
 	exg		d0,d1
-	
-	and.b	#0xF,d2		| CLUT
 	
 	* it is a HW sprite all right
 	lsl.w	#3,d2	| 2 pointers for each sprite
@@ -1717,19 +1764,20 @@ really_update_sprites:
 	GET_MEMORY_START_AND_DP
     lea _custom,A5
 	lea		(FIRST_SPRITE,a6),a0		| sprite start
-	move.w	#NB_TARGET_SPRITES-1,d7
-
+	moveq	#0,d7
 
 	lea		sprite_drawn_table(pc),a3
 	move.l	bob_previous_drawn_sprites(pc),a6
 1:
 	tst.b	(a3,d7.w)
-	jne		2f
+	jne		2f			| already rendered as a HW sprite
 	jbsr	update_one_bob
 	lea		sprite_drawn_table(pc),a3	| reload table pointer
 2:
 	addq.w	#TARGET_SPRITE_SIZEOF,a0
-	dbf		d7,1b
+	addq	#1,d7
+	cmp.w	#NB_TARGET_SPRITES,d7
+	jne		1b
 
 	rts
 	
@@ -1869,7 +1917,7 @@ blit_background:
 * must preserve all of those, plus D7
 
 update_one_bob:
-	COMPUTE_SPRITE_COORDS
+	COMPUTE_SPRITE_COORDS_AND_COLOR
 	
 	
 	.ifne	SPRITE_Y_CORRECTION
@@ -1920,7 +1968,6 @@ update_one_bob:
 	* draw from alternate table
 	lea		bob_table_x_size,a4
 0:
-	and.b	#0xF,d2		| CLUT
 	
 	* check if it is a grouped sprite in the table with 0x100 pre-computed entries
 	
@@ -2427,11 +2474,15 @@ bob_plane_size:
 	.word	0
 blitter_modulo:
 	.word	0
+
+high_sprites_list:
+	.skip	NB_TARGET_SPRITES*4
+low_sprites_list:
+	.skip	NB_TARGET_SPRITES*4
 	
 sprite_drawn_table:
 	.skip	NB_TARGET_SPRITES
-sprite_location_table:
-	.skip	GRID_SIDE*GRID_SIDE
+
 
 bob_previous_positions_1:
 	.skip NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZEOF
@@ -3729,7 +3780,6 @@ osd_sound_start:
 3:
 	cmp.b	#MICROWAVE_0A_SND*8,d0
 	jne		0f
-	move.b	#0,0x110
 	cmp.b	previous_played_sound,d0
 	jeq		10f			| don't play twice in a row (game calls the sound to death!)
 0:
