@@ -71,12 +71,11 @@ UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
 
 PLAYFIELD_Y_UP_CORRECTION = 8
 
-	.ifdef	OCS_VERSION
 HW_SPRITE_X_CORRECTION = -PLAYFIELD_Y_UP_CORRECTION
+	.ifdef	OCS_VERSION
 HW_SPRITE_Y_CORRECTION = 1
 	.else
 HW_SPRITE_Y_CORRECTION = 48+1
-HW_SPRITE_X_CORRECTION = 0
 	.endif
 	
 SPRITE_X_CORRECTION = 0-PLAYFIELD_Y_UP_CORRECTION
@@ -1486,7 +1485,6 @@ really_update_tiles:
 * */
 
 really_update_hw_sprites:
-	.ifdef		OCS_VERSION
 	
 	************************************************
 	* draw current sprites from 6809 sprite memory *
@@ -1592,7 +1590,7 @@ really_update_hw_sprites:
 	addq	#8,a3
 	jra		1b
 2:	
-	.endif
+
 	rts
 
 
@@ -3334,7 +3332,7 @@ start_1p_game:
 start_xp_game:
 	jbsr	get_nb_credits
 	sbcd	d1,d0
-	jmi		0f			| not enough money
+	jcs		0f			| not enough money
 	or.b	#0xF0,d1
 	move.b	d1,(number_of_players_4801,a6)
 	move.b	d0,d1
