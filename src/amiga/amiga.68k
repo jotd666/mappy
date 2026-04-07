@@ -67,11 +67,11 @@ ROOF_Y_LIMIT = 56   | enemy Y just below last house floor (for HW sprite priorit
 COPPER_Y_START = 0x1C
 BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 16!
 BASE_BPLCON2_VALUE = 0x0024		| sprites above all playfields
-UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs behind the house roof
+UPPER_BPLCON2_VALUE = 0x0042    | reverted planes, bobs/sprites behind the house roof
 
 PLAYFIELD_Y_UP_CORRECTION = 8
 
-HW_SPRITE_X_CORRECTION = -PLAYFIELD_Y_UP_CORRECTION
+HW_SPRITE_X_CORRECTION = -PLAYFIELD_Y_UP_CORRECTION-1
 	.ifdef	OCS_VERSION
 HW_SPRITE_Y_CORRECTION = 1
 	.else
@@ -161,7 +161,7 @@ SIZE_X_BIT = 3
 	UWORD	PREV_HEIGHT			
 	UWORD	PREV_WIDTH			
 	UBYTE	PREV_STAR		| not used	
-	UBYTE	PREV_ACTIVE_PLANES	
+	UBYTE	PREV_CODE	
 	LABEL		PREVIOUS_SPRITE_SIZEOF
 
 * hardware sprite (not used)
@@ -1308,6 +1308,7 @@ really_update_scroll:
 	move.b	(scroll_value_1389,a6),d5	| scroll value 0=>0xFF
 	not.b	d5
 	.ifdef	OCS_VERSION
+	move.b	sprite_x_offset,previous_sprite_x_offset  | save previous value
 	move.b	d5,sprite_x_offset
 	.endif
 	add.w	d5,d5
@@ -1706,6 +1707,7 @@ really_update_sprites:
 	* blit background tiles *
 	*************************
 	lea	background_restore_buffer,a0
+	lea	loot_sprites,a3
 	WAIT_BLIT
 	move.l	#-1,bltalwm(a5)		| needed for blit_background
 	* loop
@@ -1717,10 +1719,21 @@ really_update_sprites:
 	jcc		11f				| too low: discard
 	and.w	#0x1F0,d0		| align on 16 lower bound
 	* clear area where the sprite was
-	clr.l	(a4)+			| ack deletion by setting -1 in X & Y
-	move.w	(a4)+,d4			| height
+	clr.l	(a4)+			| ack deletion by setting 0 in X & Y
+	move.w	(a4)+,d4		| height
 	move.w	(a4)+,d2		| width
-	addq	#2,a4			
+	move.w	(a4)+,d3		| sprite code
+	move.l		playfield_drawn_screen_ptr(pc),a1
+	tst.b	force_all_erase
+	jne		9f
+	tst.b	(a3,d3.w)
+	jeq		9f
+	* loot tile: either we clear or we do nothing!
+	move.b	sprite_x_offset,d3
+	cmp.b	previous_sprite_x_offset,d3
+	jeq		10f		| no need to erase loot if scrolling didn't change
+9:
+	* normal sprite, restore background
 	jbsr	blit_background
 
 	.else
@@ -1729,6 +1742,7 @@ really_update_sprites:
 	*******************
 	* erase playfield *
 	*******************
+	
 	move.l	(a4),d1	| read X and Y
 	jeq		11f		| x=y=0: inactive, skip
 	move.l	d1,d0
@@ -1737,28 +1751,35 @@ really_update_sprites:
 	* clear area where the sprite was
 	clr.l	(a4)+			| ack deletion
 	move.w	(a4)+,d4		| height
-	move.w	(a4)+,d2		| width/clut index (if star)
-	addq	#2,a4			| ignore that info	
-
+	move.w	(a4)+,d2		| width
+	move.w	(a4)+,d3		| sprite code
 	and.w	#0x1F0,d0		| align on 16 lower bound
 	move.w	#NB_TILE_PLANES,d3
 	move.l		playfield_drawn_screen_ptr(pc),a1
 	jbsr		clear_planes_any_blitter_internal
 	.endif
-
+10:
 	dbf		d7,1b	
 	bra.b	12f
 11:
 	lea	(PREVIOUS_SPRITE_SIZEOF,a4),a4
 	dbf		d7,1b
 12:	
-	
-	
+	.ifdef	OCS_VERSION
+	tst.b	force_all_erase
+	jeq		13f
+	subq.b	#1,force_all_erase
+13:
+	.endif
 	*********************************************
 	* draw current BOBs from 6809 sprite memory *
 	*********************************************
 
-
+	.ifdef	OCS_VERSION
+	* default in OCS: sprites above tiles below the house roof
+	move.w	#BASE_BPLCON2_VALUE,below_roof_bplcon_value
+	.endif
+	
 	GET_MEMORY_START_AND_DP
     lea _custom,A5
 	lea		(FIRST_SPRITE,a6),a0		| sprite start
@@ -1941,6 +1962,11 @@ update_one_bob:
 10:
 	* left top title sprite: draw entire title
 	move.l	a0,-(a7)
+	.ifdef	OCS_VERSION
+	* HW sprites below title
+	clr.b	d6		| normal erase
+	move.w	#UPPER_BPLCON2_VALUE,below_roof_bplcon_value
+	.endif
 	lea		title_pic,a0
 	addq.w	#7,d1		| just a bit lower
 	jra		101f    | bypass sprite clut/mirror shit stuff, proceed to blit
@@ -1953,10 +1979,10 @@ update_one_bob:
 	rts
 0:
 
-	* load properties (for X size mostly, used for dragons and flames,
+	* load properties (for X size mostly,
 	* where sprite tiles can be used with or without X size, which makes it
-	* more complicated to display as opposed to X&Y size (big inflated monsters)
-	* and Y size (player hammering), that are only displayed grouped
+	* more complicated to display as opposed to X&Y size
+	* and Y size, that are only displayed grouped
 	lea		bob_table,a4
 	move.b	(TARGET_SPRITE_ATTR,a0),d4
 	btst	#SIZE_X_BIT,d4
@@ -1996,6 +2022,7 @@ update_one_bob:
 	movem.l	(a7)+,a2/d2-d3
 	.endif
 
+	move.b	d3,d6   | save code for later
 	.ifdef	NO68020
 	add.w	d3,d3
 	add.w	d3,d3
@@ -2058,7 +2085,7 @@ update_one_bob:
 	move.l		playfield_drawn_screen_ptr(pc),a1
 	
 	* D0 and D1 are already set
-	move.w	(a0)+,d6				| active plane mask
+	addq	#2,a0				| skip active plane mask
 	move.l	(NB_BOB_PLANES*4,a0),d2
 	jeq	21f		| mask is zero: blank tile => skip
 	move.l	d2,a3
@@ -2102,7 +2129,7 @@ update_one_bob:
 	move.w	d4,(a6)+			| store height
 	move.w	d2,(a6)+			| store width in bytes
 	clr.b	(a6)+				| 
-	move.b	d6,(a6)+		    | active planes (helps for erase)
+	move.b	d6,(a6)+		    | save sprite code (helps for erase)
 
 *	btst	#FLIP_Y_BIT,d3  | X but portrait! not used in this game
 *	jeq		101f
@@ -2350,7 +2377,7 @@ process_1_plane:
 * < D3: nb planes to clear
 * < D4: blit height
 * < D5: plane mask
-	.ifndef	OCS_VERSION
+	
 * trashes D0-D6/A2
 clear_planes_any_blitter_internal:
     * pre-compute the maximum of shit here
@@ -2369,7 +2396,11 @@ clear_planes_any_blitter_internal:
 	* null or negative height after clipping: out
 	rts
 0:
-    lea mulFG_NB_BYTES_PER_ROW_table(pc),a2
+ 	.ifdef	OCS_VERSION
+   lea mulBG_NB_BYTES_PER_ROW_table(pc),a2
+	.else
+   lea mulFG_NB_BYTES_PER_ROW_table(pc),a2
+	.endif
     add.w   d1,d1
     move.w  (a2,d1.w),d1
 1:
@@ -2384,7 +2415,11 @@ clear_planes_any_blitter_internal:
 	moveq	#1,d1
 	ror.l	#8,d1     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
 
+	.ifdef	OCS_VERSION
+	move.w #BG_NB_BYTES_PER_ROW,d0
+	.else
 	move.w #FG_NB_BYTES_PER_ROW,d0
+	.endif
 	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
     sub.w   d2,d0       | blit width
 
@@ -2407,7 +2442,11 @@ clear_planes_any_blitter_internal:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 32:
+	.ifdef	OCS_VERSION
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	.else
 	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	.endif
 	dbf		d3,3b
 4:
 	rts
@@ -2415,54 +2454,21 @@ clear_planes_any_blitter_internal:
 	
 	
 	subq	#1,d3
-*	jra		31f
 3:
-*	lsr.b	#1,d5
-*	jcc		32f
-*	BTST	#6,(dmaconr,a5)
-*	jra		31f
-*	* blitter is busy: do it with cpu for that plane
-*	move.w	d6,d2
-*	subq	#1,d2
-*	move.l	a1,a2
-*	* no need to know which width in the case of gyruss there are
-*	* only 32 bit erase / blits
-*55:
-*	clr.l	(a2)
-*	lea		(FG_NB_BYTES_PER_ROW,a2),a2
-*	dbf		d2,55b
-*	jra 	32f			| should send to blitter operation next time
 	
 31:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 32:
+	.ifdef	OCS_VERSION
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	.else
 	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	.endif
 	dbf		d3,3b
 4:
-*	lsr.b	#1,d5
-*	jcs		5f
-*	rts
-*5:
-	* last plane: if blitter busy, do with CPU
-*	BTST	#6,(dmaconr,a5)
-*	jra		31f
-*	* blitter is busy: do it with cpu for that plane
-*	move.w	d6,d2
-*	subq	#1,d2
-*	move.l	a1,a2
-*	* no need to know which width in the case of gyruss there are
-*	* only 32 bit erase / blits
-*55:
-*	clr.l	(a2)
-*	lea		(BG_NB_BYTES_PER_ROW,a2),a2
-*	dbf		d2,55b
-*	rts
-*31:
-	move.l a1,bltdpt(a5)	|destination top left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-    rts
-	.endif
+	rts
+
 
 bob_row_multiplication_table:
 	.long	0
@@ -3092,6 +3098,8 @@ standard_tile:
 2:
 	rts
 
+loot_sprites:
+	.include	"loot_sprites.68k"
 	
 mirror_bits:
 	.include "mirror_bits.68k"
@@ -3148,8 +3156,8 @@ HW_SpriteXTable:
 HW_SpriteYTable_\height:
   .set	reptn,0
   .rept 288
-	.set	ys,reptn+0x1c
-	.set	ye,ys+\height
+	.set	ys,reptn+COPPER_Y_START
+	.set	ye,ys+\height+1
     .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
 	.set	reptn,reptn+1
   .endr
@@ -3725,6 +3733,18 @@ osd_sound_start:
 	OSD_ENTER
 	movem.l	d0/d1/a0/a5/a6,-(a7)
 	GET_MEMORY_START_AND_DP
+	
+	.ifdef	OCS_VERSION
+	cmp.b	#ITEM_PICKED_08_SND,d0
+	jne		0f
+	* mega-hack to avoid erasing loot objects all the time if scrolling is not changing
+	* but to really erase them when needed. Instead of making it more complex, this sound is
+	* played when an item is picked up. So during 4 screen updates, all bobs will be erased 
+	* (as an item was picked, we need time to erase it)
+	move.b	#4,force_all_erase
+0:
+	.endif
+	
 	cmp.b	#MAIN_TUNE_SND,d0
 	jne		0f
 	tst.b	(sound_extra_life_4044,a6)
@@ -3896,6 +3916,10 @@ trigger_module_table:
 	.byte	0xE        | E
 	.byte	0xF        | F
 
+	.ifdef	OCS_VERSION
+force_all_erase:
+	.byte	0
+	.endif
 previous_played_sound:
 	.byte	-1
 lock_hurry_tune:
@@ -4130,11 +4154,15 @@ temp_filename_buffer:
 _end_of_ng_code:
 	.align 2
 		
+	.ifdef 	OCS_VERSION
 sprite_x_offset_w:
 	.byte	0
 sprite_x_offset:
 	.byte	0
-
+previous_sprite_x_offset:
+	.byte	0
+	.endif
+	
 	.align 2
 
 baloon_timeout:
@@ -4321,6 +4349,7 @@ sprite_control_words_end:
 	* top of house is above, rest of the playfield has changed priorities
 	.word	0x6001,0xFFFE
 	.word	bplcon2
+below_roof_bplcon_value:
 	.word	BASE_BPLCON2_VALUE
 
 	* not sure if it's really half screen but it doesn't matter

@@ -51,9 +51,9 @@ clean:
 	
 shell.o: $(AMIGASRC)/shell.68k
 	$(ASM_000) -I$(AMIGASRC) -I$(AMIGASRC)/mit_includes $(AMIGASRC)/shell.68k -o shell.o
-$(AMIGASRC)/aga/graphics.68k: $(ASSETS)/convert_graphics_aga.py
+$(AMIGASRC)/aga/graphics.68k: $(ASSETS)/convert_graphics_aga.py $(ASSETS)/shared.py
 	cmd /c $(ASSETS)\convert_graphics_aga.py
-$(AMIGASRC)/ecs/graphics.68k: $(ASSETS)/convert_graphics_ecs.py
+$(AMIGASRC)/ecs/graphics.68k: $(ASSETS)/convert_graphics_ecs.py $(ASSETS)/shared.py
 	cmd /c $(ASSETS)\convert_graphics_ecs.py
 
 $(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py   #$(BASE_ASSETS)/sounds/digdug2_main_tune.mod 
