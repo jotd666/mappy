@@ -88,7 +88,7 @@ def replace_colors(set_list,rep_dict):
 title_pic = Image.open(sheets_path / "title.png")
 
 sprite_sheet_dict = {i:Image.open(sheets_path / "sprites" / f"pal_{i:02x}.png") for i in range(NB_SPRITE_CLUTS)}
-tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1A)}
+tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1B)}
 
 tile_palette = set()
 tile_set_list = []

@@ -71,8 +71,6 @@ for atc in alphanum_tile_codes:
 
 
 
-
-
 if dump_it:
     if not all_tile_cluts:
         with open(dump_dir / "used_sprites.json","w") as f:
@@ -87,7 +85,7 @@ if dump_it:
 title_pic = Image.open(sheets_path / "title.png")
 
 sprite_sheet_dict = {i:Image.open(sheets_path / "sprites" / f"pal_{i:02x}.png") for i in range(NB_SPRITE_CLUTS)}
-tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1A)}
+tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(0x1B)}
 
 tile_palette = set()
 tile_set_list = []
@@ -98,6 +96,7 @@ for i,tsd in tile_sheet_dict.items():
     name_dict=None)
     tile_set_list.append(tile_set)
     tile_palette.update(tp)
+
 
 # pad
 tile_palette = sorted(tile_palette)
