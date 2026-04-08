@@ -1,6 +1,7 @@
-- level 8: bell in the middle of screen check in MAME with roof removed!
+- ECS: level 8: bell in the middle of screen, also in MAME but doesn't show because of roof!
 - when title displays (mappy title displayed) use low priority for HW sprites
-  => if "STARRING" is in tiles on top, not if title shows (problem with tutorial!)
+  => if "STARRING" is in tiles on top, not if title shows (problem with tutorial!): also for AGA!!!
+- highscore loads with >20000 ok but if plays and reaches 22000 for instance, highscore is replaced
 - check if can die when opening a microwave door in real game!
 - ECS: good with BOBs but a few corrupt background issues when score travels left/right
 - ECS: title is shaking! maybe block scroll on the title region, blit title without x offset
