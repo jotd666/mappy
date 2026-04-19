@@ -79,3 +79,4 @@ nb_lives_30 = 0x30
 level_number_31 = 0x31
 level_complete_32 = 0x32
 player_hit_33 = 0x33
+high_score_1385 = 0x1385

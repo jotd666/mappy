@@ -35,6 +35,7 @@ nb_lives_per_play_1364 = $1364
 nb_start_lives_setting_fcd1 = $fcd1
 dsw_copy_array_1378 = $1378
 copy_of_lives_dsw_1379 = $1379
+high_score_1385 = $1385
 
 ; completely unused second clocks
 game_clock_100b = $100b
@@ -202,7 +203,7 @@ A0CC: B6 07 D1    LDA    $07D1
 A0CF: B7 07 C1    STA    $07C1
 A0D2: 86 20       LDA    #$20
 A0D4: B7 13 86    STA    $1386
-A0D7: 7F 13 85    CLR    $1385
+A0D7: 7F 13 85    CLR    high_score_1385
 A0DA: 7F 13 87    CLR    $1387
 A0DD: 8E 07 ED    LDX    #$07ED
 A0E0: 6F 80       CLR    ,X+		; [video_address]
@@ -7226,6 +7227,7 @@ F263: B6 14 02    LDA    game_global_state_1402
 F266: 81 70       CMPA   #$70
 F268: 24 01       BCC    $F26B
 F26A: 39          RTS
+
 F26B: 81 80       CMPA   #$80
 F26D: 25 01       BCS    $F270
 F26F: 39          RTS
@@ -7247,7 +7249,7 @@ F28A: A6 82       LDA    ,-X
 F28C: 89 00       ADCA   #$00
 F28E: 19          DAA
 F28F: A7 84       STA    ,X
-F291: CE 13 85    LDU    #$1385
+F291: CE 13 85    LDU    #high_score_1385
 F294: EC 84       LDD    ,X
 F296: A3 C4       SUBD   ,U
 F298: 22 08       BHI    $F2A2
@@ -7260,7 +7262,7 @@ F2A4: A7 C0       STA    ,U+
 F2A6: EC 01       LDD    $1,X
 F2A8: ED C4       STD    ,U
 F2AA: 34 50       PSHS   U,X
-F2AC: 8E 13 85    LDX    #$1385
+F2AC: 8E 13 85    LDX    #high_score_1385
 F2AF: CE 07 F4    LDU    #$07F4
 F2B2: C6 03       LDB    #$03
 F2B4: A6 84       LDA    ,X

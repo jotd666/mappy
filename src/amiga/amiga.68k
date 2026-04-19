@@ -1,5 +1,5 @@
 *
-*	Amiga-specific portions of DigDug2
+*	Amiga-specific portions of Mappy
 *
 * (c) JOTD 2025-2026
 *
@@ -3583,7 +3583,14 @@ osd_read_high_scores:
 	move.b	(a0)+,(a1)+
 	dbf		d0,0b
 
-	* update high score (duplicated)
+	* copy highscore to memory too
+	lea	high_score_table_1460(a6),a0
+	lea	high_score_1385(a6),a1
+	.rept	3
+	move.b	(a0)+,(a1)+
+	.endr
+	
+	* update high score to screen too
 	lea	high_score_table_1460(a6),a1
 
 	WRITE_DIGITS	0x7F3,0x7F2		| millions + hundreds of thousands
