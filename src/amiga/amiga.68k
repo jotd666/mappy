@@ -3125,8 +3125,6 @@ standard_tile:
 loot_sprites:
 	.include	"loot_sprites.68k"
 	
-mirror_bits:
-	.include "mirror_bits.68k"
 
 tiles_layout:
 	.include "tiles_layout.68k"
