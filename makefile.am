@@ -22,6 +22,7 @@ WHDLOADER_AGA_CHIP = ..\$(PROGNAME)_AGA_chip.slave
 WHDLOADER_ECS = ..\$(PROGNAME)_ECS.slave
 WHDLOADER_ECS_CHIP = ..\$(PROGNAME)_ECS_chip.slave
 BASE_ASSETS = ..\assets
+TOOLSDIR = ..\tools
 ASSETS = $(BASE_ASSETS)\amiga
 AMIGASRC = amiga
 
@@ -51,14 +52,17 @@ clean:
 	
 shell.o: $(AMIGASRC)/shell.68k
 	$(ASM_000) -I$(AMIGASRC) -I$(AMIGASRC)/mit_includes $(AMIGASRC)/shell.68k -o shell.o
-$(AMIGASRC)/aga/graphics.68k: $(ASSETS)/convert_graphics_aga.py $(ASSETS)/shared.py
+$(AMIGASRC)/aga/graphics.68k $(AMIGASRC)/aga/palette.68k: $(ASSETS)/convert_graphics_aga.py $(ASSETS)/shared.py
 	cmd /c $(ASSETS)\convert_graphics_aga.py
-$(AMIGASRC)/ecs/graphics.68k: $(ASSETS)/convert_graphics_ecs.py $(ASSETS)/shared.py
+$(AMIGASRC)/ecs/graphics.68k $(AMIGASRC)/ecs/palette.68k: $(ASSETS)/convert_graphics_ecs.py $(ASSETS)/shared.py
 	cmd /c $(ASSETS)\convert_graphics_ecs.py
 
-$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py   #$(BASE_ASSETS)/sounds/digdug2_main_tune.mod 
+$(AMIGASRC)/sounds.68k $(AMIGASRC)/sound_entries.68k: $(ASSETS)/convert_sounds.py  $(BASE_ASSETS)/sounds/mappy_conv.mod 
 	cmd /c $(ASSETS)\convert_sounds.py
 	del sounds.o sounds_ocs.o 
+
+$(AMIGASRC)/tiles_layout.68k: $(TOOLSDIR)/make_screen_address_table.py
+	cmd /c $(TOOLSDIR)\make_screen_address_table.py
 	
 $(MAIN_AGA): $(AGA_OBJS)
 	$(GCC_BIN)/m68k-amigaos-ld $(OPT_RELEASE_LINK) -o $(MAIN_AGA) $(AGA_OBJS)
@@ -75,11 +79,11 @@ $(PROGNAME)_020.o: $(PROGNAME).68k options.inc include.inc sounds.inc data.inc
 	$(ASM_020) $(PROGNAME).68k -o $(PROGNAME)_020.o
 $(PROGNAME)_000.o: $(PROGNAME).68k options.inc include.inc sounds.inc data.inc
 	$(ASM_000) $(PROGNAME).68k -o $(PROGNAME)_000.o
-amiga_aga.o: $(AMIGASRC)/amiga.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/aga/palette.68k $(AMIGASRC)/aga/graphics.68k $(AMIGASRC)/sound_entries.68k  $(AMIGASRC)/scroll_table_64.68k
+amiga_aga.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/tiles_layout.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/aga/palette.68k $(AMIGASRC)/aga/graphics.68k $(AMIGASRC)/sound_entries.68k  $(AMIGASRC)/scroll_table_64.68k
 	$(ASM_020) -I$(AMIGASRC)/aga -I$(AMIGASRC) -I$(AMIGASRC)/mit_includes $(AMIGASRC)/amiga.68k -o amiga_aga.o
-amiga_ecs.o: $(AMIGASRC)/amiga.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/ecs/palette.68k $(AMIGASRC)/sound_entries.68k $(AMIGASRC)/scroll_table_16.68k
+amiga_ecs.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/tiles_layout.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/ecs/palette.68k $(AMIGASRC)/sound_entries.68k $(AMIGASRC)/scroll_table_16.68k
 	$(ASM_000_ECS) -I$(AMIGASRC)/ecs -I$(AMIGASRC) -I$(AMIGASRC)/mit_includes $(AMIGASRC)/amiga.68k -o amiga_ecs.o
-amiga_ocs.o: $(AMIGASRC)/amiga.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/ecs/palette.68k $(AMIGASRC)/ocs/sound_entries.68k $(AMIGASRC)/scroll_table_16.68k
+amiga_ocs.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/tiles_layout.68k options.inc include.inc data.inc $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/ecs/palette.68k $(AMIGASRC)/ocs/sound_entries.68k $(AMIGASRC)/scroll_table_16.68k
 	$(ASM_000_OCS) -I$(AMIGASRC)/ocs -I$(AMIGASRC)/ecs -I$(AMIGASRC) -I$(AMIGASRC)/mit_includes $(AMIGASRC)/amiga.68k -o amiga_ocs.o
 vbr.o: $(AMIGASRC)/vbr.68k
 	$(ASM_020) -Iamiga $(AMIGASRC)/vbr.68k -o vbr.o

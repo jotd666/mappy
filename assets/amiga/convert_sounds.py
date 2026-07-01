@@ -249,7 +249,7 @@ def convert(low_memory):
             fst.write(" | {}\n".format(i))
 
 
-#convert(low_memory=True)
+convert(low_memory=True)
 convert(low_memory=False)
 
 
