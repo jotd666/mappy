@@ -1,3 +1,5 @@
+- one of the collectibles will flash, indicating which one to pick up next for more bonus points. 
+  This also shows in the attract mode during the how to play screen.
 - ECS: level 8: bell in the middle of screen, also in MAME but doesn't show because of roof!
   bell never is visible in any level we should remove it (and gain some blitting)
 - when title displays (mappy title displayed) use low priority for HW sprites
